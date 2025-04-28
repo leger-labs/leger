@@ -39,74 +39,18 @@ class Configuration:
     # Environment mode
     ENV_MODE: EnvMode = EnvMode.LOCAL
     
-    # Subscription tier IDs - Production
-    STRIPE_FREE_TIER_ID_PROD: str = 'price_1RILb4G6l1KZGqIrK4QLrx9i'
-    STRIPE_TIER_2_20_ID_PROD: str = 'price_1RILb4G6l1KZGqIrhomjgDnO'
-    STRIPE_TIER_6_50_ID_PROD: str = 'price_1RILb4G6l1KZGqIr5q0sybWn'
-    STRIPE_TIER_12_100_ID_PROD: str = 'price_1RILb4G6l1KZGqIr5Y20ZLHm'
-    STRIPE_TIER_25_200_ID_PROD: str = 'price_1RILb4G6l1KZGqIrGAD8rNjb'
-    STRIPE_TIER_50_400_ID_PROD: str = 'price_1RILb4G6l1KZGqIruNBUMTF1'
-    STRIPE_TIER_125_800_ID_PROD: str = 'price_1RILb3G6l1KZGqIrbJA766tN'
-    STRIPE_TIER_200_1000_ID_PROD: str = 'price_1RILb3G6l1KZGqIrmauYPOiN'
+    # Single subscription price ID - Production
+    STRIPE_SUBSCRIPTION_PRICE_ID_PROD: str = 'price_1ScKQwG6l1KZGqIrTgHeLMV6' # $99/month
     
-    # Subscription tier IDs - Staging
-    STRIPE_FREE_TIER_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrw14abxeL'
-    STRIPE_TIER_2_20_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrCRu0E4Gi'
-    STRIPE_TIER_6_50_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrvjlz5p5V'
-    STRIPE_TIER_12_100_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrT6UfgblC'
-    STRIPE_TIER_25_200_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrOVLKlOMj'
-    STRIPE_TIER_50_400_ID_STAGING: str = 'price_1RIKNgG6l1KZGqIrvsat5PW7'
-    STRIPE_TIER_125_800_ID_STAGING: str = 'price_1RIKNrG6l1KZGqIrjKT0yGvI'
-    STRIPE_TIER_200_1000_ID_STAGING: str = 'price_1RIKQ2G6l1KZGqIrum9n8SI7'
+    # Single subscription price ID - Staging
+    STRIPE_SUBSCRIPTION_PRICE_ID_STAGING: str = 'price_1ScKQwG6l1KZGqIrTgHeLMV6' # Same for testing
     
-    # Computed subscription tier IDs based on environment
+    # Computed price ID based on environment
     @property
-    def STRIPE_FREE_TIER_ID(self) -> str:
+    def STRIPE_SUBSCRIPTION_PRICE_ID(self) -> str:
         if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_FREE_TIER_ID_STAGING
-        return self.STRIPE_FREE_TIER_ID_PROD
-    
-    @property
-    def STRIPE_TIER_2_20_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_2_20_ID_STAGING
-        return self.STRIPE_TIER_2_20_ID_PROD
-    
-    @property
-    def STRIPE_TIER_6_50_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_6_50_ID_STAGING
-        return self.STRIPE_TIER_6_50_ID_PROD
-    
-    @property
-    def STRIPE_TIER_12_100_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_12_100_ID_STAGING
-        return self.STRIPE_TIER_12_100_ID_PROD
-    
-    @property
-    def STRIPE_TIER_25_200_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_25_200_ID_STAGING
-        return self.STRIPE_TIER_25_200_ID_PROD
-    
-    @property
-    def STRIPE_TIER_50_400_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_50_400_ID_STAGING
-        return self.STRIPE_TIER_50_400_ID_PROD
-    
-    @property
-    def STRIPE_TIER_125_800_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_125_800_ID_STAGING
-        return self.STRIPE_TIER_125_800_ID_PROD
-    
-    @property
-    def STRIPE_TIER_200_1000_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_200_1000_ID_STAGING
-        return self.STRIPE_TIER_200_1000_ID_PROD
+            return self.STRIPE_SUBSCRIPTION_PRICE_ID_STAGING
+        return self.STRIPE_SUBSCRIPTION_PRICE_ID_PROD
     
     # LLM API keys
     ANTHROPIC_API_KEY: str = None
@@ -152,7 +96,6 @@ class Configuration:
     # Stripe configuration
     STRIPE_SECRET_KEY: Optional[str] = None
     STRIPE_WEBHOOK_SECRET: Optional[str] = None
-    STRIPE_DEFAULT_PLAN_ID: Optional[str] = None
     STRIPE_DEFAULT_TRIAL_DAYS: int = 14
     
     # Stripe Product IDs
@@ -164,6 +107,9 @@ class Configuration:
         if self.ENV_MODE == EnvMode.STAGING:
             return self.STRIPE_PRODUCT_ID_STAGING
         return self.STRIPE_PRODUCT_ID_PROD
+
+    # Subscription details
+    SUBSCRIPTION_PRICE: int = 99  # $99/month fixed price
 
     # Frontend URL configuration
     FRONTEND_URL: str = "https://app.leger.io"
@@ -290,7 +236,8 @@ class Configuration:
             "MAX_CONFIGURATIONS_FREE_TIER": self.MAX_CONFIGURATIONS_FREE_TIER,
             "MAX_CONFIGURATIONS_PAID_TIER": self.MAX_CONFIGURATIONS_PAID_TIER,
             "ENABLE_PUBLIC_TEMPLATES": self.ENABLE_PUBLIC_TEMPLATES,
-            "ENABLE_CONFIGURATION_SHARING": self.ENABLE_CONFIGURATION_SHARING
+            "ENABLE_CONFIGURATION_SHARING": self.ENABLE_CONFIGURATION_SHARING,
+            "SUBSCRIPTION_PRICE": self.SUBSCRIPTION_PRICE
         }
         return debug_info
 
