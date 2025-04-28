@@ -50,6 +50,123 @@ async def get_subscription_status(user_id: str) -> Dict[str, Any]:
                 "trial_days_remaining": 0,
                 "features": SUBSCRIPTION_TIER['features']
             }
+        
+        # Get latest subscription status from database
+        result = await client.schema('basejump').from_('billing_subscriptions') \
+            .select('*') \
+            .eq('account_id', user_id) \
+            .order('created', desc=True) \
+            .limit(1) \
+            .execute()
+        
+        # No subscription found - check if user qualifies for trial
+        if not result.data or len(result.data) == 0:
+            # Check if this is a new user who hasn't had a subscription before
+            all_subs = await client.schema('basejump').from_('billing_subscriptions') \
+                .select('id') \
+                .eq('account_id', user_id) \
+                .execute()
+            
+            # User has never had a subscription - eligible for trial
+            if not all_subs.data or len(all_subs.data) == 0:
+                return {
+                    "status": "trialing",
+                    "plan_name": "Trial",
+                    "is_paid": False,
+                    "in_trial": True,
+                    "trial_days_remaining": SUBSCRIPTION_TIER['trial_days'],
+                    "trial_end": (datetime.now(timezone.utc) + timedelta(days=SUBSCRIPTION_TIER['trial_days'])).isoformat(),
+                    "features": SUBSCRIPTION_TIER['features']
+                }
+            
+            # User had a subscription before but doesn't now
+            return {
+                "status": "no_subscription",
+                "plan_name": "None",
+                "is_paid": False,
+                "in_trial": False,
+                "features": {
+                    "max_configurations": config.MAX_CONFIGURATIONS_FREE_TIER,
+                    "configuration_sharing": False,
+                    "configuration_templates": True,  # Can use templates but not create
+                    "advanced_versioning": False
+                }
+            }
+        
+        # Get subscription details
+        subscription = result.data[0]
+        status = subscription.get('status')
+        
+        # Check if subscription is in trial period
+        in_trial = status == 'trialing'
+        is_paid = status == 'active'
+        
+        # Calculate trial days remaining if applicable
+        trial_days_remaining = 0
+        if in_trial and subscription.get('trial_end'):
+            trial_end = datetime.fromisoformat(subscription['trial_end'].replace('Z', '+00:00'))
+            now = datetime.now(timezone.utc)
+            trial_days_remaining = max(0, (trial_end - now).days)
+        
+        # Active or trialing subscription
+        if status in ['active', 'trialing']:
+            return {
+                "status": status,
+                "plan_name": subscription.get('plan_name', SUBSCRIPTION_TIER['name']),
+                "is_paid": is_paid,
+                "in_trial": in_trial,
+                "trial_days_remaining": trial_days_remaining,
+                "current_period_end": subscription.get('current_period_end'),
+                "cancel_at_period_end": subscription.get('cancel_at_period_end', False),
+                "features": SUBSCRIPTION_TIER['features']
+            }
+        
+        # Problem with payment
+        if status in ['past_due', 'incomplete', 'incomplete_expired']:
+            return {
+                "status": status,
+                "plan_name": subscription.get('plan_name', SUBSCRIPTION_TIER['name']),
+                "is_paid": False,
+                "in_trial": False,
+                "payment_issue": True,
+                "features": {  # Limited features due to payment issues
+                    "max_configurations": config.MAX_CONFIGURATIONS_FREE_TIER,
+                    "configuration_sharing": False,
+                    "configuration_templates": True,
+                    "advanced_versioning": False
+                }
+            }
+        
+        # Canceled subscription
+        return {
+            "status": status,
+            "plan_name": "None",
+            "is_paid": False,
+            "in_trial": False,
+            "features": {
+                "max_configurations": config.MAX_CONFIGURATIONS_FREE_TIER,
+                "configuration_sharing": False,
+                "configuration_templates": True,
+                "advanced_versioning": False
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting subscription status for user {user_id}: {str(e)}")
+        # Return default free tier features on error
+        return {
+            "status": "error",
+            "plan_name": "Error",
+            "is_paid": False,
+            "in_trial": False,
+            "error": str(e),
+            "features": {
+                "max_configurations": config.MAX_CONFIGURATIONS_FREE_TIER,
+                "configuration_sharing": False,
+                "configuration_templates": True,
+                "advanced_versioning": False
+            }
+        }
 
 async def can_create_configuration(user_id: str) -> Tuple[bool, str]:
     """
@@ -178,120 +295,3 @@ async def can_use_advanced_features(user_id: str, feature: str) -> Tuple[bool, s
         logger.error(f"Error checking if user {user_id} can use feature {feature}: {str(e)}")
         # Allow basic usage on error but log it
         return True, "OK"
-        
-        # Get latest subscription status from database
-        result = await client.schema('basejump').from_('billing_subscriptions') \
-            .select('*') \
-            .eq('account_id', user_id) \
-            .order('created', desc=True) \
-            .limit(1) \
-            .execute()
-        
-        # No subscription found - check if user qualifies for trial
-        if not result.data or len(result.data) == 0:
-            # Check if this is a new user who hasn't had a subscription before
-            all_subs = await client.schema('basejump').from_('billing_subscriptions') \
-                .select('id') \
-                .eq('account_id', user_id) \
-                .execute()
-            
-            # User has never had a subscription - eligible for trial
-            if not all_subs.data or len(all_subs.data) == 0:
-                return {
-                    "status": "trialing",
-                    "plan_name": "Trial",
-                    "is_paid": False,
-                    "in_trial": True,
-                    "trial_days_remaining": SUBSCRIPTION_TIER['trial_days'],
-                    "trial_end": (datetime.now(timezone.utc) + timedelta(days=SUBSCRIPTION_TIER['trial_days'])).isoformat(),
-                    "features": SUBSCRIPTION_TIER['features']
-                }
-            
-            # User had a subscription before but doesn't now
-            return {
-                "status": "no_subscription",
-                "plan_name": "None",
-                "is_paid": False,
-                "in_trial": False,
-                "features": {
-                    "max_configurations": config.MAX_CONFIGURATIONS_FREE_TIER,
-                    "configuration_sharing": False,
-                    "configuration_templates": True,  # Can use templates but not create
-                    "advanced_versioning": False
-                }
-            }
-        
-        # Get subscription details
-        subscription = result.data[0]
-        status = subscription.get('status')
-        
-        # Check if subscription is in trial period
-        in_trial = status == 'trialing'
-        is_paid = status == 'active'
-        
-        # Calculate trial days remaining if applicable
-        trial_days_remaining = 0
-        if in_trial and subscription.get('trial_end'):
-            trial_end = datetime.fromisoformat(subscription['trial_end'].replace('Z', '+00:00'))
-            now = datetime.now(timezone.utc)
-            trial_days_remaining = max(0, (trial_end - now).days)
-        
-        # Active or trialing subscription
-        if status in ['active', 'trialing']:
-            return {
-                "status": status,
-                "plan_name": subscription.get('plan_name', SUBSCRIPTION_TIER['name']),
-                "is_paid": is_paid,
-                "in_trial": in_trial,
-                "trial_days_remaining": trial_days_remaining,
-                "current_period_end": subscription.get('current_period_end'),
-                "cancel_at_period_end": subscription.get('cancel_at_period_end', False),
-                "features": SUBSCRIPTION_TIER['features']
-            }
-        
-        # Problem with payment
-        if status in ['past_due', 'incomplete', 'incomplete_expired']:
-            return {
-                "status": status,
-                "plan_name": subscription.get('plan_name', SUBSCRIPTION_TIER['name']),
-                "is_paid": False,
-                "in_trial": False,
-                "payment_issue": True,
-                "features": {  # Limited features due to payment issues
-                    "max_configurations": config.MAX_CONFIGURATIONS_FREE_TIER,
-                    "configuration_sharing": False,
-                    "configuration_templates": True,
-                    "advanced_versioning": False
-                }
-            }
-        
-        # Canceled subscription
-        return {
-            "status": status,
-            "plan_name": "None",
-            "is_paid": False,
-            "in_trial": False,
-            "features": {
-                "max_configurations": config.MAX_CONFIGURATIONS_FREE_TIER,
-                "configuration_sharing": False,
-                "configuration_templates": True,
-                "advanced_versioning": False
-            }
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting subscription status for user {user_id}: {str(e)}")
-        # Return default free tier features on error
-        return {
-            "status": "error",
-            "plan_name": "Error",
-            "is_paid": False,
-            "in_trial": False,
-            "error": str(e),
-            "features": {
-                "max_configurations": config.MAX_CONFIGURATIONS_FREE_TIER,
-                "configuration_sharing": False,
-                "configuration_templates": True,
-                "advanced_versioning": False
-            }
-        }

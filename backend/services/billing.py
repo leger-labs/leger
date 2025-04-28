@@ -321,6 +321,7 @@ async def create_portal_session(
                                 'proration_behavior': 'create_prorations',
                                 'default_allowed_updates': ['price']
                             },
+                            # Preserve other features that may already be enabled
                             'customer_update': default_config.get('features', {}).get('customer_update', {'enabled': True, 'allowed_updates': ['email', 'address']}),
                             'invoice_history': {'enabled': True},
                             'payment_method_update': {'enabled': True}
@@ -381,46 +382,35 @@ async def get_subscription(
 ):
     """Get the current subscription status for the current user."""
     try:
-        # Get Supabase client
-        db = DBConnection()
-        client = await db.client
-        
-        # Get subscription from Stripe
+        # Get subscription from Stripe (this helper already handles filtering/cleanup)
         subscription = await get_user_subscription(current_user_id)
         
         if not subscription:
-            # Check if they've had a subscription before
-            previous_sub = await client.schema('basejump').from_('billing_subscriptions') \
-                .select('*') \
-                .eq('account_id', current_user_id) \
-                .order('created', desc=True) \
-                .limit(1) \
-                .execute()
-            
-            if previous_sub.data and len(previous_sub.data) > 0:
-                # User had a subscription before, but canceled
-                return SubscriptionStatus(
-                    status="no_subscription",
-                    plan_name="None"
-                )
-            
-            # New user - they get a free trial
-            # Calculate when the trial would end (14 days from now)
-            trial_end = datetime.now(timezone.utc) + timedelta(days=SUBSCRIPTION_TIER['trial_days'])
-            
+            # Default to free tier status if no active subscription for our product
             return SubscriptionStatus(
-                status="trialing",
-                plan_name="Trial",
-                trial_end=trial_end,
-                trial_remaining_days=SUBSCRIPTION_TIER['trial_days']
+                status="no_subscription",
+                plan_name="None"
             )
         
         # Extract current plan details
         status = subscription.get('status')
         created_at = datetime.fromtimestamp(subscription.get('created'), tz=timezone.utc) if subscription.get('created') else None
         trial_end = datetime.fromtimestamp(subscription.get('trial_end'), tz=timezone.utc) if subscription.get('trial_end') else None
-        current_period_end = datetime.fromtimestamp(subscription.get('current_period_end'), tz=timezone.utc) if subscription.get('current_period_end') else None
+        
+        # Find the first subscription item with our product ID
+        current_period_end = None
         cancel_at_period_end = subscription.get('cancel_at_period_end', False)
+        
+        if subscription.get('items') and subscription['items'].get('data'):
+            for item in subscription['items']['data']:
+                if item.get('price') and item['price'].get('product') == config.STRIPE_PRODUCT_ID:
+                    if item.get('current_period_end'):
+                        current_period_end = datetime.fromtimestamp(item.get('current_period_end'), tz=timezone.utc)
+                    break
+        
+        # If we didn't find specific item data, use subscription-level data
+        if not current_period_end and subscription.get('current_period_end'):
+            current_period_end = datetime.fromtimestamp(subscription.get('current_period_end'), tz=timezone.utc)
         
         # Calculate trial remaining days
         trial_remaining_days = None
