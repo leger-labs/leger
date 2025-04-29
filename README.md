@@ -47,27 +47,51 @@ I am not 100% on which service to set up as long-running (via `--keep-warm-secon
 
 ## Selected Components
 ### 1) Frontend:
-React for the admin UI, and Headless UI using [Catalyst](https://catalyst.tailwindui.com/docs)
-Aim to make it compliant with [WCAG 2.1 AA](https://www.w3.org/TR/WCAG21/) standards with keyboard navigation and semantic HTML structure.
-We use FastAPI with RESTful endpoints for our API, which provides automatic OpenAPI documentation for client integration. The frontend will consume these APIs through standard fetch calls with appropriate error handling.
-This is where the admin does configuration and team/user management, we would also need a proper hierarchy model in the database for teams, sending email notifications for new invites, or initial setup guidance.
+React with Shadcn UI component library. This provides:
+- Pre-built, accessible components that integrate well with form validation
+- Consistent design language following [WCAG 2.1 AA](https://www.w3.org/TR/WCAG21/) standards  
+- Built-in keyboard navigation and semantic HTML structure
+
+The frontend will use a comprehensive form validation approach:
+- React Hook Form for efficient form state management
+- Zod for schema validation with zodResolver integration
+- Real-time feedback on configuration errors
 
 ### 2) Middleware:
-Python middleware using FastAPI. We use Pydantic models for form/user input validation on the backend. These models serve as the "single source of truth" for the ensemble of environment variables and flags to be passed to the OWUI deployment. We can generate TypeScript types from the OpenAPI schema for frontend type safety.
+Python middleware using FastAPI. Our configuration validation approach follows this pipeline:
+1. OpenAPI specification automatically generated from Open WebUI's documentation
+2. This specification serves as the "single source of truth" for environment variables
+3. Backend validates against this schema using Pydantic models
+4. Frontend validates using Zod schemas (derived from the same OpenAPI spec)
+This dual-validation approach ensures configuration correctness at both client and server levels, with immediate feedback for administrators.
 
 Further down the line, we can set up automated scripts that scan OWUI documentation for new environment variables ("features") made available. For this we could use [openhands github action](https://docs.all-hands.dev/modules/usage/how-to/github-action) but this is out of scope for an MVP. New fields would then be automatically incorporated into our Pydantic models.
 
 ### 3) Backend:
-Prisma to manage user accounts/authentication info, deployment history, status information, usage tracking, billing data, saved configurations for each user, and presents/config templates for OWUI deployments.
+The backend implementation is well underway with core functionality already established:
+- Account management system built with Supabase and custom API endpoints
+- Authentication flows including signup, login, JWT handling
+- Billing integration with Stripe supporting subscription management
+- Configuration versioning and template management
+
+The system uses Prisma for database operations, with models for account structure, configuration storage, and version history.
+
 Implement functionality to import configurations from existing sources, or to export configuration as JSON should the admin's needs change (example: they decide to host OWUI on their own infrastructure or go for an OWUI enterprise license).
 
-NOTE: Our validation approach combines Pydantic on the backend with Prisma for database management. This provides strong validation at both the API and database layers, creating a robust system for configuration management. Our goal with Leger is to simplify OWUI configuration management so it is crucial to feed consistent environment variables into the OWUI deployment on Beam otherwise the product breaks.
+### 4) Configuration Management:
+The configuration management system now follows a documentation-first approach:
+- OpenAPI specification automatically derived from Open WebUI's official documentation
+- Parsing system extracts all environment variables and their metadata
+- Validation rules generated from the documentation ensure configurations meet requirements
+- Future updates to Open WebUI will be automatically incorporated through documentation scanning
 
-### 4) Beam deployment Backend:
-Wrapper around Beam CLI/SDK that handles deployment and management of OWUI instances on Beam Pods.
-Co-development opportunity to be discussed, depending on Beam's availability and willingness to help.
+Beam.cloud remains the core infrastructure for OWUI deployments, with several key components:
 
-Further down the line, we could also implement some lifecycle management functionality to/from Beam backend directly into Leger dashboard: session analytics, monitoring dashboard for resource utilization, deployment logs and diagnostics.
+Wrapper around Beam CLI/SDK that handles deployment and management of OWUI instances on Beam Pods
+Configuration transformation from Leger's validated schema to Beam deployment parameters
+Integration with the OpenAPI specifications derived from OWUI documentation to ensure all environment variables are properly set
+
+This approach ensures deployments follow a "configuration as code" model that is version controlled and validated before deployment.
 
 ### 5) Persistent Storage:
 Part of what makes OWUI so powerful is the 5+ auxiliary services that add functionality: Postgres db for chat data, Redis, S3/object storage for file uploads, etc.
@@ -80,10 +104,15 @@ We need to decide which services are provided by Beam.cloud, and which ones to s
 
 ### 6) Additional moving pieces:
 #### (A) Account creation/user authentication/authorization
-Basejump schema for account/user management
+✅ Implemented using Basejump framework with Supabase Auth
+✅ Personal and team account management 
+✅ Role-based authorization system with owner/member permissions
 
 #### (B) Subscription management/billing system
-Stripe!
+✅ Stripe integration with webhook handling
+✅ Trial period management
+✅ Subscription tier enforcement
+✅ Billing functions integrated with account permissions
 
 #### (C) Secrets configuration
 A special part of the Leger UI is the secrets section. This is where admins enter their LLM API keys (for example OpenAI, OpenRouter, or basically any other..) and possibly third-party API keys (if using MCP servers or other tooling).
