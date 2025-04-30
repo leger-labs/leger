@@ -58,14 +58,13 @@
           },
           "DEFAULT_USER_ROLE": {
             "type": "string",
-            "description": "Sets the default role assigned to new users.",
+            "description": "Sets the default role assigned to new users.\n\nOptions:\n  - `user` - - New users are automatically activated with regular user permissions.\n  - `admin` - - New users are automatically activated with administrator permissions.\n",
             "x-env-var": "DEFAULT_USER_ROLE",
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 6,
             "default": "pending",
             "enum": [
-              "pending",
               "user",
               "admin"
             ]
@@ -142,13 +141,12 @@
           },
           "ENV": {
             "type": "string",
-            "description": "Environment setting.",
+            "description": "Environment setting.\n\nOptions:\n  - `prod` - - Automatically configures several environment variables\n",
             "x-env-var": "ENV",
             "x-persistent-config": false,
             "x-category": "App/Backend",
             "x-display-order": 15,
             "enum": [
-              "dev",
               "prod"
             ]
           },
@@ -727,14 +725,13 @@
           },
           "WEBUI_SESSION_COOKIE_SAME_SITE": {
             "type": "string",
-            "description": "Sets the `SameSite` attribute for session cookies.",
+            "description": "Sets the `SameSite` attribute for session cookies.\n\nOptions:\n  - `strict` - - Sets the `SameSite` attribute to strict, blocking session cookies from being sent\nwith requests initiated by third-party websites.\n  - `none` - - Sets the `SameSite` attribute to none, allowing session cookies to be sent with\nrequests initiated by third-party websites, but only over HTTPS.\n",
             "x-env-var": "WEBUI_SESSION_COOKIE_SAME_SITE",
             "x-persistent-config": false,
             "x-category": "Security Variables",
             "x-display-order": 79,
             "default": "lax",
             "enum": [
-              "lax",
               "strict",
               "none"
             ]
@@ -750,14 +747,13 @@
           },
           "WEBUI_AUTH_COOKIE_SAME_SITE": {
             "type": "string",
-            "description": "Sets the `SameSite` attribute for auth cookies.",
+            "description": "Sets the `SameSite` attribute for auth cookies.\n\nOptions:\n  - `strict` - - Sets the `SameSite` attribute to strict, blocking auth cookies from being sent\nwith requests initiated by third-party websites.\n  - `none` - - Sets the `SameSite` attribute to none, allowing auth cookies to be sent with\nrequests initiated by third-party websites, but only over HTTPS.\n",
             "x-env-var": "WEBUI_AUTH_COOKIE_SAME_SITE",
             "x-persistent-config": false,
             "x-category": "Security Variables",
             "x-display-order": 81,
             "default": "lax",
             "enum": [
-              "lax",
               "strict",
               "none"
             ]
@@ -864,7 +860,7 @@
           },
           "VECTOR_DB": {
             "type": "string",
-            "description": "Specifies which vector database system to use. This setting determines which vector storage system will be used for managing embeddings.",
+            "description": "Specifies which vector database system to use. This setting determines which vector storage system will be used for managing embeddings.\n\nOptions:\n",
             "x-env-var": "VECTOR_DB",
             "x-persistent-config": false,
             "x-category": "Vector Database",
@@ -1178,7 +1174,7 @@
           },
           "PINECONE_METRIC": {
             "type": "string",
-            "description": "Specifies the similarity metric to use for vector comparisons within the Pinecone index.",
+            "description": "Specifies the similarity metric to use for vector comparisons within the Pinecone index.\n\nOptions:\n",
             "x-env-var": "PINECONE_METRIC",
             "x-persistent-config": false,
             "x-category": "Vector Database",
@@ -1187,7 +1183,7 @@
           },
           "PINECONE_CLOUD": {
             "type": "string",
-            "description": "Specifies the cloud provider where the Pinecone index is hosted.",
+            "description": "Specifies the cloud provider where the Pinecone index is hosted.\n\nOptions:\n",
             "x-env-var": "PINECONE_CLOUD",
             "x-persistent-config": false,
             "x-category": "Vector Database",
@@ -1196,7 +1192,7 @@
           },
           "CONTENT_EXTRACTION_ENGINE": {
             "type": "string",
-            "description": "Sets the content extraction engine to use for document ingestion.",
+            "description": "Sets the content extraction engine to use for document ingestion.\n\nOptions:\n  - `tika` - - Use a local Apache Tika server\n  - `docling` - - Use Docling engine\n  - `document_intelligence` - - Use Document Intelligence engine\n  - `mistral_ocr` - - Use Mistral OCR engine\n",
             "x-env-var": "CONTENT_EXTRACTION_ENGINE",
             "x-persistent-config": true,
             "x-category": "RAG Content Extraction Engine",
@@ -1238,7 +1234,7 @@
           },
           "RAG_EMBEDDING_ENGINE": {
             "type": "string",
-            "description": "Selects an embedding engine to use for RAG.",
+            "description": "Selects an embedding engine to use for RAG.\n\nOptions:\n  - `ollama` - - Uses the Ollama API for embeddings.\n  - `openai` - - Uses the OpenAI API for embeddings.\n",
             "x-env-var": "RAG_EMBEDDING_ENGINE",
             "x-persistent-config": true,
             "x-category": "Retrieval Augmented Generation (RAG)",
@@ -1303,14 +1299,13 @@
           },
           "RAG_TEXT_SPLITTER": {
             "type": "string",
-            "description": "Sets the text splitter for RAG models.",
+            "description": "Sets the text splitter for RAG models.\n\nOptions:\n  - `token` - \n",
             "x-env-var": "RAG_TEXT_SPLITTER",
             "x-persistent-config": true,
             "x-category": "Retrieval Augmented Generation (RAG)",
             "x-display-order": 141,
             "default": "character",
             "enum": [
-              "character",
               "token"
             ]
           },
@@ -1626,7 +1621,6 @@
             "x-category": "Web Search",
             "x-display-order": 176,
             "enum": [
-              "searxng",
               "google_pse",
               "brave",
               "kagi",
@@ -1864,7 +1858,7 @@
           },
           "WEB_LOADER_ENGINE": {
             "type": "string",
-            "description": "Specifies the loader to use for retrieving and processing web content.",
+            "description": "Specifies the loader to use for retrieving and processing web content.\n\nOptions:\n  - `playwright` - - Uses Playwright for more advanced web page rendering and interaction.\n",
             "x-env-var": "WEB_LOADER_ENGINE",
             "x-persistent-config": true,
             "x-category": "Web Search",
@@ -1976,7 +1970,7 @@
           },
           "AUDIO_STT_ENGINE": {
             "type": "string",
-            "description": "Specifies the Speech-to-Text engine to use.",
+            "description": "Specifies the Speech-to-Text engine to use.\n\nOptions:\n  - `openai` - - Uses OpenAI engine for Speech-to-Text.\n  - `deepgram` - - Uses Deepgram engine for Speech-to-Text.\n  - `azure` - Uses Azure engine for Speech-to-Text.\n",
             "x-env-var": "AUDIO_STT_ENGINE",
             "x-persistent-config": true,
             "x-category": "Audio",
@@ -2064,7 +2058,7 @@
           },
           "AUDIO_TTS_ENGINE": {
             "type": "string",
-            "description": "Specifies the Text-to-Speech engine to use.",
+            "description": "Specifies the Text-to-Speech engine to use.\n\nOptions:\n  - `azure` - - Uses Azure engine for Text-to-Speech.\n  - `elevenlabs` - - Uses ElevenLabs engine for Text-to-Speech\n  - `openai` - - Uses OpenAI engine for Text-to-Speech.\n  - `transformers` - - Uses SentenceTransformers for Text-to-Speech.\n",
             "x-env-var": "AUDIO_TTS_ENGINE",
             "x-persistent-config": true,
             "x-category": "Audio",
@@ -2140,14 +2134,13 @@
           },
           "IMAGE_GENERATION_ENGINE": {
             "type": "string",
-            "description": "Specifies the engine to use for image generation.",
+            "description": "Specifies the engine to use for image generation.\n\nOptions:\n  - `comfyui` - - Uses ComfyUI engine for image generation.\n  - `automatic1111` - - Uses AUTOMATIC1111 engine for image generation.\n  - `gemini` - - Uses Gemini for image generation.\n",
             "x-env-var": "IMAGE_GENERATION_ENGINE",
             "x-persistent-config": true,
             "x-category": "Image Generation",
             "x-display-order": 230,
             "default": "openai",
             "enum": [
-              "openai",
               "comfyui",
               "automatic1111",
               "gemini"
@@ -2945,14 +2938,13 @@
           },
           "STORAGE_PROVIDER": {
             "type": "string",
-            "description": "Sets the storage provider.",
+            "description": "Sets the storage provider.\n\nOptions:\n  - `gcs` - - uses the GCS client library and related environment variables mentioned in [Google Cloud Storage](#google-cloud-storage)\n  - `azure` - - uses the Azure client library and related environment variables mentioned in [Microsoft Azure Storage](#microsoft-azure-storage)\n",
             "x-env-var": "STORAGE_PROVIDER",
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
             "x-display-order": 321,
             "default": "empty string (' '), which defaults to",
             "enum": [
-              "s3",
               "gcs",
               "azure"
             ]
@@ -3215,8 +3207,9 @@
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
             "x-display-order": 351
-          }  
-        }
+          }
+        },
+        "required": []
       }
     }
   }
