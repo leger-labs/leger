@@ -134,6 +134,20 @@ OWUI has over 340 configuration variables. Currently this was converted to a sin
 
 Specifically we must first decide which flags to have by default, since Leger provisions some additional functionality by default (as mentioned previously: Redis and S3 storage at the minimum).
 
+From the OWUI environment variables docs, we find that it has the following headers, implying an intuitive grouping:
+- App/Backend
+- Security Variables
+- Vector Database
+- RAG Content Extraction Engine
+- Retrieval Augmented Generation (RAG)
+- Web Search
+- Audio
+- Image Generation
+- OAuth
+- LDAP
+- User Permissions
+- Misc Environment Variables
+
 Leger dashboard is actually used for more than only the OWUI environment variables configuration. 
 namely there should be sections for:
 * team management (since each admin can add people to his team) which lets them manage invites and other users to be added to their group [INVESTIGATE the leger /backend files to make sure that this is indeed possibler in my data model]; there might also be the opportunity for the admin to set user-specific permissions within the openwebui interface 
