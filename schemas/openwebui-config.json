@@ -864,7 +864,7 @@
           },
           "VECTOR_DB": {
             "type": "string",
-            "description": "Specifies which vector database system to use. This setting determines which vector storage system will be used for managing embeddings.\n\nOptions:\n",
+            "description": "Specifies which vector database system to use. This setting determines which vector storage system will be used for managing embeddings.",
             "x-env-var": "VECTOR_DB",
             "x-persistent-config": false,
             "x-category": "Vector Database",
@@ -1178,7 +1178,7 @@
           },
           "PINECONE_METRIC": {
             "type": "string",
-            "description": "Specifies the similarity metric to use for vector comparisons within the Pinecone index.\n\nOptions:\n",
+            "description": "Specifies the similarity metric to use for vector comparisons within the Pinecone index.",
             "x-env-var": "PINECONE_METRIC",
             "x-persistent-config": false,
             "x-category": "Vector Database",
@@ -1187,7 +1187,7 @@
           },
           "PINECONE_CLOUD": {
             "type": "string",
-            "description": "Specifies the cloud provider where the Pinecone index is hosted.\n\nOptions:\n",
+            "description": "Specifies the cloud provider where the Pinecone index is hosted.",
             "x-env-var": "PINECONE_CLOUD",
             "x-persistent-config": false,
             "x-category": "Vector Database",
@@ -1303,14 +1303,15 @@
           },
           "RAG_TEXT_SPLITTER": {
             "type": "string",
-            "description": "Sets the text splitter for RAG models.\n\nOptions:\n  - `character` - `token`\n",
+            "description": "Sets the text splitter for RAG models.\n\nOptions:\n  - `character` - `token`\n  - `token`\n",
             "x-env-var": "RAG_TEXT_SPLITTER",
             "x-persistent-config": true,
             "x-category": "Retrieval Augmented Generation (RAG)",
             "x-display-order": 141,
             "default": "character",
             "enum": [
-              "character"
+              "character",
+              "token"
             ]
           },
           "TIKTOKEN_CACHE_DIR": {
@@ -1863,14 +1864,15 @@
           },
           "WEB_LOADER_ENGINE": {
             "type": "string",
-            "description": "Specifies the loader to use for retrieving and processing web content.\n\nOptions:\n  - `playwright` - Uses Playwright for more advanced web page rendering and interaction.\n",
+            "description": "Specifies the loader to use for retrieving and processing web content.\n\nOptions:\n  - `playwright` - Uses Playwright for more advanced web page rendering and interaction.\n  - Empty string - Uses the `requests` module with enhanced error handling.\n",
             "x-env-var": "WEB_LOADER_ENGINE",
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 201,
             "default": "safe_web",
             "enum": [
-              "playwright"
+              "playwright",
+              ""
             ]
           },
           "PLAYWRIGHT_WS_URL": {
