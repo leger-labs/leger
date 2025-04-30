@@ -432,9 +432,9 @@
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 47,
-            "default": "### Task:\nGenerate a concise, 3-5 word title with an emoji summarizing the chat history.\n### Guidelines:\n- The title should clearly represent the main theme or subject of the conversation.\n- Use emojis that enhance understanding of the topic, but avoid quotation marks or special formatting.\n- Write the title in the chat's primary language; default to English if multilingual.\n- Prioritize accuracy over excessive creativity; keep it clear and simple.\n### Output:\nJSON format: { \"title\": \"your concise title here\" }\n### Examples:\n- { \"title\": \"📉 Stock Market Trends\" },\n- { \"title\": \"🍪 Perfect Chocolate Chip Recipe\" },\n- { \"title\": \"Evolution of Music Streaming\" },\n- { \"title\": \"Remote Work Productivity Tips\" },\n- { \"title\": \"Artificial Intelligence in Healthcare\" },\n- { \"title\": \"🎮 Video Game Development Insights\" }\n### Chat History:\n<chat_history>\n{{MESSAGES:END:2}}\n</chat_history>",
+            "default": "### Task:\nGenerate a concise, 3-5 word title with an emoji summarizing the chat history.\n### Guidelines:\n- The title should clearly represent the main theme or subject of the conversation.\n- Use emojis that enhance understanding of the topic, but avoid quotation marks or special formatting.\n- Write the title in the chat's primary language; default to English if multilingual.\n- Prioritize accuracy over excessive creativity; keep it clear and simple.\n### Output:\nJSON format: { \"title\": \"your concise title here\" }\n### Examples:\n- { \"title\": \"\ud83d\udcc9 Stock Market Trends\" },\n- { \"title\": \"\ud83c\udf6a Perfect Chocolate Chip Recipe\" },\n- { \"title\": \"Evolution of Music Streaming\" },\n- { \"title\": \"Remote Work Productivity Tips\" },\n- { \"title\": \"Artificial Intelligence in Healthcare\" },\n- { \"title\": \"\ud83c\udfae Video Game Development Insights\" }\n### Chat History:\n<chat_history>\n{{MESSAGES:END:2}}\n</chat_history>",
             "x-references-var": "DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE",
-            "x-env-template": "\"### Task:\nGenerate a concise, 3-5 word title with an emoji summarizing the chat history.\n### Guidelines:\n- The title should clearly represent the main theme or subject of the conversation.\n- Use emojis that enhance understanding of the topic, but avoid quotation marks or special formatting.\n- Write the title in the chat's primary language; default to English if multilingual.\n- Prioritize accuracy over excessive creativity; keep it clear and simple.\n### Output:\nJSON format: { \\\"title\\\": \\\"your concise title here\\\" }\n### Examples:\n- { \\\"title\\\": \\\"📉 Stock Market Trends\\\" },\n- { \\\"title\\\": \\\"🍪 Perfect Chocolate Chip Recipe\\\" },\n- { \\\"title\\\": \\\"Evolution of Music Streaming\\\" },\n- { \\\"title\\\": \\\"Remote Work Productivity Tips\\\" },\n- { \\\"title\\\": \\\"Artificial Intelligence in Healthcare\\\" },\n- { \\\"title\\\": \\\"🎮 Video Game Development Insights\\\" }\n### Chat History:\n<chat_history>\n{{MESSAGES:END:2}}\n</chat_history>\""
+            "x-env-template": "\"### Task:\nGenerate a concise, 3-5 word title with an emoji summarizing the chat history.\n### Guidelines:\n- The title should clearly represent the main theme or subject of the conversation.\n- Use emojis that enhance understanding of the topic, but avoid quotation marks or special formatting.\n- Write the title in the chat's primary language; default to English if multilingual.\n- Prioritize accuracy over excessive creativity; keep it clear and simple.\n### Output:\nJSON format: { \\\"title\\\": \\\"your concise title here\\\" }\n### Examples:\n- { \\\"title\\\": \\\"\ud83d\udcc9 Stock Market Trends\\\" },\n- { \\\"title\\\": \\\"\ud83c\udf6a Perfect Chocolate Chip Recipe\\\" },\n- { \\\"title\\\": \\\"Evolution of Music Streaming\\\" },\n- { \\\"title\\\": \\\"Remote Work Productivity Tips\\\" },\n- { \\\"title\\\": \\\"Artificial Intelligence in Healthcare\\\" },\n- { \\\"title\\\": \\\"\ud83c\udfae Video Game Development Insights\\\" }\n### Chat History:\n<chat_history>\n{{MESSAGES:END:2}}\n</chat_history>\""
           },
           "TOOLS_FUNCTION_CALLING_PROMPT_TEMPLATE": {
             "type": "string",
@@ -463,7 +463,21 @@
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 50,
-            "default": "pyodide"
+            "default": "pyodide",
+            "enum": [
+              "pyodide",
+              "jupyter"
+            ],
+            "x-provider-fields": {
+              "pyodide": [],
+              "jupyter": [
+                "CODE_EXECUTION_JUPYTER_URL",
+                "CODE_EXECUTION_JUPYTER_AUTH",
+                "CODE_EXECUTION_JUPYTER_AUTH_TOKEN",
+                "CODE_EXECUTION_JUPYTER_AUTH_PASSWORD",
+                "CODE_EXECUTION_JUPYTER_TIMEOUT"
+              ]
+            }
           },
           "CODE_EXECUTION_JUPYTER_URL": {
             "type": "string",
@@ -472,7 +486,10 @@
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 51,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "CODE_EXECUTION_ENGINE": "jupyter"
+            }
           },
           "CODE_EXECUTION_JUPYTER_AUTH": {
             "type": "string",
@@ -481,7 +498,10 @@
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 52,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "CODE_EXECUTION_ENGINE": "jupyter"
+            }
           },
           "CODE_EXECUTION_JUPYTER_AUTH_TOKEN": {
             "type": "string",
@@ -491,7 +511,10 @@
             "x-category": "App/Backend",
             "x-display-order": 53,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "CODE_EXECUTION_ENGINE": "jupyter"
+            }
           },
           "CODE_EXECUTION_JUPYTER_AUTH_PASSWORD": {
             "type": "string",
@@ -501,7 +524,10 @@
             "x-category": "App/Backend",
             "x-display-order": 54,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "CODE_EXECUTION_ENGINE": "jupyter"
+            }
           },
           "CODE_EXECUTION_JUPYTER_TIMEOUT": {
             "type": "string",
@@ -510,7 +536,10 @@
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 55,
-            "default": "Empty string (' '), since"
+            "default": "Empty string (' '), since",
+            "x-depends-on": {
+              "CODE_EXECUTION_ENGINE": "jupyter"
+            }
           },
           "ENABLE_CODE_INTERPRETER": {
             "type": "boolean",
@@ -528,7 +557,21 @@
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 57,
-            "default": "pyodide"
+            "default": "pyodide",
+            "enum": [
+              "pyodide",
+              "jupyter"
+            ],
+            "x-provider-fields": {
+              "pyodide": [],
+              "jupyter": [
+                "CODE_INTERPRETER_JUPYTER_URL",
+                "CODE_INTERPRETER_JUPYTER_AUTH",
+                "CODE_INTERPRETER_JUPYTER_AUTH_TOKEN",
+                "CODE_INTERPRETER_JUPYTER_AUTH_PASSWORD",
+                "CODE_INTERPRETER_JUPYTER_TIMEOUT"
+              ]
+            }
           },
           "CODE_INTERPRETER_PROMPT_TEMPLATE": {
             "type": "string",
@@ -546,7 +589,10 @@
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 59,
-            "default": "Empty string (' '), since"
+            "default": "Empty string (' '), since",
+            "x-depends-on": {
+              "CODE_INTERPRETER_ENGINE": "jupyter"
+            }
           },
           "CODE_INTERPRETER_JUPYTER_AUTH": {
             "type": "string",
@@ -555,7 +601,10 @@
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 60,
-            "default": "Empty string (' '), since"
+            "default": "Empty string (' '), since",
+            "x-depends-on": {
+              "CODE_INTERPRETER_ENGINE": "jupyter"
+            }
           },
           "CODE_INTERPRETER_JUPYTER_AUTH_TOKEN": {
             "type": "string",
@@ -565,7 +614,10 @@
             "x-category": "App/Backend",
             "x-display-order": 61,
             "default": "Empty string (' '), since",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "CODE_INTERPRETER_ENGINE": "jupyter"
+            }
           },
           "CODE_INTERPRETER_JUPYTER_AUTH_PASSWORD": {
             "type": "string",
@@ -575,7 +627,10 @@
             "x-category": "App/Backend",
             "x-display-order": 62,
             "default": "Empty string (' '), since",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "CODE_INTERPRETER_ENGINE": "jupyter"
+            }
           },
           "CODE_INTERPRETER_JUPYTER_TIMEOUT": {
             "type": "string",
@@ -584,7 +639,10 @@
             "x-persistent-config": true,
             "x-category": "App/Backend",
             "x-display-order": 63,
-            "default": "Empty string (' '), since"
+            "default": "Empty string (' '), since",
+            "x-depends-on": {
+              "CODE_INTERPRETER_ENGINE": "jupyter"
+            }
           },
           "ENABLE_DIRECT_CONNECTIONS": {
             "type": "boolean",
@@ -869,7 +927,68 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 93,
-            "default": "chroma"
+            "default": "chroma",
+            "enum": [
+              "chroma",
+              "elasticsearch",
+              "milvus",
+              "opensearch",
+              "pgvector",
+              "qdrant",
+              "pinecone"
+            ],
+            "x-provider-fields": {
+              "chroma": [
+                "CHROMA_TENANT",
+                "CHROMA_DATABASE",
+                "CHROMA_HTTP_HOST",
+                "CHROMA_HTTP_PORT",
+                "CHROMA_HTTP_HEADERS",
+                "CHROMA_HTTP_SSL",
+                "CHROMA_CLIENT_AUTH_PROVIDER",
+                "CHROMA_CLIENT_AUTH_CREDENTIALS"
+              ],
+              "elasticsearch": [
+                "ELASTICSEARCH_API_KEY",
+                "ELASTICSEARCH_CA_CERTS",
+                "ELASTICSEARCH_CLOUD_ID",
+                "ELASTICSEARCH_INDEX_PREFIX",
+                "ELASTICSEARCH_PASSWORD",
+                "ELASTICSEARCH_URL",
+                "ELASTICSEARCH_USERNAME"
+              ],
+              "milvus": [
+                "MILVUS_URI",
+                "MILVUS_DB",
+                "MILVUS_TOKEN"
+              ],
+              "opensearch": [
+                "OPENSEARCH_CERT_VERIFY",
+                "OPENSEARCH_PASSWORD",
+                "OPENSEARCH_SSL",
+                "OPENSEARCH_URI",
+                "OPENSEARCH_USERNAME"
+              ],
+              "pgvector": [
+                "PGVECTOR_DB_URL",
+                "PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH"
+              ],
+              "qdrant": [
+                "QDRANT_API_KEY",
+                "QDRANT_URI",
+                "QDRANT_ON_DISK",
+                "QDRANT_PREFER_GRPC",
+                "QDRANT_GRPC_PORT"
+              ],
+              "pinecone": [
+                "PINECONE_API_KEY",
+                "PINECONE_ENVIRONMENT",
+                "PINECONE_INDEX_NAME",
+                "PINECONE_DIMENSION",
+                "PINECONE_METRIC",
+                "PINECONE_CLOUD"
+              ]
+            }
           },
           "CHROMA_TENANT": {
             "type": "string",
@@ -878,7 +997,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 94,
-            "default": "The value of"
+            "default": "The value of",
+            "x-depends-on": {
+              "VECTOR_DB": "chroma"
+            }
           },
           "CHROMA_DATABASE": {
             "type": "string",
@@ -887,7 +1009,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 95,
-            "default": "The value of"
+            "default": "The value of",
+            "x-depends-on": {
+              "VECTOR_DB": "chroma"
+            }
           },
           "CHROMA_HTTP_HOST": {
             "type": "string",
@@ -895,7 +1020,10 @@
             "x-env-var": "CHROMA_HTTP_HOST",
             "x-persistent-config": false,
             "x-category": "Vector Database",
-            "x-display-order": 96
+            "x-display-order": 96,
+            "x-depends-on": {
+              "VECTOR_DB": "chroma"
+            }
           },
           "CHROMA_HTTP_PORT": {
             "type": "string",
@@ -904,7 +1032,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 97,
-            "default": "8000"
+            "default": "8000",
+            "x-depends-on": {
+              "VECTOR_DB": "chroma"
+            }
           },
           "CHROMA_HTTP_HEADERS": {
             "type": "string",
@@ -912,7 +1043,10 @@
             "x-env-var": "CHROMA_HTTP_HEADERS",
             "x-persistent-config": false,
             "x-category": "Vector Database",
-            "x-display-order": 98
+            "x-display-order": 98,
+            "x-depends-on": {
+              "VECTOR_DB": "chroma"
+            }
           },
           "CHROMA_HTTP_SSL": {
             "type": "boolean",
@@ -921,7 +1055,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 99,
-            "default": false
+            "default": false,
+            "x-depends-on": {
+              "VECTOR_DB": "chroma"
+            }
           },
           "CHROMA_CLIENT_AUTH_PROVIDER": {
             "type": "string",
@@ -929,7 +1066,10 @@
             "x-env-var": "CHROMA_CLIENT_AUTH_PROVIDER",
             "x-persistent-config": false,
             "x-category": "Vector Database",
-            "x-display-order": 100
+            "x-display-order": 100,
+            "x-depends-on": {
+              "VECTOR_DB": "chroma"
+            }
           },
           "CHROMA_CLIENT_AUTH_CREDENTIALS": {
             "type": "string",
@@ -938,7 +1078,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 101,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "VECTOR_DB": "chroma"
+            }
           },
           "ELASTICSEARCH_API_KEY": {
             "type": "string",
@@ -948,7 +1091,10 @@
             "x-category": "Vector Database",
             "x-display-order": 102,
             "default": "Empty string (' '), since",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "VECTOR_DB": "elasticsearch"
+            }
           },
           "ELASTICSEARCH_CA_CERTS": {
             "type": "string",
@@ -957,7 +1103,10 @@
             "x-persistent-config": true,
             "x-category": "Vector Database",
             "x-display-order": 103,
-            "default": "Empty string (' '), since"
+            "default": "Empty string (' '), since",
+            "x-depends-on": {
+              "VECTOR_DB": "elasticsearch"
+            }
           },
           "ELASTICSEARCH_CLOUD_ID": {
             "type": "string",
@@ -966,7 +1115,10 @@
             "x-persistent-config": true,
             "x-category": "Vector Database",
             "x-display-order": 104,
-            "default": "Empty string (' '), since"
+            "default": "Empty string (' '), since",
+            "x-depends-on": {
+              "VECTOR_DB": "elasticsearch"
+            }
           },
           "ELASTICSEARCH_INDEX_PREFIX": {
             "type": "string",
@@ -975,7 +1127,10 @@
             "x-persistent-config": true,
             "x-category": "Vector Database",
             "x-display-order": 105,
-            "default": "open_webui_collections"
+            "default": "open_webui_collections",
+            "x-depends-on": {
+              "VECTOR_DB": "elasticsearch"
+            }
           },
           "ELASTICSEARCH_PASSWORD": {
             "type": "string",
@@ -985,7 +1140,10 @@
             "x-category": "Vector Database",
             "x-display-order": 106,
             "default": "Empty string (' '), since",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "VECTOR_DB": "elasticsearch"
+            }
           },
           "ELASTICSEARCH_URL": {
             "type": "string",
@@ -994,7 +1152,10 @@
             "x-persistent-config": true,
             "x-category": "Vector Database",
             "x-display-order": 107,
-            "default": "https://localhost:9200"
+            "default": "https://localhost:9200",
+            "x-depends-on": {
+              "VECTOR_DB": "elasticsearch"
+            }
           },
           "ELASTICSEARCH_USERNAME": {
             "type": "string",
@@ -1003,7 +1164,10 @@
             "x-persistent-config": true,
             "x-category": "Vector Database",
             "x-display-order": 108,
-            "default": "Empty string (' '), since"
+            "default": "Empty string (' '), since",
+            "x-depends-on": {
+              "VECTOR_DB": "elasticsearch"
+            }
           },
           "MILVUS_URI": {
             "type": "string",
@@ -1012,7 +1176,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 109,
-            "default": "${DATA_DIR}/vector_db/milvus.db"
+            "default": "${DATA_DIR}/vector_db/milvus.db",
+            "x-depends-on": {
+              "VECTOR_DB": "milvus"
+            }
           },
           "MILVUS_DB": {
             "type": "string",
@@ -1021,7 +1188,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 110,
-            "default": "default"
+            "default": "default",
+            "x-depends-on": {
+              "VECTOR_DB": "milvus"
+            }
           },
           "MILVUS_TOKEN": {
             "type": "string",
@@ -1031,7 +1201,10 @@
             "x-category": "Vector Database",
             "x-display-order": 111,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "VECTOR_DB": "milvus"
+            }
           },
           "OPENSEARCH_CERT_VERIFY": {
             "type": "boolean",
@@ -1040,7 +1213,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 112,
-            "default": false
+            "default": false,
+            "x-depends-on": {
+              "VECTOR_DB": "opensearch"
+            }
           },
           "OPENSEARCH_PASSWORD": {
             "type": "string",
@@ -1049,7 +1225,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 113,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "VECTOR_DB": "opensearch"
+            }
           },
           "OPENSEARCH_SSL": {
             "type": "boolean",
@@ -1058,7 +1237,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 114,
-            "default": true
+            "default": true,
+            "x-depends-on": {
+              "VECTOR_DB": "opensearch"
+            }
           },
           "OPENSEARCH_URI": {
             "type": "string",
@@ -1067,7 +1249,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 115,
-            "default": "https://localhost:9200"
+            "default": "https://localhost:9200",
+            "x-depends-on": {
+              "VECTOR_DB": "opensearch"
+            }
           },
           "OPENSEARCH_USERNAME": {
             "type": "string",
@@ -1075,7 +1260,10 @@
             "x-env-var": "OPENSEARCH_USERNAME",
             "x-persistent-config": false,
             "x-category": "Vector Database",
-            "x-display-order": 116
+            "x-display-order": 116,
+            "x-depends-on": {
+              "VECTOR_DB": "opensearch"
+            }
           },
           "PGVECTOR_DB_URL": {
             "type": "string",
@@ -1084,7 +1272,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 117,
-            "default": "The value of the"
+            "default": "The value of the",
+            "x-depends-on": {
+              "VECTOR_DB": "pgvector"
+            }
           },
           "PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH": {
             "type": "string",
@@ -1093,7 +1284,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 118,
-            "default": "1536"
+            "default": "1536",
+            "x-depends-on": {
+              "VECTOR_DB": "pgvector"
+            }
           },
           "QDRANT_API_KEY": {
             "type": "string",
@@ -1102,7 +1296,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 119,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "VECTOR_DB": "qdrant"
+            }
           },
           "QDRANT_URI": {
             "type": "string",
@@ -1110,7 +1307,10 @@
             "x-env-var": "QDRANT_URI",
             "x-persistent-config": false,
             "x-category": "Vector Database",
-            "x-display-order": 120
+            "x-display-order": 120,
+            "x-depends-on": {
+              "VECTOR_DB": "qdrant"
+            }
           },
           "QDRANT_ON_DISK": {
             "type": "boolean",
@@ -1119,7 +1319,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 121,
-            "default": false
+            "default": false,
+            "x-depends-on": {
+              "VECTOR_DB": "qdrant"
+            }
           },
           "QDRANT_PREFER_GRPC": {
             "type": "boolean",
@@ -1128,7 +1331,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 122,
-            "default": false
+            "default": false,
+            "x-depends-on": {
+              "VECTOR_DB": "qdrant"
+            }
           },
           "QDRANT_GRPC_PORT": {
             "type": "string",
@@ -1137,7 +1343,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 123,
-            "default": "6334"
+            "default": "6334",
+            "x-depends-on": {
+              "VECTOR_DB": "qdrant"
+            }
           },
           "PINECONE_API_KEY": {
             "type": "string",
@@ -1147,7 +1356,10 @@
             "x-category": "Vector Database",
             "x-display-order": 124,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "VECTOR_DB": "pinecone"
+            }
           },
           "PINECONE_ENVIRONMENT": {
             "type": "string",
@@ -1156,7 +1368,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 125,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "VECTOR_DB": "pinecone"
+            }
           },
           "PINECONE_INDEX_NAME": {
             "type": "string",
@@ -1165,7 +1380,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 126,
-            "default": "open-webui-index"
+            "default": "open-webui-index",
+            "x-depends-on": {
+              "VECTOR_DB": "pinecone"
+            }
           },
           "PINECONE_DIMENSION": {
             "type": "string",
@@ -1174,7 +1392,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 127,
-            "default": "1536"
+            "default": "1536",
+            "x-depends-on": {
+              "VECTOR_DB": "pinecone"
+            }
           },
           "PINECONE_METRIC": {
             "type": "string",
@@ -1183,7 +1404,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 128,
-            "default": "cosine"
+            "default": "cosine",
+            "x-depends-on": {
+              "VECTOR_DB": "pinecone"
+            }
           },
           "PINECONE_CLOUD": {
             "type": "string",
@@ -1192,7 +1416,10 @@
             "x-persistent-config": false,
             "x-category": "Vector Database",
             "x-display-order": 129,
-            "default": "aws"
+            "default": "aws",
+            "x-depends-on": {
+              "VECTOR_DB": "pinecone"
+            }
           },
           "CONTENT_EXTRACTION_ENGINE": {
             "type": "string",
@@ -1206,7 +1433,22 @@
               "docling",
               "document_intelligence",
               "mistral_ocr"
-            ]
+            ],
+            "x-provider-fields": {
+              "tika": [
+                "TIKA_SERVER_URL"
+              ],
+              "docling": [
+                "DOCLING_SERVER_URL"
+              ],
+              "document_intelligence": [
+                "DOCUMENT_INTELLIGENCE_ENDPOINT",
+                "DOCUMENT_INTELLIGENCE_KEY"
+              ],
+              "mistral_ocr": [
+                "MISTRAL_OCR_API_KEY"
+              ]
+            }
           },
           "MISTRAL_OCR_API_KEY": {
             "type": "string",
@@ -1216,7 +1458,10 @@
             "x-category": "RAG Content Extraction Engine",
             "x-display-order": 131,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "CONTENT_EXTRACTION_ENGINE": "mistral_ocr"
+            }
           },
           "TIKA_SERVER_URL": {
             "type": "string",
@@ -1225,7 +1470,10 @@
             "x-persistent-config": true,
             "x-category": "RAG Content Extraction Engine",
             "x-display-order": 132,
-            "default": "http://localhost:9998"
+            "default": "http://localhost:9998",
+            "x-depends-on": {
+              "CONTENT_EXTRACTION_ENGINE": "tika"
+            }
           },
           "DOCLING_SERVER_URL": {
             "type": "string",
@@ -1234,7 +1482,10 @@
             "x-persistent-config": true,
             "x-category": "RAG Content Extraction Engine",
             "x-display-order": 133,
-            "default": "http://docling:5001"
+            "default": "http://docling:5001",
+            "x-depends-on": {
+              "CONTENT_EXTRACTION_ENGINE": "docling"
+            }
           },
           "RAG_EMBEDDING_ENGINE": {
             "type": "string",
@@ -1246,7 +1497,18 @@
             "enum": [
               "ollama",
               "openai"
-            ]
+            ],
+            "x-provider-fields": {
+              "ollama": [
+                "RAG_OLLAMA_API_KEY",
+                "RAG_OLLAMA_BASE_URL"
+              ],
+              "openai": [
+                "RAG_OPENAI_API_BASE_URL",
+                "RAG_OPENAI_API_KEY",
+                "RAG_EMBEDDING_OPENAI_BATCH_SIZE"
+              ]
+            }
           },
           "RAG_EMBEDDING_MODEL": {
             "type": "string",
@@ -1392,7 +1654,10 @@
             "x-persistent-config": true,
             "x-category": "Retrieval Augmented Generation (RAG)",
             "x-display-order": 150,
-            "default": "${OPENAI_API_BASE_URL}"
+            "default": "${OPENAI_API_BASE_URL}",
+            "x-depends-on": {
+              "RAG_EMBEDDING_ENGINE": "openai"
+            }
           },
           "RAG_OPENAI_API_KEY": {
             "type": "string",
@@ -1402,7 +1667,10 @@
             "x-category": "Retrieval Augmented Generation (RAG)",
             "x-display-order": 151,
             "default": "${OPENAI_API_KEY}",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "RAG_EMBEDDING_ENGINE": "openai"
+            }
           },
           "RAG_EMBEDDING_OPENAI_BATCH_SIZE": {
             "type": "string",
@@ -1411,7 +1679,10 @@
             "x-persistent-config": false,
             "x-category": "Retrieval Augmented Generation (RAG)",
             "x-display-order": 152,
-            "default": "1"
+            "default": "1",
+            "x-depends-on": {
+              "RAG_EMBEDDING_ENGINE": "openai"
+            }
           },
           "RAG_EMBEDDING_BATCH_SIZE": {
             "type": "string",
@@ -1429,7 +1700,10 @@
             "x-persistent-config": true,
             "x-category": "Retrieval Augmented Generation (RAG)",
             "x-display-order": 154,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "RAG_EMBEDDING_ENGINE": "ollama"
+            }
           },
           "RAG_OLLAMA_BASE_URL": {
             "type": "string",
@@ -1437,7 +1711,10 @@
             "x-env-var": "RAG_OLLAMA_BASE_URL",
             "x-persistent-config": true,
             "x-category": "Retrieval Augmented Generation (RAG)",
-            "x-display-order": 155
+            "x-display-order": 155,
+            "x-depends-on": {
+              "RAG_EMBEDDING_ENGINE": "ollama"
+            }
           },
           "ENABLE_RETRIEVAL_QUERY_GENERATION": {
             "type": "boolean",
@@ -1472,7 +1749,10 @@
             "x-persistent-config": true,
             "x-category": "Retrieval Augmented Generation (RAG)",
             "x-display-order": 159,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "CONTENT_EXTRACTION_ENGINE": "document_intelligence"
+            }
           },
           "DOCUMENT_INTELLIGENCE_KEY": {
             "type": "string",
@@ -1482,7 +1762,10 @@
             "x-category": "Retrieval Augmented Generation (RAG)",
             "x-display-order": 160,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "CONTENT_EXTRACTION_ENGINE": "document_intelligence"
+            }
           },
           "ENABLE_RAG_LOCAL_WEB_FETCH": {
             "type": "boolean",
@@ -1644,7 +1927,67 @@
               "exa",
               "perplexity",
               "sougou"
-            ]
+            ],
+            "x-provider-fields": {
+              "searxng": [
+                "SEARXNG_QUERY_URL"
+              ],
+              "google_pse": [
+                "GOOGLE_PSE_API_KEY",
+                "GOOGLE_PSE_ENGINE_ID"
+              ],
+              "brave": [
+                "BRAVE_SEARCH_API_KEY"
+              ],
+              "kagi": [
+                "KAGI_SEARCH_API_KEY"
+              ],
+              "mojeek": [
+                "MOJEEK_SEARCH_API_KEY"
+              ],
+              "bocha": [
+                "BOCHA_SEARCH_API_KEY"
+              ],
+              "serpstack": [
+                "SERPSTACK_API_KEY",
+                "SERPSTACK_HTTPS"
+              ],
+              "serper": [
+                "SERPER_API_KEY"
+              ],
+              "serply": [
+                "SERPLY_API_KEY"
+              ],
+              "searchapi": [
+                "SEARCHAPI_API_KEY",
+                "SEARCHAPI_ENGINE"
+              ],
+              "serpapi": [
+                "SERPAPI_API_KEY",
+                "SERPAPI_ENGINE"
+              ],
+              "tavily": [
+                "TAVILY_API_KEY",
+                "TAVILY_EXTRACT_DEPTH"
+              ],
+              "jina": [
+                "JINA_API_KEY"
+              ],
+              "bing": [
+                "BING_SEARCH_V7_ENDPOINT",
+                "BING_SEARCH_V7_SUBSCRIPTION_KEY"
+              ],
+              "exa": [
+                "EXA_API_KEY"
+              ],
+              "perplexity": [
+                "PERPLEXITY_API_KEY"
+              ],
+              "sougou": [
+                "SOUGOU_API_SID",
+                "SOUGOU_API_SK"
+              ]
+            }
           },
           "BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL": {
             "type": "boolean",
@@ -1661,7 +2004,10 @@
             "x-env-var": "SEARXNG_QUERY_URL",
             "x-persistent-config": true,
             "x-category": "Web Search",
-            "x-display-order": 178
+            "x-display-order": 178,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "searxng"
+            }
           },
           "GOOGLE_PSE_API_KEY": {
             "type": "string",
@@ -1670,7 +2016,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 179,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "google_pse"
+            }
           },
           "GOOGLE_PSE_ENGINE_ID": {
             "type": "string",
@@ -1678,7 +2027,10 @@
             "x-env-var": "GOOGLE_PSE_ENGINE_ID",
             "x-persistent-config": true,
             "x-category": "Web Search",
-            "x-display-order": 180
+            "x-display-order": 180,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "google_pse"
+            }
           },
           "BRAVE_SEARCH_API_KEY": {
             "type": "string",
@@ -1687,7 +2039,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 181,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "brave"
+            }
           },
           "KAGI_SEARCH_API_KEY": {
             "type": "string",
@@ -1696,7 +2051,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 182,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "kagi"
+            }
           },
           "MOJEEK_SEARCH_API_KEY": {
             "type": "string",
@@ -1705,7 +2063,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 183,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "mojeek"
+            }
           },
           "SERPSTACK_API_KEY": {
             "type": "string",
@@ -1714,7 +2075,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 184,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "serpstack"
+            }
           },
           "SERPSTACK_HTTPS": {
             "type": "boolean",
@@ -1723,7 +2087,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 185,
-            "default": true
+            "default": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "serpstack"
+            }
           },
           "SERPER_API_KEY": {
             "type": "string",
@@ -1732,7 +2099,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 186,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "serper"
+            }
           },
           "SERPLY_API_KEY": {
             "type": "string",
@@ -1741,7 +2111,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 187,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "serply"
+            }
           },
           "SEARCHAPI_API_KEY": {
             "type": "string",
@@ -1750,7 +2123,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 188,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "searchapi"
+            }
           },
           "SEARCHAPI_ENGINE": {
             "type": "string",
@@ -1758,7 +2134,10 @@
             "x-env-var": "SEARCHAPI_ENGINE",
             "x-persistent-config": true,
             "x-category": "Web Search",
-            "x-display-order": 189
+            "x-display-order": 189,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "searchapi"
+            }
           },
           "TAVILY_API_KEY": {
             "type": "string",
@@ -1767,7 +2146,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 190,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "tavily"
+            }
           },
           "JINA_API_KEY": {
             "type": "string",
@@ -1776,7 +2158,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 191,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "jina"
+            }
           },
           "BING_SEARCH_V7_ENDPOINT": {
             "type": "string",
@@ -1784,7 +2169,10 @@
             "x-env-var": "BING_SEARCH_V7_ENDPOINT",
             "x-persistent-config": true,
             "x-category": "Web Search",
-            "x-display-order": 192
+            "x-display-order": 192,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "bing"
+            }
           },
           "BING_SEARCH_V7_SUBSCRIPTION_KEY": {
             "type": "string",
@@ -1794,7 +2182,10 @@
             "x-category": "Web Search",
             "x-display-order": 193,
             "default": "https://api.bing.microsoft.com/v7.0/search",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "bing"
+            }
           },
           "BOCHA_SEARCH_API_KEY": {
             "type": "string",
@@ -1804,7 +2195,10 @@
             "x-category": "Web Search",
             "x-display-order": 194,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "bocha"
+            }
           },
           "EXA_API_KEY": {
             "type": "string",
@@ -1814,7 +2208,10 @@
             "x-category": "Web Search",
             "x-display-order": 195,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "exa"
+            }
           },
           "SERPAPI_API_KEY": {
             "type": "string",
@@ -1824,7 +2221,10 @@
             "x-category": "Web Search",
             "x-display-order": 196,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "serpapi"
+            }
           },
           "SERPAPI_ENGINE": {
             "type": "string",
@@ -1833,7 +2233,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 197,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "serpapi"
+            }
           },
           "SOUGOU_API_SID": {
             "type": "string",
@@ -1842,7 +2245,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 198,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "sougou"
+            }
           },
           "SOUGOU_API_SK": {
             "type": "string",
@@ -1851,7 +2257,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 199,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "sougou"
+            }
           },
           "TAVILY_EXTRACT_DEPTH": {
             "type": "string",
@@ -1860,7 +2269,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 200,
-            "default": "basic"
+            "default": "basic",
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "tavily"
+            }
           },
           "WEB_LOADER_ENGINE": {
             "type": "string",
@@ -1873,7 +2285,14 @@
             "enum": [
               "playwright",
               ""
-            ]
+            ],
+            "x-provider-fields": {
+              "": [],
+              "playwright": [
+                "PLAYWRIGHT_WS_URL",
+                "PLAYWRIGHT_TIMEOUT"
+              ]
+            }
           },
           "PLAYWRIGHT_WS_URL": {
             "type": "string",
@@ -1882,7 +2301,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 202,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "WEB_LOADER_ENGINE": "playwright"
+            }
           },
           "FIRECRAWL_API_BASE_URL": {
             "type": "string",
@@ -1911,7 +2333,10 @@
             "x-category": "Web Search",
             "x-display-order": 205,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "WEB_SEARCH_ENGINE": "perplexity"
+            }
           },
           "PLAYWRIGHT_TIMEOUT": {
             "type": "string",
@@ -1920,7 +2345,10 @@
             "x-persistent-config": true,
             "x-category": "Web Search",
             "x-display-order": 206,
-            "default": "Empty string (' '), since"
+            "default": "Empty string (' '), since",
+            "x-depends-on": {
+              "WEB_LOADER_ENGINE": "playwright"
+            }
           },
           "YOUTUBE_LOADER_PROXY_URL": {
             "type": "string",
@@ -1985,7 +2413,22 @@
             "enum": [
               "openai",
               "deepgram"
-            ]
+            ],
+            "x-provider-fields": {
+              "openai": [
+                "AUDIO_STT_MODEL",
+                "AUDIO_STT_OPENAI_API_BASE_URL",
+                "AUDIO_STT_OPENAI_API_KEY"
+              ],
+              "deepgram": [
+                "DEEPGRAM_API_KEY"
+              ],
+              "azure": [
+                "AUDIO_STT_AZURE_API_KEY",
+                "AUDIO_STT_AZURE_REGION",
+                "AUDIO_STT_AZURE_LOCALES"
+              ]
+            }
           },
           "AUDIO_STT_MODEL": {
             "type": "string",
@@ -1994,7 +2437,10 @@
             "x-persistent-config": true,
             "x-category": "Audio",
             "x-display-order": 214,
-            "default": "whisper-1"
+            "default": "whisper-1",
+            "x-depends-on": {
+              "AUDIO_STT_ENGINE": "openai"
+            }
           },
           "AUDIO_STT_OPENAI_API_BASE_URL": {
             "type": "string",
@@ -2003,7 +2449,10 @@
             "x-persistent-config": true,
             "x-category": "Audio",
             "x-display-order": 215,
-            "default": "${OPENAI_API_BASE_URL}"
+            "default": "${OPENAI_API_BASE_URL}",
+            "x-depends-on": {
+              "AUDIO_STT_ENGINE": "openai"
+            }
           },
           "AUDIO_STT_OPENAI_API_KEY": {
             "type": "string",
@@ -2013,7 +2462,10 @@
             "x-category": "Audio",
             "x-display-order": 216,
             "default": "${OPENAI_API_KEY}",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "AUDIO_STT_ENGINE": "openai"
+            }
           },
           "AUDIO_STT_AZURE_API_KEY": {
             "type": "string",
@@ -2023,7 +2475,10 @@
             "x-category": "Audio",
             "x-display-order": 217,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "AUDIO_STT_ENGINE": "azure"
+            }
           },
           "AUDIO_STT_AZURE_REGION": {
             "type": "string",
@@ -2032,7 +2487,10 @@
             "x-persistent-config": true,
             "x-category": "Audio",
             "x-display-order": 218,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "AUDIO_STT_ENGINE": "azure"
+            }
           },
           "AUDIO_STT_AZURE_LOCALES": {
             "type": "string",
@@ -2041,7 +2499,10 @@
             "x-persistent-config": true,
             "x-category": "Audio",
             "x-display-order": 219,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "AUDIO_STT_ENGINE": "azure"
+            }
           },
           "DEEPGRAM_API_KEY": {
             "type": "string",
@@ -2051,7 +2512,10 @@
             "x-category": "Audio",
             "x-display-order": 220,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "AUDIO_STT_ENGINE": "deepgram"
+            }
           },
           "AUDIO_TTS_API_KEY": {
             "type": "string",
@@ -2060,7 +2524,10 @@
             "x-persistent-config": true,
             "x-category": "Audio",
             "x-display-order": 221,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "AUDIO_TTS_ENGINE": "elevenlabs"
+            }
           },
           "AUDIO_TTS_ENGINE": {
             "type": "string",
@@ -2074,7 +2541,25 @@
               "elevenlabs",
               "openai",
               "transformers"
-            ]
+            ],
+            "x-provider-fields": {
+              "azure": [
+                "AUDIO_TTS_AZURE_SPEECH_REGION",
+                "AUDIO_TTS_AZURE_SPEECH_OUTPUT_FORMAT",
+                "AUDIO_TTS_API_KEY"
+              ],
+              "elevenlabs": [
+                "AUDIO_TTS_API_KEY"
+              ],
+              "openai": [
+                "AUDIO_TTS_MODEL",
+                "AUDIO_TTS_VOICE",
+                "AUDIO_TTS_SPLIT_ON",
+                "AUDIO_TTS_OPENAI_API_BASE_URL",
+                "AUDIO_TTS_OPENAI_API_KEY"
+              ],
+              "transformers": []
+            }
           },
           "AUDIO_TTS_MODEL": {
             "type": "string",
@@ -2083,7 +2568,10 @@
             "x-persistent-config": true,
             "x-category": "Audio",
             "x-display-order": 223,
-            "default": "tts-1"
+            "default": "tts-1",
+            "x-depends-on": {
+              "AUDIO_TTS_ENGINE": "openai"
+            }
           },
           "AUDIO_TTS_VOICE": {
             "type": "string",
@@ -2092,7 +2580,10 @@
             "x-persistent-config": true,
             "x-category": "Audio",
             "x-display-order": 224,
-            "default": "alloy"
+            "default": "alloy",
+            "x-depends-on": {
+              "AUDIO_TTS_ENGINE": "openai"
+            }
           },
           "AUDIO_TTS_SPLIT_ON": {
             "type": "string",
@@ -2101,7 +2592,10 @@
             "x-persistent-config": true,
             "x-category": "Audio",
             "x-display-order": 225,
-            "default": "punctuation"
+            "default": "punctuation",
+            "x-depends-on": {
+              "AUDIO_TTS_ENGINE": "openai"
+            }
           },
           "AUDIO_TTS_AZURE_SPEECH_REGION": {
             "type": "string",
@@ -2109,7 +2603,10 @@
             "x-env-var": "AUDIO_TTS_AZURE_SPEECH_REGION",
             "x-persistent-config": true,
             "x-category": "Audio",
-            "x-display-order": 226
+            "x-display-order": 226,
+            "x-depends-on": {
+              "AUDIO_TTS_ENGINE": "azure"
+            }
           },
           "AUDIO_TTS_AZURE_SPEECH_OUTPUT_FORMAT": {
             "type": "string",
@@ -2117,7 +2614,10 @@
             "x-env-var": "AUDIO_TTS_AZURE_SPEECH_OUTPUT_FORMAT",
             "x-persistent-config": true,
             "x-category": "Audio",
-            "x-display-order": 227
+            "x-display-order": 227,
+            "x-depends-on": {
+              "AUDIO_TTS_ENGINE": "azure"
+            }
           },
           "AUDIO_TTS_OPENAI_API_BASE_URL": {
             "type": "string",
@@ -2126,7 +2626,10 @@
             "x-persistent-config": true,
             "x-category": "Audio",
             "x-display-order": 228,
-            "default": "${OPENAI_API_BASE_URL}"
+            "default": "${OPENAI_API_BASE_URL}",
+            "x-depends-on": {
+              "AUDIO_TTS_ENGINE": "openai"
+            }
           },
           "AUDIO_TTS_OPENAI_API_KEY": {
             "type": "string",
@@ -2136,7 +2639,10 @@
             "x-category": "Audio",
             "x-display-order": 229,
             "default": "${OPENAI_API_KEY}",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "AUDIO_TTS_ENGINE": "openai"
+            }
           },
           "IMAGE_GENERATION_ENGINE": {
             "type": "string",
@@ -2151,7 +2657,31 @@
               "comfyui",
               "automatic1111",
               "gemini"
-            ]
+            ],
+            "x-provider-fields": {
+              "openai": [
+                "IMAGES_OPENAI_API_BASE_URL",
+                "IMAGES_OPENAI_API_KEY"
+              ],
+              "comfyui": [
+                "COMFYUI_BASE_URL",
+                "COMFYUI_API_KEY",
+                "COMFYUI_WORKFLOW"
+              ],
+              "automatic1111": [
+                "AUTOMATIC1111_BASE_URL",
+                "AUTOMATIC1111_API_AUTH",
+                "AUTOMATIC1111_CFG_SCALE",
+                "AUTOMATIC1111_SAMPLER",
+                "AUTOMATIC1111_SCHEDULER"
+              ],
+              "gemini": [
+                "GEMINI_API_BASE_URL",
+                "GEMINI_API_KEY",
+                "IMAGES_GEMINI_API_BASE_URL",
+                "IMAGES_GEMINI_API_KEY"
+              ]
+            }
           },
           "ENABLE_IMAGE_GENERATION": {
             "type": "boolean",
@@ -2212,7 +2742,10 @@
             "x-env-var": "AUTOMATIC1111_BASE_URL",
             "x-persistent-config": true,
             "x-category": "Image Generation",
-            "x-display-order": 237
+            "x-display-order": 237,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "automatic1111"
+            }
           },
           "AUTOMATIC1111_API_AUTH": {
             "type": "string",
@@ -2220,7 +2753,10 @@
             "x-env-var": "AUTOMATIC1111_API_AUTH",
             "x-persistent-config": true,
             "x-category": "Image Generation",
-            "x-display-order": 238
+            "x-display-order": 238,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "automatic1111"
+            }
           },
           "AUTOMATIC1111_CFG_SCALE": {
             "type": "number",
@@ -2228,7 +2764,10 @@
             "x-env-var": "AUTOMATIC1111_CFG_SCALE",
             "x-persistent-config": true,
             "x-category": "Image Generation",
-            "x-display-order": 239
+            "x-display-order": 239,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "automatic1111"
+            }
           },
           "AUTOMATIC1111_SAMPLER": {
             "type": "string",
@@ -2236,7 +2775,10 @@
             "x-env-var": "AUTOMATIC1111_SAMPLER",
             "x-persistent-config": true,
             "x-category": "Image Generation",
-            "x-display-order": 240
+            "x-display-order": 240,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "automatic1111"
+            }
           },
           "AUTOMATIC1111_SCHEDULER": {
             "type": "string",
@@ -2244,7 +2786,10 @@
             "x-env-var": "AUTOMATIC1111_SCHEDULER",
             "x-persistent-config": true,
             "x-category": "Image Generation",
-            "x-display-order": 241
+            "x-display-order": 241,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "automatic1111"
+            }
           },
           "COMFYUI_BASE_URL": {
             "type": "string",
@@ -2252,7 +2797,10 @@
             "x-env-var": "COMFYUI_BASE_URL",
             "x-persistent-config": true,
             "x-category": "Image Generation",
-            "x-display-order": 242
+            "x-display-order": 242,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "comfyui"
+            }
           },
           "COMFYUI_API_KEY": {
             "type": "string",
@@ -2261,7 +2809,10 @@
             "x-persistent-config": true,
             "x-category": "Image Generation",
             "x-display-order": 243,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "comfyui"
+            }
           },
           "COMFYUI_WORKFLOW": {
             "type": "string",
@@ -2269,7 +2820,10 @@
             "x-env-var": "COMFYUI_WORKFLOW",
             "x-persistent-config": true,
             "x-category": "Image Generation",
-            "x-display-order": 244
+            "x-display-order": 244,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "comfyui"
+            }
           },
           "GEMINI_API_BASE_URL": {
             "type": "string",
@@ -2278,7 +2832,10 @@
             "x-persistent-config": true,
             "x-category": "Image Generation",
             "x-display-order": 245,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "gemini"
+            }
           },
           "GEMINI_API_KEY": {
             "type": "string",
@@ -2288,7 +2845,10 @@
             "x-category": "Image Generation",
             "x-display-order": 246,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "gemini"
+            }
           },
           "IMAGES_GEMINI_API_BASE_URL": {
             "type": "string",
@@ -2297,7 +2857,10 @@
             "x-persistent-config": true,
             "x-category": "Image Generation",
             "x-display-order": 247,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "gemini"
+            }
           },
           "IMAGES_GEMINI_API_KEY": {
             "type": "string",
@@ -2307,7 +2870,10 @@
             "x-category": "Image Generation",
             "x-display-order": 248,
             "default": "None",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "gemini"
+            }
           },
           "IMAGES_OPENAI_API_BASE_URL": {
             "type": "string",
@@ -2316,7 +2882,10 @@
             "x-persistent-config": true,
             "x-category": "Image Generation",
             "x-display-order": 249,
-            "default": "${OPENAI_API_BASE_URL}"
+            "default": "${OPENAI_API_BASE_URL}",
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "openai"
+            }
           },
           "IMAGES_OPENAI_API_KEY": {
             "type": "string",
@@ -2326,7 +2895,10 @@
             "x-category": "Image Generation",
             "x-display-order": 250,
             "default": "${OPENAI_API_KEY}",
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "IMAGE_GENERATION_ENGINE": "openai"
+            }
           },
           "ENABLE_OAUTH_SIGNUP": {
             "type": "boolean",
@@ -2335,7 +2907,42 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 251,
-            "default": false
+            "default": false,
+            "x-provider-fields": [
+              "OAUTH_MERGE_ACCOUNTS_BY_EMAIL",
+              "WEBUI_AUTH_TRUSTED_EMAIL_HEADER",
+              "WEBUI_AUTH_TRUSTED_NAME_HEADER",
+              "GOOGLE_CLIENT_ID",
+              "GOOGLE_CLIENT_SECRET",
+              "GOOGLE_OAUTH_SCOPE",
+              "GOOGLE_REDIRECT_URI",
+              "MICROSOFT_CLIENT_ID",
+              "MICROSOFT_CLIENT_SECRET",
+              "MICROSOFT_CLIENT_TENANT_ID",
+              "MICROSOFT_OAUTH_SCOPE",
+              "MICROSOFT_REDIRECT_URI",
+              "GITHUB_CLIENT_ID",
+              "GITHUB_CLIENT_SECRET",
+              "GITHUB_CLIENT_SCOPE",
+              "GITHUB_CLIENT_REDIRECT_URI",
+              "OAUTH_CLIENT_ID",
+              "OAUTH_CLIENT_SECRET",
+              "OPENID_PROVIDER_URL",
+              "OPENID_REDIRECT_URI",
+              "OAUTH_SCOPES",
+              "OAUTH_CODE_CHALLENGE_METHOD",
+              "OAUTH_PROVIDER_NAME",
+              "OAUTH_USERNAME_CLAIM",
+              "OAUTH_EMAIL_CLAIM",
+              "OAUTH_PICTURE_CLAIM",
+              "OAUTH_GROUP_CLAIM",
+              "ENABLE_OAUTH_ROLE_MANAGEMENT",
+              "ENABLE_OAUTH_GROUP_MANAGEMENT",
+              "OAUTH_ROLES_CLAIM",
+              "OAUTH_ALLOWED_ROLES",
+              "OAUTH_ADMIN_ROLES",
+              "OAUTH_ALLOWED_DOMAINS"
+            ]
           },
           "OAUTH_MERGE_ACCOUNTS_BY_EMAIL": {
             "type": "boolean",
@@ -2344,7 +2951,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 252,
-            "default": false
+            "default": false,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "WEBUI_AUTH_TRUSTED_EMAIL_HEADER": {
             "type": "string",
@@ -2352,7 +2962,10 @@
             "x-env-var": "WEBUI_AUTH_TRUSTED_EMAIL_HEADER",
             "x-persistent-config": false,
             "x-category": "OAuth",
-            "x-display-order": 253
+            "x-display-order": 253,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "WEBUI_AUTH_TRUSTED_NAME_HEADER": {
             "type": "string",
@@ -2360,7 +2973,10 @@
             "x-env-var": "WEBUI_AUTH_TRUSTED_NAME_HEADER",
             "x-persistent-config": false,
             "x-category": "OAuth",
-            "x-display-order": 254
+            "x-display-order": 254,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "GOOGLE_CLIENT_ID": {
             "type": "string",
@@ -2368,7 +2984,10 @@
             "x-env-var": "GOOGLE_CLIENT_ID",
             "x-persistent-config": true,
             "x-category": "OAuth",
-            "x-display-order": 255
+            "x-display-order": 255,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "GOOGLE_CLIENT_SECRET": {
             "type": "string",
@@ -2377,7 +2996,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 256,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "GOOGLE_OAUTH_SCOPE": {
             "type": "string",
@@ -2386,7 +3008,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 257,
-            "default": "openid email profile"
+            "default": "openid email profile",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "GOOGLE_REDIRECT_URI": {
             "type": "string",
@@ -2395,7 +3020,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 258,
-            "default": "<backend>/oauth/google/callback"
+            "default": "<backend>/oauth/google/callback",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "MICROSOFT_CLIENT_ID": {
             "type": "string",
@@ -2403,7 +3031,10 @@
             "x-env-var": "MICROSOFT_CLIENT_ID",
             "x-persistent-config": true,
             "x-category": "OAuth",
-            "x-display-order": 259
+            "x-display-order": 259,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "MICROSOFT_CLIENT_SECRET": {
             "type": "string",
@@ -2412,7 +3043,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 260,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "MICROSOFT_CLIENT_TENANT_ID": {
             "type": "string",
@@ -2420,7 +3054,10 @@
             "x-env-var": "MICROSOFT_CLIENT_TENANT_ID",
             "x-persistent-config": true,
             "x-category": "OAuth",
-            "x-display-order": 261
+            "x-display-order": 261,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "MICROSOFT_OAUTH_SCOPE": {
             "type": "string",
@@ -2429,7 +3066,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 262,
-            "default": "openid email profile"
+            "default": "openid email profile",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "MICROSOFT_REDIRECT_URI": {
             "type": "string",
@@ -2438,7 +3078,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 263,
-            "default": "<backend>/oauth/microsoft/callback"
+            "default": "<backend>/oauth/microsoft/callback",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "GITHUB_CLIENT_ID": {
             "type": "string",
@@ -2446,7 +3089,10 @@
             "x-env-var": "GITHUB_CLIENT_ID",
             "x-persistent-config": true,
             "x-category": "OAuth",
-            "x-display-order": 264
+            "x-display-order": 264,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "GITHUB_CLIENT_SECRET": {
             "type": "string",
@@ -2455,7 +3101,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 265,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "GITHUB_CLIENT_SCOPE": {
             "type": "string",
@@ -2464,7 +3113,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 266,
-            "default": "user:email"
+            "default": "user:email",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "GITHUB_CLIENT_REDIRECT_URI": {
             "type": "string",
@@ -2473,7 +3125,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 267,
-            "default": "<backend>/oauth/github/callback"
+            "default": "<backend>/oauth/github/callback",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_CLIENT_ID": {
             "type": "string",
@@ -2481,7 +3136,10 @@
             "x-env-var": "OAUTH_CLIENT_ID",
             "x-persistent-config": true,
             "x-category": "OAuth",
-            "x-display-order": 268
+            "x-display-order": 268,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_CLIENT_SECRET": {
             "type": "string",
@@ -2490,7 +3148,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 269,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OPENID_PROVIDER_URL": {
             "type": "string",
@@ -2498,7 +3159,10 @@
             "x-env-var": "OPENID_PROVIDER_URL",
             "x-persistent-config": true,
             "x-category": "OAuth",
-            "x-display-order": 270
+            "x-display-order": 270,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OPENID_REDIRECT_URI": {
             "type": "string",
@@ -2507,7 +3171,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 271,
-            "default": "<backend>/oauth/oidc/callback"
+            "default": "<backend>/oauth/oidc/callback",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_SCOPES": {
             "type": "string",
@@ -2516,7 +3183,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 272,
-            "default": "openid email profile"
+            "default": "openid email profile",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_CODE_CHALLENGE_METHOD": {
             "type": "string",
@@ -2525,7 +3195,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 273,
-            "default": "Empty string (' '), since"
+            "default": "Empty string (' '), since",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_PROVIDER_NAME": {
             "type": "string",
@@ -2534,7 +3207,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 274,
-            "default": "SSO"
+            "default": "SSO",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_USERNAME_CLAIM": {
             "type": "string",
@@ -2543,7 +3219,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 275,
-            "default": "name"
+            "default": "name",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_EMAIL_CLAIM": {
             "type": "string",
@@ -2552,7 +3231,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 276,
-            "default": "email"
+            "default": "email",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_PICTURE_CLAIM": {
             "type": "string",
@@ -2561,7 +3243,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 277,
-            "default": "picture"
+            "default": "picture",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_GROUP_CLAIM": {
             "type": "string",
@@ -2570,7 +3255,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 278,
-            "default": "groups"
+            "default": "groups",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "ENABLE_OAUTH_ROLE_MANAGEMENT": {
             "type": "boolean",
@@ -2579,7 +3267,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 279,
-            "default": false
+            "default": false,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "ENABLE_OAUTH_GROUP_MANAGEMENT": {
             "type": "boolean",
@@ -2588,7 +3279,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 280,
-            "default": false
+            "default": false,
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_ROLES_CLAIM": {
             "type": "string",
@@ -2597,7 +3291,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 281,
-            "default": "roles"
+            "default": "roles",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_ALLOWED_ROLES": {
             "type": "string",
@@ -2606,7 +3303,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 282,
-            "default": "user,admin"
+            "default": "user,admin",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_ADMIN_ROLES": {
             "type": "string",
@@ -2615,7 +3315,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 283,
-            "default": "admin"
+            "default": "admin",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "OAUTH_ALLOWED_DOMAINS": {
             "type": "string",
@@ -2624,7 +3327,10 @@
             "x-persistent-config": true,
             "x-category": "OAuth",
             "x-display-order": 284,
-            "default": "*"
+            "default": "*",
+            "x-depends-on": {
+              "ENABLE_OAUTH_SIGNUP": true
+            }
           },
           "ENABLE_LDAP": {
             "type": "boolean",
@@ -2633,7 +3339,22 @@
             "x-persistent-config": true,
             "x-category": "LDAP",
             "x-display-order": 285,
-            "default": false
+            "default": false,
+            "x-provider-fields": [
+              "LDAP_SERVER_LABEL",
+              "LDAP_SERVER_HOST",
+              "LDAP_SERVER_PORT",
+              "LDAP_ATTRIBUTE_FOR_MAIL",
+              "LDAP_ATTRIBUTE_FOR_USERNAME",
+              "LDAP_APP_DN",
+              "LDAP_APP_PASSWORD",
+              "LDAP_SEARCH_BASE",
+              "LDAP_SEARCH_FILTER",
+              "LDAP_SEARCH_FILTERS",
+              "LDAP_USE_TLS",
+              "LDAP_CA_CERT_FILE",
+              "LDAP_CIPHERS"
+            ]
           },
           "LDAP_SERVER_LABEL": {
             "type": "string",
@@ -2641,7 +3362,10 @@
             "x-env-var": "LDAP_SERVER_LABEL",
             "x-persistent-config": true,
             "x-category": "LDAP",
-            "x-display-order": 286
+            "x-display-order": 286,
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_SERVER_HOST": {
             "type": "string",
@@ -2650,7 +3374,10 @@
             "x-persistent-config": true,
             "x-category": "LDAP",
             "x-display-order": 287,
-            "default": "localhost"
+            "default": "localhost",
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_SERVER_PORT": {
             "type": "string",
@@ -2659,7 +3386,10 @@
             "x-persistent-config": true,
             "x-category": "LDAP",
             "x-display-order": 288,
-            "default": "389"
+            "default": "389",
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_ATTRIBUTE_FOR_MAIL": {
             "type": "string",
@@ -2667,7 +3397,10 @@
             "x-env-var": "LDAP_ATTRIBUTE_FOR_MAIL",
             "x-persistent-config": true,
             "x-category": "LDAP",
-            "x-display-order": 289
+            "x-display-order": 289,
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_ATTRIBUTE_FOR_USERNAME": {
             "type": "string",
@@ -2675,7 +3408,10 @@
             "x-env-var": "LDAP_ATTRIBUTE_FOR_USERNAME",
             "x-persistent-config": true,
             "x-category": "LDAP",
-            "x-display-order": 290
+            "x-display-order": 290,
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_APP_DN": {
             "type": "string",
@@ -2683,7 +3419,10 @@
             "x-env-var": "LDAP_APP_DN",
             "x-persistent-config": true,
             "x-category": "LDAP",
-            "x-display-order": 291
+            "x-display-order": 291,
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_APP_PASSWORD": {
             "type": "string",
@@ -2692,7 +3431,10 @@
             "x-persistent-config": true,
             "x-category": "LDAP",
             "x-display-order": 292,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_SEARCH_BASE": {
             "type": "string",
@@ -2700,7 +3442,10 @@
             "x-env-var": "LDAP_SEARCH_BASE",
             "x-persistent-config": true,
             "x-category": "LDAP",
-            "x-display-order": 293
+            "x-display-order": 293,
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_SEARCH_FILTER": {
             "type": "string",
@@ -2709,7 +3454,10 @@
             "x-persistent-config": true,
             "x-category": "LDAP",
             "x-display-order": 294,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_SEARCH_FILTERS": {
             "type": "string",
@@ -2717,7 +3465,10 @@
             "x-env-var": "LDAP_SEARCH_FILTERS",
             "x-persistent-config": true,
             "x-category": "LDAP",
-            "x-display-order": 295
+            "x-display-order": 295,
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_USE_TLS": {
             "type": "boolean",
@@ -2726,7 +3477,10 @@
             "x-persistent-config": true,
             "x-category": "LDAP",
             "x-display-order": 296,
-            "default": true
+            "default": true,
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_CA_CERT_FILE": {
             "type": "string",
@@ -2734,7 +3488,10 @@
             "x-env-var": "LDAP_CA_CERT_FILE",
             "x-persistent-config": true,
             "x-category": "LDAP",
-            "x-display-order": 297
+            "x-display-order": 297,
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "LDAP_CIPHERS": {
             "type": "string",
@@ -2743,7 +3500,10 @@
             "x-persistent-config": true,
             "x-category": "LDAP",
             "x-display-order": 298,
-            "default": "ALL"
+            "default": "ALL",
+            "x-depends-on": {
+              "ENABLE_LDAP": true
+            }
           },
           "USER_PERMISSIONS_CHAT_CONTROLS": {
             "type": "string",
@@ -2955,7 +3715,28 @@
               "s3",
               "gcs",
               "azure"
-            ]
+            ],
+            "x-provider-fields": {
+              "s3": [
+                "S3_ACCESS_KEY_ID",
+                "S3_SECRET_ACCESS_KEY",
+                "S3_BUCKET_NAME",
+                "S3_ENDPOINT_URL",
+                "S3_REGION_NAME",
+                "S3_KEY_PREFIX",
+                "S3_ADDRESSING_STYLE",
+                "S3_USE_ACCELERATE_ENDPOINT"
+              ],
+              "gcs": [
+                "GOOGLE_APPLICATION_CREDENTIALS_JSON",
+                "GCS_BUCKET_NAME"
+              ],
+              "azure": [
+                "AZURE_STORAGE_ENDPOINT",
+                "AZURE_STORAGE_CONTAINER_NAME",
+                "AZURE_STORAGE_KEY"
+              ]
+            }
           },
           "S3_ACCESS_KEY_ID": {
             "type": "string",
@@ -2964,7 +3745,10 @@
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
             "x-display-order": 322,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "s3"
+            }
           },
           "S3_ADDRESSING_STYLE": {
             "type": "string",
@@ -2973,7 +3757,10 @@
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
             "x-display-order": 323,
-            "default": "None"
+            "default": "None",
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "s3"
+            }
           },
           "S3_BUCKET_NAME": {
             "type": "string",
@@ -2981,7 +3768,10 @@
             "x-env-var": "S3_BUCKET_NAME",
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
-            "x-display-order": 324
+            "x-display-order": 324,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "s3"
+            }
           },
           "S3_ENDPOINT_URL": {
             "type": "string",
@@ -2989,7 +3779,10 @@
             "x-env-var": "S3_ENDPOINT_URL",
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
-            "x-display-order": 325
+            "x-display-order": 325,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "s3"
+            }
           },
           "S3_KEY_PREFIX": {
             "type": "string",
@@ -2998,7 +3791,10 @@
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
             "x-display-order": 326,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "s3"
+            }
           },
           "S3_REGION_NAME": {
             "type": "string",
@@ -3006,7 +3802,10 @@
             "x-env-var": "S3_REGION_NAME",
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
-            "x-display-order": 327
+            "x-display-order": 327,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "s3"
+            }
           },
           "S3_SECRET_ACCESS_KEY": {
             "type": "string",
@@ -3015,7 +3814,10 @@
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
             "x-display-order": 328,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "s3"
+            }
           },
           "S3_USE_ACCELERATE_ENDPOINT": {
             "type": "string",
@@ -3024,7 +3826,10 @@
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
             "x-display-order": 329,
-            "default": "False"
+            "default": "False",
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "s3"
+            }
           },
           "GOOGLE_APPLICATION_CREDENTIALS_JSON": {
             "type": "string",
@@ -3033,7 +3838,10 @@
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
             "x-display-order": 330,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "gcs"
+            }
           },
           "GCS_BUCKET_NAME": {
             "type": "string",
@@ -3041,7 +3849,10 @@
             "x-env-var": "GCS_BUCKET_NAME",
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
-            "x-display-order": 331
+            "x-display-order": 331,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "gcs"
+            }
           },
           "AZURE_STORAGE_ENDPOINT": {
             "type": "string",
@@ -3049,7 +3860,10 @@
             "x-env-var": "AZURE_STORAGE_ENDPOINT",
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
-            "x-display-order": 332
+            "x-display-order": 332,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "azure"
+            }
           },
           "AZURE_STORAGE_CONTAINER_NAME": {
             "type": "string",
@@ -3057,7 +3871,10 @@
             "x-env-var": "AZURE_STORAGE_CONTAINER_NAME",
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
-            "x-display-order": 333
+            "x-display-order": 333,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "azure"
+            }
           },
           "AZURE_STORAGE_KEY": {
             "type": "string",
@@ -3066,7 +3883,10 @@
             "x-persistent-config": false,
             "x-category": "Misc Environment Variables",
             "x-display-order": 334,
-            "x-sensitive": true
+            "x-sensitive": true,
+            "x-depends-on": {
+              "STORAGE_PROVIDER": "azure"
+            }
           },
           "DATABASE_URL": {
             "type": "string",
