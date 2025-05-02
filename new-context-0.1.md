@@ -58,6 +58,3 @@ By starting with the unguessable URL approach and progressively enhancing securi
 ```
 
 
-
-Let me know what you think of the above, and if there are some other considerations I should have. Then, detail an approach I can follow to enhance the openapi spec, manually labeling which environment variables/flags should not be controllable from the Leger dashboard itself. I think it is sufficient to have three qualifications: "Hidden", "Provided by default" and "Left for the user to decide" [criticize this approach, propose perhaps a better system (it might not be 3 tags), and give me a one-word qualifier that is better suited for this]
-OWUI has "PersistentConfig" flags but in my case those will not be used because of how the architecture works.
