@@ -238,5 +238,48 @@ i think the separation of duties from cloudflare workers (the "leger functionali
 
 
 
+----
+Previous prompt 1:
 
+
+Hello Orchestrator. You are a high-level SWE agent working alongside me on Leger. Leger is a front-end system for provisioning OpenWebUI deployments on Beam.cloud. It reduces the complexity of OpenWebUI's 300+ environment variables and offers users a friendly way to launch preconfigured pods.
+
+Your task is to **design the frontend user flow only**, using ShadCN components inside a modern Next.js App Router project. **Do not generate backend code.** We already have a complete Python backend that handles account management, secrets, and deployment. Your role is to illustrate the click-through flow.
+
+## UX Design Philosophy
+
+- **Leger is essentially a fancy data entry form**, but a very opinionated one: we hide complexity and reduce surface area.
+- Most OpenWebUI variables are pre-filled or hidden from the user—Leger acts as a middleware layer to provide **sensible defaults**.
+- You must simulate a **deployment journey from landing page to successful pod creation** using dummy data or placeholder states.
+
+## Key UX Rules
+
+- Some config options (like `auth` settings) are omitted from the UI because users are already authenticated in Leger.
+- If a setting (e.g., "Web Search Provider") supports multiple values, show a dropdown. When a provider is selected, render only the fields relevant to that choice.
+- Secrets (e.g., API keys) are stored separately and linked by name. The config UI only refers to them by name, not value.
+- Certain services (Redis, Object Storage) are **auto-provisioned** and need no user input. Just show that they’re "enabled by default".
+
+## Security Model
+
+For now, we use **unguessable URLs** for deployed OpenWebUI instances:
+- Each deployment is served under a UUID-based subdomain
+- No secondary auth is required after deployment
+- The frontend only needs to display this URL on the "Success" page
+
+## Design Scope
+
+You are responsible for rendering the following screens:
+- Landing Page (`/`)
+- Login Page (`/login`)
+- Signup Page (`/signup`)
+- Dashboard (`/dashboard`)
+- Deploy Config Summary (`/deploy`)
+- Deploying Feedback Page (`/deploying`)
+- Success Page (`/success`)
+
+Use **ShadCN UI components**, Tailwind layout, and placeholder data. Do not handle API requests or dynamic logic—only build the UI click flow.
+
+You may simulate logic using dummy conditionals if needed (e.g., mock a dropdown for provider selection showing related fields). This is a scaffold for UX planning, not a production-ready app.
+
+Remember: **no backend code**, no real form submissions, just the clickable experience and visual structure.
 
