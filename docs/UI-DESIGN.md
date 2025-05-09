@@ -27,5 +27,24 @@ namely there should be sections for:
 * analytics: COMNG SOON lets the admin do some monitoring on their team's openwebui usage activity
 Note: api keys and Secrets are managed by beam.cloud secrets directly rather than through my own database.
 
+# Work in progress:
+1) Prompt:
+```
+now moving on to the most important task at hand: creating the full GUI that illustrates the user journey from start to finish. for that we will use cloudflare workers (blog post atached here).  we are aiming for a full drill-thru, so to begin with we can keep the "default" python script to start the beam.cloud hosted pods running openwebui (it spins up a new openwebui instance each time), and "simulate"/use the actual user flow. so we generate the shadcn frontend and deploy the webapp on cloudflare workers, with account creation (only free access for now). no even need for staging right now just aim for mvp drillthrough.
+i was working on the immedsiate next steps indivudsually but realiozed that this is not the most pressing metter. the most pressing matter is to have a comprehensive mockup ui that i can click through and underastand the barebones journey. it s about "deploying" or the first time and ironing out all the issues. it s about creating the asccounts and setting up the databases and api keys oin the actual services. 
+i think this approahc is mofre sensible. prepare a comprhensive systme prompt that i can feed ot anm LLM whhich has acces to the whole leger labs ui codebase so far wit hthe above in mind. 
+use markdown and favor artifacts for each according to an oprchestrator-type level of thinking.
+```
+
+2) Notes
+#### UX Design Philosophy
+- Leger is essentially a fancy data entry form, but a very opinionated one: we hide complexity and reduce surface area.
+- Most OpenWebUI variables are pre-filled or hidden from the user—Leger acts as a middleware layer to provide sensible defaults.
+- You must simulate a deployment journey from landing page to successful pod creation using dummy data or placeholder states.
+#### Key UX Rules
+- Some config options (like auth settings) are omitted from the UI because users are already authenticated in Leger.
+- If a setting (e.g., "Web Search Provider") supports multiple values, show a dropdown. When a provider is selected, render only the fields relevant to that choice.
+- Secrets (e.g., API keys) are stored separately and linked by name. The config UI only refers to them by name, not value.
+- Certain services (Redis, Object Storage) are auto-provisioned and need no user input. Just show that they’re "enabled by default".
 
 

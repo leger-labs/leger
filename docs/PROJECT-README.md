@@ -4,6 +4,9 @@ A configuration management platform for managed OpenWebUI deployments.
 
 Leger is a comprehensive openwebui configuration management tool that works like Github Codespaces (or previously [Gitpod](gitpod.io), Coder and DevPod) and [ComfyUI Deploy](comfydeploy.com) but instead of launching VSCode-in-browser or comfyui; Leger enables users to launch pre-configured Open-webui sessions with full batteries included.
 
+Openwebui has over a hundred flags/environment variables it can be run with. 
+My goal with leger is to abstract away the overhead of spinning up additional services to get a "fully featured" openwebui deplyoment, from the admin who just wants to givve their team a chatgpt equivalent "with superpowers".
+
 ## How It Works
 
 tldr; 
@@ -16,6 +19,14 @@ tldr;
 - The platform serves two primary user types:
     - Administrators: Technical users who deploy and configure OpenWebUI instances
     - End users: Users who access the deployed OpenWebUI instances
+
+New user flow specified (might be different or similar to previous tldr, needs consolidation):
+* admin opens leger configurator
+* uses the gui to create a new deployment config
+* the gui is written in a way that catches any error before pushing with its robust zod schema for validation on the front end
+* admin saves the config which is now a new 
+* admin can "launch" an openwebui workspace which starts the beam.cloud pod with all the environment variables.
+
 
 [Optional: A short demo video or screenshot]
 
