@@ -1,3 +1,5 @@
+NEW INFORMATION: we want the openapi spec to also reflect the PRICING MODEL such that from the same place we can choose what feature is behind what pricing plan, and have the UI reflect that by greying out features.
+
 # Single Source of Truth Architecture Assessment for Leger
 
 ## Project Context Summary
@@ -742,3 +744,4 @@ I've analyzed the authentication and deployment protection screenshots, identify
 The authentication and protection screenshots have revealed important patterns around feature availability based on plan tiers, dynamic field collection management, and security configuration workflows. These screenshots show how Vercel handles premium features with clear upgrade paths while still allowing users to understand the value of restricted functionality. 
 
 The consistent treatment of documentation links and contextual help across all sections reinforces our understanding of Vercel's design philosophy around self-documentation and guided configuration. The interface shows remarkable consistency in how similar patterns (like adding multiple items to a list) are implemented across entirely different functional areas (paths, IPs, environment variables), suggesting a well-designed component system underpinning the entire interface.
+
