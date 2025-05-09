@@ -1,5 +1,6 @@
 {
   "openapi": "3.0.0",
+  "leger_schema_version": "0.0.1",
   "info": {
     "title": "OpenWebUI Configuration",
     "description": "Configuration schema for OpenWebUI environment variables",

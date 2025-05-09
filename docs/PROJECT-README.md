@@ -24,7 +24,7 @@ New user flow specified (might be different or similar to previous tldr, needs c
 * admin opens leger configurator
 * uses the gui to create a new deployment config
 * the gui is written in a way that catches any error before pushing with its robust zod schema for validation on the front end
-* admin saves the config which is now a new 
+* admin saves the config which is now a new json file with a uuid (saved in supabase, with timestamps)
 * admin can "launch" an openwebui workspace which starts the beam.cloud pod with all the environment variables.
 
 

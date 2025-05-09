@@ -1,8 +1,5 @@
 # Leger Project Retrospective
 
-## Project Evolution & Learning
-[Overview of how the project has evolved]
-
 ## Initial Concept & Validation
 Minimum functional product used to validate usefulness was the [following railway.app template](https://railway.com/new/template/Hez7Hu).
 Allowed for quick deployment of Open-webui and Pipelines backend combo with simple configuration management (environment variables). This was using the official docker images. Was limited by: annoying to maintain (openwebui project moving very fast, hard to update each time).
@@ -10,17 +7,43 @@ Instead we prefer python deployments.
 
 Open-webui has [many environment variables which allow for advanced functionality](https://docs.openwebui.com/getting-started/env-configuration) but the administrator has to be aware of many configuration flags and environment variables, often relying on external services (third-party or hosted on own infra).
 
-## Project Management Lessons
-[What worked and what didn't]
-### What Worked Well
-### Challenges & Solutions
-
 ## Technical Exploration Outcomes
-[Results of research into other systems]
 ### Vercel UI Component Analysis
-### Schema Enhancement Explorations
+### Storing owui configs in supabase database
+Save the configuration in jsonb format in the database as it makes migrations easier down the road:
+```
+CREATE TABLE user_configs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Config UUID
+  user_id UUID NOT NULL,                         -- Reference to your users
+  name TEXT,                                     -- Optional: user-friendly label (e.g., "Prod S3 Config")
+  schema_version TEXT NOT NULL,                  -- Ties this config to your OpenAPI spec version
+  config JSONB NOT NULL,                         -- The actual stripped-down config
+  created_at TIMESTAMPTZ DEFAULT NOW(),          -- When this version was saved
+  updated_at TIMESTAMPTZ DEFAULT NOW(),          -- Updated on modification
+  is_latest BOOLEAN DEFAULT TRUE,                -- Helps with quick lookups
+  version INTEGER GENERATED ALWAYS AS IDENTITY,  -- Auto-incrementing version for each config set
+  rollback_of UUID                               -- Optional: tracks if this was a rollback of another version
+);
+```
+Potential future improvement: Besides UUIDs, let users label their configs as `dev`, `prod`, `staging` as this makes config retrieval more human-readable and reduces errors
+### Single source of truth schema Enhancement Explorations
 The zod validation schema was not a good choice for being single source of truth because it has to be per-page. It is not a unified file and on a per data entry form per entity basis (entity is a grouping of env variables).
 This is why we chose the OpenAPI specification, which can serve as single source of truth for the dashboard.
+### Secrets management on Leger:
+```
+Architecture Overview
+1. Cloudflare Workers + KV (Frontend/UI + Local Cache)
+- You build a lightweight web UI using Cloudflare Workers.
+- Cloudflare KV stores a mirror/cached copy of the secrets.
+- Users interact with this UI to view, create, edit, or delete secrets.
+
+2. Sync Layer (2-Way Sync to/from Beam)
+- Since Beam secrets can only be managed via CLI:
+- You run a backend script (could be a server, or even a GitHub Action, etc.) that:
+- Reads KV state and pushes changes to Beam via beam secret create|modify|delete.
+- Fetches current Beam secrets via beam secret list/show, and updates KV.
+- Can run periodically or be triggered via webhook.
+```
 ### Authentication management for OWUI instances:
 Comments on auth-less owui instances with beam.cloud follow:
 
@@ -56,7 +79,6 @@ As our platform matures beyond MVP, we plan to implement additional security lay
 - **Network Isolation**: Advanced network controls to restrict what services instances can connect to
 By starting with the unguessable URL approach and progressively enhancing security, we can deliver immediate value while establishing a path toward enterprise-grade security for more demanding use cases. 
 ```
-
 
 
 ## Future Exploration Areas
