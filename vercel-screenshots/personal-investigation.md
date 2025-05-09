@@ -1,4 +1,4 @@
-# TO ORCHESTRATOR: This doc is invaluable: it contains my personal observations on the vercel bui
+# TO ORCHESTRATOR: This doc is invaluable: it contains my personal observations on the vercel ui
 
 Additional context: this is the Build and Deployment section of the settings. 
 of particilar relevance for me is the framework settions which has users select a preset from a dropdown and then manually override sane defaults 
@@ -57,5 +57,14 @@ The GitHub interface similarly compartmentalizes settings into logical groupings
 now come out of component analysis mode, revisit hte conversatin we have had thoroughly with a focus on my notes and observations on the design of the vercel configuration management tool altogether. 
 the thought and system design that this product reflects is astonoshing from a product perspective. the web entry form is well-compsrtmentalized (despiter the hundreds of flags and env variables that would need to be toggled or configured). each "grouping" of "subclass" of information is a separate entity (a collection of related fields to be toggled or inputed text into) that can be saved, and frequerntly a feature has links to the relevant part of the documentation explaining what a varaible is - including situations where the specific feature is tied to a specific pricing plan in which case the ui flags it, disables the button, slightly greys out the whole object and includes the proper redirect for the feature ("upgrade" or "talk to sales"). in my case since it s going to be an MVP with many documented but not yet implemented features this will be an amazing way to collect feedback about what feature users want next (allowing for nice prioritization system).
 
-you are orchestrator,  a world class cto with experience interacting with some of the world s best design systems (including github s). i want you to analyze how the entire vercel configuration management tool is likely manifested: what is the single source of truth schema that is used?
 if we remove away the abstraction that the UI components building bring, we see a clear pattern in information and featrure hierarchies linked with human-readable documentatin and the appropriate conditional logic (for instance variables that only need ot be set when other features are enabled). this is a model where the entire configuration management tool is Declarative. prepare several markdown artifacts where you explain 1) how you think this is done at vercel, 2) how this has been done before in other organizations, 3) if openapi specification is suitable as single source of truth, 4) if zod validation is suitable as single source of truth (and if zod + react web form is likely to be used by vercel for this configuratin mgmt tool), and 5) how each grouping of "features" can effectively be one github issue/one part of my project that can be worked on after the full frontend gets set up and then each one consists of preparing the documentation, any backend function implemented and connected to the UI, and finally we can do release notes as we progress throug hthe project)
+
+
+note from the security section: see how the Save button is greyed out until the user decides to implement a change, and then it becomes black and clickable. 
+
+in the config manager: notice how an error pops up a notification in bottom right when the entered data is invalid but the user proceeds to "Create". this notification fades after 10 seconds and can be dismissed manually. however the fields that were wrong are marked in red and stay that way even after the notification fades or is dismissed.
+
+in the main-config-management pictures, notice how the left menu has several sections Profile and Settings; those are all on the same page but with different headers. the left bar serves as navigatin (user can click on one subheader to navigate to it). also notice how left bar headers can be collapsed for easier reading.
+notice in main config management 4 and 5 the textbox is large enough for large paragraphs - and explicitly supports markdown in the text entry (appears as raw text, no need to render markdown)
+
+
