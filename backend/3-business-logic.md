@@ -1,81 +1,90 @@
-## Business Logic
+# Business Logic
+
+The business logic in Leger is implemented within the single Cloudflare Worker architecture, organized by domain. This document outlines the key business workflows, rules, and implementation approaches.
+
+## Stripe Integration Workflow
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant API as Leger API
-    participant DB as Database
+    participant Worker as Leger Worker
+    participant D1 as Cloudflare D1
     participant Stripe
     
     %% Customer Creation
-    User->>API: Request checkout
-    API->>DB: Check for existing customer
+    User->>Worker: Request checkout
+    Worker->>D1: Check for existing customer
     alt No customer exists
-        API->>Stripe: Create customer
-        Stripe-->>API: Return customer ID
-        API->>DB: Store customer ID
+        Worker->>Stripe: Create customer
+        Stripe-->>Worker: Return customer ID
+        Worker->>D1: Store customer ID
     else Customer exists
-        DB-->>API: Return customer ID
+        D1-->>Worker: Return customer ID
     end
     
     %% Checkout Session
-    API->>Stripe: Create checkout session
-    Stripe-->>API: Return session URL
-    API-->>User: Return session URL
+    Worker->>Stripe: Create checkout session
+    Stripe-->>Worker: Return session URL
+    Worker-->>User: Return session URL
     User->>Stripe: Complete checkout
     
     %% Webhook processing
-    Stripe->>API: subscription.created webhook
-    API->>API: Verify webhook signature
-    API->>DB: Log webhook event
-    API->>DB: Create/update subscription
-    API-->>Stripe: Return 200 OK
+    Stripe->>Worker: subscription.created webhook
+    Worker->>Worker: Verify webhook signature
+    Worker->>D1: Log webhook event
+    Worker->>D1: Create/update subscription
+    Worker-->>Stripe: Return 200 OK
     
     %% Customer Portal
-    User->>API: Request customer portal
-    API->>Stripe: Create portal session
-    Stripe-->>API: Return portal URL
-    API-->>User: Return portal URL
+    User->>Worker: Request customer portal
+    Worker->>Stripe: Create portal session
+    Stripe-->>Worker: Return portal URL
+    Worker-->>User: Return portal URL
     User->>Stripe: Manage subscription
     
     %% Subscription Updates
-    Stripe->>API: subscription.updated webhook
-    API->>API: Verify webhook signature
-    API->>DB: Log webhook event
-    API->>DB: Update subscription status
-    API-->>Stripe: Return 200 OK
+    Stripe->>Worker: subscription.updated webhook
+    Worker->>Worker: Verify webhook signature
+    Worker->>D1: Log webhook event
+    Worker->>D1: Update subscription status
+    Worker-->>Stripe: Return 200 OK
     
     %% Payment issues
-    Stripe->>API: invoice.payment_failed webhook
-    API->>API: Verify webhook signature
-    API->>DB: Log webhook event
-    API->>DB: Update subscription to past_due
-    API-->>Stripe: Return 200 OK
+    Stripe->>Worker: invoice.payment_failed webhook
+    Worker->>Worker: Verify webhook signature
+    Worker->>D1: Log webhook event
+    Worker->>D1: Update subscription to past_due
+    Worker-->>Stripe: Return 200 OK
     
     %% Cancellation
-    Stripe->>API: subscription.deleted webhook
-    API->>API: Verify webhook signature
-    API->>DB: Log webhook event
-    API->>DB: Mark subscription as canceled
-    API-->>Stripe: Return 200 OK
+    Stripe->>Worker: subscription.deleted webhook
+    Worker->>Worker: Verify webhook signature
+    Worker->>D1: Log webhook event
+    Worker->>D1: Mark subscription as canceled
+    Worker-->>Stripe: Return 200 OK
 ```
 
 # Core Business Logic
 
-This section documents the essential business functions, rules, workflows, and constraints that form the core logic of the Leger system. These logic components need to be reimplemented in the Cloudflare ecosystem.
+This section documents the essential business functions, rules, workflows, and constraints that form the core logic of the Leger system, implemented within a single Cloudflare Worker using domain-driven design principles.
 
 ## Account Management Logic
 
 ### User Registration and Account Creation
 
-When a new user registers with the system, several operations are performed automatically:
+When a new user authenticates with Cloudflare Access for the first time, several operations are performed automatically:
 
-1. Create a user record with the provided email and optional name
+1. Create a user record with information from the Cloudflare Access JWT
 2. Create a personal account for the user with:
    - The user as the primary owner with "owner" role
    - Name derived from the user's name or email
    - `personal_account` flag set to true
 3. The new user automatically enters a 14-day trial period with full feature access
+
+**Implementation Approach:**
+- Identity information is extracted from Cloudflare Access JWT
+- Business logic is encapsulated in the AccountDomain module
+- Account creation triggers provisioning of tenant-specific resources
 
 **Business Rules:**
 - Email addresses must be unique across all users
@@ -107,6 +116,12 @@ Team accounts allow multiple users to collaborate on shared configurations.
 5. If an owner attempts to leave, they must transfer primary ownership first
 6. Users can be members of multiple accounts simultaneously
 
+**Implementation Approach:**
+- Account operations are implemented in the AccountDomain module
+- Authorization checks occur in the Worker middleware
+- Access control is enforced before processing requests
+- Database operations use Drizzle ORM transactions to ensure data consistency
+
 ### Invitation Management
 
 Invitations allow account owners to add new members to team accounts.
@@ -126,7 +141,12 @@ Invitations allow account owners to add new members to team accounts.
 **Invitation Management:**
 1. Account owners can view all pending invitations for their accounts
 2. Account owners can delete any pending invitation
-3. Users can look up invitation details using the token before accepting
+3. Users can look up invitation token details before accepting
+
+**Implementation Approach:**
+- Email delivery handled by Cloudflare Email Workers
+- Invitation validation implemented in the AccountDomain module
+- Secure token generation and verification
 
 ## Configuration Management Logic
 
@@ -156,6 +176,12 @@ Invitations allow account owners to add new members to team accounts.
 2. Deletion removes the configuration and all its versions
 3. Deletion is permanent and cannot be undone
 
+**Implementation Approach:**
+- Configuration operations implemented in the ConfigurationDomain module
+- Versioning implemented explicitly in Worker code (not via database triggers)
+- Transaction-based operations ensure data consistency
+- Access control enforced at the application level
+
 ### Template Management
 
 Templates are special configurations that can be shared and reused.
@@ -172,6 +198,11 @@ Templates are special configurations that can be shared and reused.
 2. Application creates a new configuration based on the template data
 3. Users can override specific values during application
 4. The new configuration is not linked to the original template after creation
+
+**Implementation Approach:**
+- Template operations implemented in the ConfigurationDomain module
+- Public template discovery optimized through caching
+- Authorization checks for template creation based on subscription
 
 ### Version Management
 
@@ -199,6 +230,43 @@ Version management tracks the history of changes to configurations.
 3. The version number is incremented, not reverted
 4. Restoration action is recorded in the version history
 
+**Implementation Approach:**
+- Version operations implemented in the VersionDomain module
+- Diff computation performed in the Worker
+- JSON comparison utilities for efficient difference detection
+- Explicit versioning in transaction-based operations
+
+## Multi-Tenant Resource Provisioning Logic
+
+Leger provides dedicated resources for each tenant account, managed through the Resource Provisioning domain.
+
+**Resource Provisioning Flow:**
+1. Account creation triggers resource provisioning
+2. System creates dedicated resources for the tenant:
+   - R2 bucket for object storage
+   - Upstash Redis instance for caching
+3. Resource identifiers and access details are stored securely
+4. Resources are tagged with tenant identifiers for management
+
+**Resource Access Flow:**
+1. When a tenant operation requires a specific resource:
+   - The Worker looks up resource mapping in D1
+   - Resource credentials are retrieved and decrypted
+   - Worker connects to the appropriate resource
+2. Complete isolation between tenant resources is maintained
+
+**Resource Management:**
+1. Resources are scaled based on subscription tier
+2. Resource usage is monitored
+3. Resources can be reconfigured when subscription changes
+4. Resources are preserved during account deactivation
+
+**Implementation Approach:**
+- Provisioning implemented in the ResourceProvisioningDomain module
+- Credential encryption/decryption handled securely
+- Resource pooling for optimal performance
+- Background provisioning tasks for non-blocking operation
+
 ## Subscription and Billing Logic
 
 ### Subscription Management
@@ -211,8 +279,8 @@ Version management tracks the history of changes to configurations.
 
 **Checkout Process:**
 1. Users can initiate subscription checkout from the UI
-2. System creates or retrieves a Stripe customer for the account
-3. System creates a Stripe checkout session with the correct pricing
+2. Worker creates or retrieves a Stripe customer for the account
+3. Worker creates a Stripe checkout session with the correct pricing ($99/month)
 4. After successful checkout, the subscription becomes active
 5. If a user already has a subscription, they are redirected to the customer portal
 
@@ -226,6 +294,7 @@ Version management tracks the history of changes to configurations.
 1. Users can cancel their subscription through the Stripe customer portal
 2. Canceled subscriptions remain active until the end of the current billing period
 3. After the billing period ends, the account reverts to free tier access
+4. User can resubscribe at any time
 
 ### Feature Access Control
 
@@ -244,12 +313,85 @@ The subscription status determines feature access through a layered control syst
 4. All collaboration features enabled
 
 **Access Control Functions:**
-1. `can_create_configuration()` - Checks if the account has reached its configuration limit
-2. `can_share_configuration()` - Checks if the account can create and share templates
-3. `can_use_advanced_features()` - Checks access to premium features
+1. `canCreateConfiguration()` - Checks if the account has reached its configuration limit
+2. `canShareConfiguration()` - Checks if the account can create and share templates
+3. `canUseAdvancedFeatures()` - Checks access to premium features
+
+**Implementation Approach:**
+- Authorization helpers implemented in utility functions
+- Feature access checked before each relevant operation
+- Clear error messages explain subscription requirements when access is denied
+
+```typescript
+// utils/subscription.ts
+import { eq } from 'drizzle-orm';
+import { billingSubscriptions } from '../db/schema';
+
+// Check if account has access to premium features
+export async function hasPremiumAccess(
+  accountId: string,
+  db: D1Database
+): Promise<boolean> {
+  const subscription = await db.query.billingSubscriptions.findFirst({
+    where: eq(billingSubscriptions.account_id, accountId),
+    orderBy: [{ created: 'desc' }],
+  });
+  
+  if (!subscription) {
+    return false;
+  }
+  
+  // Active or trialing subscriptions have premium access
+  return ['active', 'trialing'].includes(subscription.status);
+}
+
+// Check if account can create templates
+export async function canCreateTemplates(
+  accountId: string,
+  db: D1Database
+): Promise<boolean> {
+  return await hasPremiumAccess(accountId, db);
+}
+
+// Check if account can use advanced features
+export async function canUseAdvancedFeatures(
+  accountId: string,
+  db: D1Database
+): Promise<boolean> {
+  return await hasPremiumAccess(accountId, db);
+}
+```
 
 **Subscription Verification:**
 1. Feature access is checked before each relevant operation
-2. System enforces limits based on the current subscription status
+2. Worker enforces limits based on the current subscription status
 3. Clear error messages explain subscription requirements when access is denied
 
+## Deployment Logic
+
+Leger implements a seamless deployment workflow for OpenWebUI configurations.
+
+**Deployment Creation:**
+1. User selects a configuration to deploy
+2. System validates configuration completeness
+3. Configuration is transformed to deployment parameters
+4. System calls Beam.cloud API to create Pod
+5. Deployment status and URL are recorded
+
+**Deployment Management:**
+1. Users can view deployment status
+2. Users can stop active deployments
+3. System periodically polls for status updates
+4. Error handling and retry mechanisms for failed deployments
+
+**Environment Variable Transformation:**
+1. Configuration JSON is transformed to OpenWebUI environment variables
+2. Sensitive values are replaced with Beam.cloud secret references
+3. Array/object values are properly serialized
+4. Validation ensures all required variables are present
+
+**Implementation Approach:**
+- Deployment operations implemented in the DeploymentDomain module
+- Beam.cloud API client for Pod management
+- Configuration transformation utilities
+- Status tracking and updates

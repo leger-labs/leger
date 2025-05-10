@@ -1,4 +1,6 @@
-## Data Models
+# Data Models
+
+## Entity Relationship Diagram
 
 ```mermaid
 erDiagram
@@ -9,371 +11,395 @@ erDiagram
     User ||--o{ AccountUser : "belongs to"
     Account ||--o{ BillingSubscription : "has subscription"
     Account ||--o{ BillingCustomer : "has billing customer"
+    Account ||--o{ TenantResource : "has dedicated"
     
     User {
-        uuid id PK
-        string email
-        string name
-        string avatar_url
-        datetime created_at
+        string id PK "Generated UUID"
+        string email "From Cloudflare Access"
+        string name "From Cloudflare Access"
+        string avatar_url "Optional"
+        string created_at "ISO datetime"
     }
     
     Account {
-        uuid id PK
-        string name
-        string slug
-        boolean personal_account
-        uuid primary_owner_user_id FK
-        jsonb metadata
-        datetime created_at
-        datetime updated_at
+        string id PK "Generated UUID"
+        string name "Display name"
+        string slug "URL-friendly identifier"
+        boolean personal_account "0 or 1"
+        string primary_owner_user_id FK "User ID"
+        string metadata "JSON string"
+        string created_at "ISO datetime"
+        string updated_at "ISO datetime"
     }
     
     AccountUser {
-        uuid id PK
-        uuid account_id FK
-        uuid user_id FK
-        string account_role
-        datetime created_at
+        string id PK "Generated UUID"
+        string account_id FK "References Account"
+        string user_id FK "References User"
+        string account_role "owner or member"
+        string created_at "ISO datetime"
     }
     
     Configuration {
-        uuid config_id PK
-        uuid account_id FK
-        string name
-        string description
-        jsonb config_data
-        boolean is_template
-        boolean is_public
-        int version
-        datetime created_at
-        datetime updated_at
-        uuid created_by FK
-        uuid updated_by FK
+        string config_id PK "Generated UUID"
+        string account_id FK "References Account"
+        string name "Display name"
+        string description "Optional"
+        string config_data "JSON string"
+        boolean is_template "0 or 1"
+        boolean is_public "0 or 1"
+        integer version "Auto-incremented"
+        string created_at "ISO datetime"
+        string updated_at "ISO datetime"
+        string created_by FK "User ID"
+        string updated_by FK "User ID"
     }
     
     ConfigurationVersion {
-        uuid version_id PK
-        uuid config_id FK
-        int version
-        jsonb config_data
-        datetime created_at
-        uuid created_by FK
-        string change_description
+        string version_id PK "Generated UUID"
+        string config_id FK "References Configuration"
+        integer version "Version number"
+        string config_data "JSON string"
+        string created_at "ISO datetime"
+        string created_by FK "User ID"
+        string change_description "Optional"
     }
     
     BillingSubscription {
-        string id PK
-        uuid account_id FK
-        string billing_customer_id FK
-        string status
-        string tier
-        string plan_name
-        boolean cancel_at_period_end
-        datetime created
-        datetime current_period_start
-        datetime current_period_end
-        datetime trial_start
-        datetime trial_end
-        int trial_remaining_days
-        jsonb metadata
-        string provider
+        string id PK "Stripe subscription ID"
+        string account_id FK "References Account"
+        string billing_customer_id FK "Stripe customer ID"
+        string status "Subscription status"
+        string tier "Subscription tier"
+        string plan_name "Human-readable name"
+        boolean cancel_at_period_end "0 or 1"
+        string created "ISO datetime"
+        string current_period_start "ISO datetime"
+        string current_period_end "ISO datetime"
+        string trial_start "ISO datetime, optional"
+        string trial_end "ISO datetime, optional"
+        integer trial_remaining_days "Optional"
+        string metadata "JSON string"
+        string provider "Default: stripe"
     }
     
     BillingCustomer {
-        string id PK
-        uuid account_id FK
-        string email
-        string provider
+        string id PK "Stripe customer ID"
+        string account_id FK "References Account"
+        string email "Customer email"
+        string provider "Default: stripe"
     }
     
     Invitation {
-        uuid invitation_id PK
-        uuid account_id FK
-        string token
-        string account_role
-        string invitation_type
-        datetime created_at
-        datetime expires_at
-        uuid created_by FK
-        boolean used
-        datetime used_at
+        string invitation_id PK "Generated UUID"
+        string account_id FK "References Account"
+        string token "Unique token"
+        string account_role "owner or member"
+        string invitation_type "one_time or 24_hour"
+        string created_at "ISO datetime"
+        string expires_at "ISO datetime, optional"
+        string created_by FK "User ID"
+        boolean used "0 or 1"
+        string used_at "ISO datetime, optional"
     }
     
     WebhookLog {
-        uuid id PK
-        string event_type
-        string subscription_id
-        string customer_id
-        uuid account_id
-        jsonb data
-        datetime created_at
-        boolean processed
-        datetime processed_at
+        string id PK "Generated UUID"
+        string event_type "Webhook event type"
+        string subscription_id "Optional Stripe ID"
+        string customer_id "Optional Stripe ID"
+        string account_id "Optional Account ID"
+        string data "JSON string"
+        string created_at "ISO datetime"
+        boolean processed "0 or 1"
+        string processed_at "ISO datetime, optional"
+    }
+
+    TenantResource {
+        string id PK "Generated UUID"
+        string account_id FK "References Account"
+        string resource_type "r2, redis, etc."
+        string resource_id "External identifier"
+        string endpoint "Resource endpoint"
+        string credentials "JSON string (encrypted)"
+        string created_at "ISO datetime"
+        string updated_at "ISO datetime"
+        string status "provisioned, failed, etc."
+    }
+
+    Deployment {
+        string id PK "Generated UUID"
+        string account_id FK "References Account"
+        string config_id FK "References Configuration"
+        string beam_pod_id "Beam.cloud pod ID"
+        string status "pending, active, etc."
+        string url "Deployment URL"
+        string created_at "ISO datetime"
+        string updated_at "ISO datetime"
+        string created_by FK "User ID"
+        string error "Optional error message"
+        string metadata "JSON string"
     }
 ```
 
-# Detailed Data Models
+## Drizzle ORM Schema Definitions
 
-## User
+The data models are implemented using Drizzle ORM, providing type-safe access to Cloudflare D1. Below are the schema definitions for the core entities:
 
-The User entity represents an authenticated user of the system.
+### User Schema
 
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `id` | UUID | Primary key, unique identifier | Auto-generated |
-| `email` | String | User's email address | Valid email format, unique |
-| `name` | String | User's display name | Optional |
-| `avatar_url` | String | URL to user's avatar image | Optional, valid URL format |
-| `created_at` | DateTime | Account creation timestamp | Auto-generated |
+```typescript
+// db/schema/users.ts
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { createId } from '@paralleldrive/cuid2';
 
-**Relationships:**
-- A User can be a member of multiple Accounts through AccountUser
-- A User can create/update Configurations and Versions (tracked in audit fields)
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  avatar_url: text('avatar_url'),
+  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+});
+```
 
-**Indexing:**
-- Primary key on `id`
-- Unique index on `email` for fast lookups
+### Account Schema
 
-## Account
+```typescript
+// db/schema/accounts.ts
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { createId } from '@paralleldrive/cuid2';
+import { users } from './users';
 
-The Account entity represents either a personal or team account.
+export const accounts = sqliteTable('accounts', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  name: text('name').notNull(),
+  slug: text('slug').unique(),
+  personal_account: integer('personal_account', { mode: 'boolean' }).notNull().default(false),
+  primary_owner_user_id: text('primary_owner_user_id').notNull().references(() => users.id),
+  metadata: text('metadata', { mode: 'json' }).default('{}'),
+  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+});
 
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `id` | UUID | Primary key, unique identifier | Auto-generated |
-| `name` | String | Account display name | Required, not empty |
-| `slug` | String | URL-friendly account identifier | Optional, URL-safe characters, unique |
-| `personal_account` | Boolean | Whether this is a personal account | Required |
-| `primary_owner_user_id` | UUID | References the primary owner | Required, valid User ID |
-| `metadata` | JSON | Custom account metadata | Optional |
-| `created_at` | DateTime | Account creation timestamp | Auto-generated |
-| `updated_at` | DateTime | Last update timestamp | Auto-updated |
+export const accountUsers = sqliteTable('account_users', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  account_id: text('account_id').notNull().references(() => accounts.id),
+  user_id: text('user_id').notNull().references(() => users.id),
+  account_role: text('account_role').notNull().default('member'), // 'owner' or 'member'
+  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+});
+```
 
-**Relationships:**
-- An Account has many User members through AccountUser junction table
-- An Account owns many Configurations
-- An Account can have one BillingCustomer
-- An Account can have many BillingSubscriptions (historical record)
+### Configuration Schema
 
-**Indexing:**
-- Primary key on `id`
-- Index on `primary_owner_user_id` for fast ownership lookups
-- Unique index on `slug` if provided
+```typescript
+// db/schema/configurations.ts
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { createId } from '@paralleldrive/cuid2';
+import { accounts } from './accounts';
+import { users } from './users';
 
-**Business Rules:**
-- Personal accounts are automatically created during user registration
-- Team accounts are created explicitly by users
-- Every account must have at least one owner role
-- The primary owner cannot be removed from the account
+export const configurations = sqliteTable('configurations', {
+  config_id: text('config_id').primaryKey().$defaultFn(() => createId()),
+  account_id: text('account_id').notNull().references(() => accounts.id),
+  name: text('name').notNull(),
+  description: text('description'),
+  config_data: text('config_data', { mode: 'json' }).notNull().default('{}'),
+  is_template: integer('is_template', { mode: 'boolean' }).notNull().default(false),
+  is_public: integer('is_public', { mode: 'boolean' }).notNull().default(false),
+  version: integer('version').notNull().default(1),
+  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  created_by: text('created_by').references(() => users.id),
+  updated_by: text('updated_by').references(() => users.id),
+});
 
-## AccountUser
+export const configurationVersions = sqliteTable('configuration_versions', {
+  version_id: text('version_id').primaryKey().$defaultFn(() => createId()),
+  config_id: text('config_id').notNull().references(() => configurations.config_id),
+  version: integer('version').notNull(),
+  config_data: text('config_data', { mode: 'json' }).notNull(),
+  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  created_by: text('created_by').references(() => users.id),
+  change_description: text('change_description'),
+});
+```
 
-Junction table representing the membership of a User in an Account.
+### Billing Schema
 
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `id` | UUID | Primary key, unique identifier | Auto-generated |
-| `account_id` | UUID | References the Account | Required, valid Account ID |
-| `user_id` | UUID | References the User | Required, valid User ID |
-| `account_role` | String | User's role in the account | Required, one of: "owner", "member" |
-| `created_at` | DateTime | Membership creation timestamp | Auto-generated |
+```typescript
+// db/schema/billing.ts
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { accounts } from './accounts';
 
-**Relationships:**
-- Links User to Account with a specific role
+export const billingCustomers = sqliteTable('billing_customers', {
+  id: text('id').primaryKey(), // Stripe customer ID
+  account_id: text('account_id').notNull().references(() => accounts.id).unique(),
+  email: text('email').notNull(),
+  provider: text('provider').notNull().default('stripe'),
+});
 
-**Indexing:**
-- Primary key on `id`
-- Composite index on (`account_id`, `user_id`) for fast lookups and enforcing uniqueness
-- Index on `user_id` for finding a user's accounts
+export const billingSubscriptions = sqliteTable('billing_subscriptions', {
+  id: text('id').primaryKey(), // Stripe subscription ID
+  account_id: text('account_id').notNull().references(() => accounts.id),
+  billing_customer_id: text('billing_customer_id').notNull().references(() => billingCustomers.id),
+  status: text('status').notNull(),
+  tier: text('tier').notNull().default('standard'),
+  plan_name: text('plan_name').notNull(),
+  cancel_at_period_end: integer('cancel_at_period_end', { mode: 'boolean' }).notNull().default(false),
+  created: text('created').notNull(),
+  current_period_start: text('current_period_start').notNull(),
+  current_period_end: text('current_period_end').notNull(),
+  trial_start: text('trial_start'),
+  trial_end: text('trial_end'),
+  trial_remaining_days: integer('trial_remaining_days'),
+  metadata: text('metadata', { mode: 'json' }).default('{}'),
+  provider: text('provider').notNull().default('stripe'),
+});
+```
 
-**Business Rules:**
-- Valid roles are limited to "owner" and "member"
-- A user cannot have duplicate memberships in the same account
-- The primary owner of an account must have the "owner" role
+### Tenant Resources Schema
 
-## Configuration
+```typescript
+// db/schema/tenant-resources.ts
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { createId } from '@paralleldrive/cuid2';
+import { accounts } from './accounts';
 
-The Configuration entity stores the latest version of configuration data.
+export const tenantResources = sqliteTable('tenant_resources', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  account_id: text('account_id').notNull().references(() => accounts.id),
+  resource_type: text('resource_type').notNull(), // 'r2', 'redis', etc.
+  resource_id: text('resource_id').notNull(), // External identifier
+  endpoint: text('endpoint').notNull(), // Resource endpoint
+  credentials: text('credentials', { mode: 'json' }).notNull(), // Encrypted
+  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  status: text('status').notNull().default('provisioning'), // 'provisioning', 'provisioned', 'failed'
+});
+```
 
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `config_id` | UUID | Primary key, unique identifier | Auto-generated |
-| `account_id` | UUID | Account that owns this configuration | Required, valid Account ID |
-| `name` | String | Configuration display name | Required, not empty |
-| `description` | String | Configuration description | Optional |
-| `config_data` | JSON | The actual configuration data | Required, valid JSON |
-| `is_template` | Boolean | Whether this is a template configuration | Required, default false |
-| `is_public` | Boolean | Whether this configuration is publicly accessible | Required, default false |
-| `version` | Integer | Current version number | Required, default 1, auto-incremented |
-| `created_at` | DateTime | Creation timestamp | Auto-generated |
-| `updated_at` | DateTime | Last update timestamp | Auto-updated |
-| `created_by` | UUID | User who created this configuration | Optional, valid User ID |
-| `updated_by` | UUID | User who last updated this configuration | Optional, valid User ID |
+### Deployment Schema
 
-**Relationships:**
-- Belongs to an Account
-- Has many ConfigurationVersions as history
-- Related to Users through audit fields
+```typescript
+// db/schema/deployments.ts
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { createId } from '@paralleldrive/cuid2';
+import { accounts } from './accounts';
+import { configurations } from './configurations';
+import { users } from './users';
 
-**Indexing:**
-- Primary key on `config_id`
-- Index on `account_id` for listing account configurations
-- Composite index on (`is_template`, `is_public`) for filtering public templates
+export const deployments = sqliteTable('deployments', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  account_id: text('account_id').notNull().references(() => accounts.id),
+  config_id: text('config_id').notNull().references(() => configurations.config_id),
+  beam_pod_id: text('beam_pod_id'),
+  status: text('status').notNull().default('pending'), // 'pending', 'active', 'failed', 'stopped'
+  url: text('url'),
+  created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+  updated_at: text('updated_at').$defaultFn(() => new Date().toISOString()),
+  created_by: text('created_by').references(() => users.id),
+  error: text('error'),
+  metadata: text('metadata', { mode: 'json' }).default('{}'),
+});
+```
 
-**Business Rules:**
-- When a configuration is updated, the previous state is stored as a ConfigurationVersion
-- Templates can be marked as public to be shared across accounts
-- Version number is automatically incremented on each update to config_data
-- Free tier accounts have a limit on the number of configurations they can create
+## Data Access Patterns
 
-## ConfigurationVersion
+The application uses Drizzle ORM to interact with the Cloudflare D1 database. This provides type-safe queries and ensures data integrity through the type system.
 
-The ConfigurationVersion entity stores historical versions of configuration data.
+### Example Query Patterns
 
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `version_id` | UUID | Primary key, unique identifier | Auto-generated |
-| `config_id` | UUID | References the parent Configuration | Required, valid Configuration ID |
-| `version` | Integer | Version number | Required, positive integer |
-| `config_data` | JSON | The configuration data at this version | Required, valid JSON |
-| `created_at` | DateTime | Version creation timestamp | Auto-generated |
-| `created_by` | UUID | User who created this version | Optional, valid User ID |
-| `change_description` | String | Description of changes in this version | Optional |
+```typescript
+// Retrieving a user's accounts
+const getUserAccounts = async (userId: string) => {
+  return await db
+    .select({
+      account: accounts,
+      role: accountUsers.account_role,
+    })
+    .from(accounts)
+    .innerJoin(accountUsers, eq(accounts.id, accountUsers.account_id))
+    .where(eq(accountUsers.user_id, userId));
+};
 
-**Relationships:**
-- Belongs to a Configuration
-- Optional relation to User who created the version
+// Creating a new configuration
+const createConfiguration = async (data, userId: string, accountId: string) => {
+  return await db.transaction(async (tx) => {
+    // Create the configuration
+    const [config] = await tx
+      .insert(configurations)
+      .values({
+        account_id: accountId,
+        name: data.name,
+        description: data.description,
+        config_data: data.config_data,
+        is_template: data.is_template || false,
+        is_public: data.is_public || false,
+        created_by: userId,
+        updated_by: userId,
+      })
+      .returning();
 
-**Indexing:**
-- Primary key on `version_id`
-- Index on `config_id` for listing versions of a configuration
-- Composite index on (`config_id`, `version`) for quickly finding specific versions
+    // Create initial version
+    await tx.insert(configurationVersions).values({
+      config_id: config.config_id,
+      version: 1,
+      config_data: data.config_data,
+      created_by: userId,
+      change_description: 'Initial version',
+    });
 
-**Business Rules:**
-- Versions are immutable once created
-- A new version is created automatically when the parent configuration's data is updated
-- When restoring from a previous version, a new version is created (not reverting to an old one)
+    return config;
+  });
+};
+```
 
-## BillingCustomer
+## Business Rules and Data Validation
 
-The BillingCustomer entity links an Account to a Stripe customer.
+Data validation is implemented at multiple levels:
 
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `id` | String | Primary key, Stripe customer ID | Required |
-| `account_id` | UUID | References the Account | Required, valid Account ID |
-| `email` | String | Customer email address | Required, valid email |
-| `provider` | String | Billing provider name | Required, default "stripe" |
+1. **Frontend Validation**: Using Zod schemas with React Hook Form
+2. **Worker Validation**: Server-side validation using the same Zod schemas
+3. **Database Constraints**: SQL constraints enforced by D1
+4. **Application Logic**: Additional business rules enforced in code
 
-**Relationships:**
-- Belongs to an Account
-- Related to BillingSubscriptions
+### Shared Zod Schemas
 
-**Indexing:**
-- Primary key on `id`
-- Unique index on `account_id` (one Stripe customer per account)
+```typescript
+// shared/validation/configuration.schema.ts
+import { z } from 'zod';
 
-**Business Rules:**
-- Created during the first checkout process
-- Email is synchronized with the account owner's email
+export const configurationSchema = z.object({
+  name: z.string().min(1, "Name is required").max(255),
+  description: z.string().optional(),
+  config_data: z.record(z.any()).default({}),
+  is_template: z.boolean().optional().default(false),
+  is_public: z.boolean().optional().default(false),
+});
 
-## BillingSubscription
+export const configurationUpdateSchema = configurationSchema.partial();
 
-The BillingSubscription entity tracks subscription status and details.
+export type ConfigurationInput = z.infer<typeof configurationSchema>;
+export type ConfigurationUpdateInput = z.infer<typeof configurationUpdateSchema>;
+```
 
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `id` | String | Primary key, Stripe subscription ID | Required |
-| `account_id` | UUID | References the Account | Required, valid Account ID |
-| `billing_customer_id` | String | References the BillingCustomer | Required |
-| `status` | String | Subscription status | Required, one of predefined statuses |
-| `tier` | String | Subscription tier name | Required, default "standard" |
-| `plan_name` | String | Human-readable plan name | Required |
-| `cancel_at_period_end` | Boolean | Whether subscription will cancel at period end | Required, default false |
-| `created` | DateTime | Subscription creation timestamp | Required |
-| `current_period_start` | DateTime | Start of current billing period | Required |
-| `current_period_end` | DateTime | End of current billing period | Required |
-| `trial_start` | DateTime | Start of trial period | Optional |
-| `trial_end` | DateTime | End of trial period | Optional |
-| `trial_remaining_days` | Integer | Days remaining in trial | Optional |
-| `metadata` | JSON | Additional subscription metadata | Optional |
-| `provider` | String | Billing provider name | Required, default "stripe" |
+## Multi-Tenant Resource Management
 
-**Relationships:**
-- Belongs to an Account
-- Related to a BillingCustomer
+The `tenant_resources` table tracks dedicated resources provisioned for each tenant:
 
-**Indexing:**
-- Primary key on `id`
-- Index on `account_id` for finding account subscriptions
-- Index on `status` for filtering by status
+1. **Resource Provisioning**: When a new account is created, the system automatically provisions:
+   - A dedicated R2 bucket for file storage
+   - A dedicated Upstash Redis instance for caching
 
-**Business Rules:**
-- Valid statuses include: "active", "trialing", "past_due", "canceled", "incomplete", "incomplete_expired"
-- Only the most recent subscription record for an account is considered active
-- Trial periods are 14 days by default for new users
-- When subscription status changes, a new record may be created or existing one updated (based on webhook)
+2. **Resource Access**: When a request needs to access a tenant-specific resource:
+   - The Worker queries the tenant_resources table
+   - The appropriate endpoint and credentials are retrieved
+   - The Worker connects to the resource using these credentials
 
-## Invitation
+3. **Resource Lifecycle**: Resources follow the same lifecycle as the account:
+   - Created during account provisioning
+   - Updated if needed during subscription changes
+   - Resources are retained when accounts are deactivated (for potential recovery)
 
-The Invitation entity represents an invitation to join an Account.
-
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `invitation_id` | UUID | Primary key, unique identifier | Auto-generated |
-| `account_id` | UUID | References the Account | Required, valid Account ID |
-| `token` | String | Unique invitation token | Required, auto-generated, unique |
-| `account_role` | String | Role to grant on acceptance | Required, one of: "owner", "member" |
-| `invitation_type` | String | Type of invitation | Required, one of: "one_time", "24_hour" |
-| `created_at` | DateTime | Creation timestamp | Auto-generated |
-| `expires_at` | DateTime | Expiration timestamp | Required, calculated based on type |
-| `created_by` | UUID | User who created the invitation | Required, valid User ID |
-| `used` | Boolean | Whether invitation has been used | Required, default false |
-| `used_at` | DateTime | When invitation was accepted | Optional |
-
-**Relationships:**
-- Belongs to an Account
-- Created by a User
-
-**Indexing:**
-- Primary key on `invitation_id`
-- Unique index on `token` for secure lookups
-- Index on `account_id` for listing account invitations
-
-**Business Rules:**
-- "one_time" invitations never expire until used
-- "24_hour" invitations expire after 24 hours
-- Only account owners can create invitations
-- Invitations can only be used once
-- Expired or used invitations cannot be accepted
-
-## WebhookLog
-
-The WebhookLog entity logs webhook events from external services.
-
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `id` | UUID | Primary key, unique identifier | Auto-generated |
-| `event_type` | String | Type of webhook event | Required |
-| `subscription_id` | String | Related subscription ID | Optional |
-| `customer_id` | String | Related customer ID | Optional |
-| `account_id` | UUID | Related account ID | Optional |
-| `data` | JSON | Full webhook event data | Required |
-| `created_at` | DateTime | Event receipt timestamp | Auto-generated |
-| `processed` | Boolean | Whether event was processed | Required, default false |
-| `processed_at` | DateTime | When event was processed | Optional |
-
-**Relationships:**
-- May relate to an Account, BillingSubscription, or BillingCustomer
-
-**Indexing:**
-- Primary key on `id`
-- Index on `event_type` for filtering by event type
-- Index on `created_at` for chronological listing
-- Index on `processed` for finding unprocessed events
-
-**Business Rules:**
-- All webhook events are logged before processing
-- Processing status is updated after successful handling
-- Failed processing can be retried
+This approach ensures complete data isolation between tenants while maintaining the operational benefits of a single Worker architecture.

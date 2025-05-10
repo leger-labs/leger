@@ -20,21 +20,41 @@ tldr;
     - Administrators: Technical users who deploy and configure OpenWebUI instances
     - End users: Users who access the deployed OpenWebUI instances
 
-New user flow specified (might be different or similar to previous tldr, needs consolidation):
+New user flow:
 * admin opens leger configurator
 * uses the gui to create a new deployment config
 * the gui is written in a way that catches any error before pushing with its robust zod schema for validation on the front end
-* admin saves the config which is now a new json file with a uuid (saved in supabase, with timestamps)
-* admin can "launch" an openwebui workspace which starts the beam.cloud pod with all the environment variables.
-
-
-[Optional: A short demo video or screenshot]
+* admin saves the config which is now a new json file with a uuid (saved in D1 database, with timestamps)
+* admin can "launch" an openwebui workspace which starts the beam.cloud pod with all the environment variables
 
 ## Core Features
 
-- [Key feature 1]
-- [Key feature 2]
-- [Key feature 3]
+- **Configuration Management**: Create, update, and version JSON configuration data for OpenWebUI
+- **Template System**: Create and share configuration templates
+- **Team Collaboration**: Team accounts with role-based permissions
+- **Version Control**: Track changes to configurations with comparison and restoration
+- **Subscription Model**: Tiered access with free and paid options
+- **Per-Account Resource Provisioning**: Dedicated storage and services for each tenant
+
+## Subscription Plans
+
+- **Free Tier**:
+  - Available after trial expiration
+  - Limited to 3 configurations
+  - Cannot create or share templates
+  - Basic versioning features only
+
+- **Standard Plan** ($99/month):
+  - 50 configurations maximum
+  - Full template creation and sharing
+  - Advanced versioning features
+  - All collaboration capabilities
+
+- **Trial Period**:
+  - 14 days of full access
+  - Automatically provided to new users
+  - All premium features available
+  - Seamless transition to paid plan
 
 ## User Journeys
 
@@ -46,15 +66,40 @@ Besides from the admin, users just want to access a company-approved ChatGPT-esq
 
 ## Architecture Overview
 
-[Simplified architecture diagram or description]
+Leger employs a single Cloudflare Worker architecture that handles both frontend and backend responsibilities, with fly.io providing a bridge to Beam.cloud for OpenWebUI deployments:
+
+```
+Frontend/Backend (Cloudflare Worker) → fly.io → Beam.cloud → OpenWebUI Pods
+```
 
 ## Technical Details & Implementation Considerations
 
-It is important to distinguish the OWUI deployments which rely entirely on Beam.cloud from the "actual webapp" that I will be coding myself. 
+Leger is built with the following architecture:
 
-My vision for Leger is to enable "fully decked out" openwebui managed deployments out-of-the-box. This means that we are responsible for provisioning those "support" services (ie. different data/object storage types) automatically for each Leger account. For this we will rely on two providers (at least until Q4'25); in order of preference:
-1) Beam.cloud: It's like Beam was purpose-built to exist as infrastructure support and backbone for Leger. We aim to rely maximally on its available tooling and capabilities, including its Pods deployments (example of this for a simple OWUI session at the end of this doc). It also has ASGI (asynchronous server gateway interface) already baked in.
-2) Cloudflare: I have access to Cloudflare credits, and we can benefit from its vast ecosystem of database services (including redis, s3 object, postgres equivalent etc). [Recent cloudflare workers developments](https://blog.cloudflare.com/full-stack-development-on-cloudflare-workers) make it very attractive option to host the Leger webapp (configuration management tool). More on this in a following section. 
+1. **Single Cloudflare Worker**: 
+   - Handles both frontend rendering and backend API logic
+   - Uses domain-driven design to organize code by business function
+   - Implements React for frontend with shadcn/ui components
+
+2. **Database**:
+   - Cloudflare D1 (SQLite-compatible) with Drizzle ORM
+   - Type-safe database operations with comprehensive schema
+   - Version tracking for configurations
+
+3. **Authentication**:
+   - Cloudflare Access for identity management
+   - JWT-based authentication flow
+   - Application-level authorization with role-based permissions
+
+4. **Resource Management**:
+   - Per-tenant R2 buckets for dedicated object storage
+   - Per-tenant Upstash Redis instances
+   - Cloudflare KV for secrets management (synchronized with Beam.cloud)
+
+5. **Deployment Bridge**:
+   - fly.io serverless functions connect to Beam.cloud
+   - Python-based deployment orchestration
+   - Environment variable transformation for OpenWebUI pods
 
 Open-webui offers extremely comprehensive advanced AI capabilities, all in one OSS product but its configuration involves many moving pieces:
 - [Standalone Front-end](https://github.com/open-webui/open-webui)

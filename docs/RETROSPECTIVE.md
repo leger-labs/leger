@@ -80,6 +80,25 @@ As our platform matures beyond MVP, we plan to implement additional security lay
 By starting with the unguessable URL approach and progressively enhancing security, we can deliver immediate value while establishing a path toward enterprise-grade security for more demanding use cases. 
 ```
 
+## Architectural Evolution: Single-Worker Cloudflare Architecture
+
+After extensive analysis of requirements and implementation options, we've made the strategic decision to adopt a single Cloudflare Worker architecture that handles both frontend and backend responsibilities. This architecture provides several advantages:
+
+1. **Simplified Deployment**: A single Worker reduces deployment complexity and ensures consistency between frontend and backend code.
+2. **Edge Computing Benefits**: Leveraging Cloudflare's global edge network provides low-latency access worldwide.
+3. **Domain-Driven Design**: Organizing code by business domain rather than technical layer better aligns with Leger's configuration-centric model.
+4. **Streamlined Development**: Using TypeScript throughout the entire stack with shared validation schemas reduces duplication and ensures consistency.
+
+## Fly.io Bridge for Beam.cloud Integration
+
+For OpenWebUI deployments, we've implemented a critical bridge using fly.io. This architectural decision addresses a key limitation: Cloudflare Workers cannot directly create Beam.cloud pods (which require Python). The fly.io service provides:
+
+1. **Lightweight API Layer**: Exposes REST endpoints that the Cloudflare Worker can call
+2. **Python Execution Environment**: Runs the Beam.cloud Python SDK commands
+3. **Deployment Orchestration**: Handles the complete lifecycle of OpenWebUI pod deployments
+4. **Secret Synchronization**: Ensures credentials are properly synchronized between systems
+
+This hybrid approach combines the strengths of Cloudflare's edge computing platform with Beam.cloud's specialized container deployment capabilities.
 
 ## Future Exploration Areas
 [Areas that warrant further investigation]
@@ -187,6 +206,3 @@ webui_server = Pod(
 result = webui_server.create()
 print("URL:", result.url)
 ```
-
-
-
