@@ -82,6 +82,23 @@ A key feature of Leger is its ability to provision dedicated resources for each 
 
 This approach ensures complete data isolation between tenants while providing a seamless experience for administrators. The provisioning process is automatically triggered during account creation.
 
+## Cloudflare Worker Organization
+
+The single Cloudflare Worker architecture follows a domain-driven approach to code organization:
+
+1. **Route Handler Layer**: Entry points that parse requests, validate input, and dispatch to appropriate domain services
+2. **Domain Services Layer**: Core business logic organized by domain (accounts, configurations, versions, etc.)
+3. **Data Access Layer**: Type-safe database operations using Drizzle ORM
+4. **Shared Utilities**: Cross-cutting concerns like validation, error handling, and security
+
+This layered approach within a single Worker provides several advantages:
+- Clear separation of concerns without multiple deployment units
+- Consistent error handling and validation
+- Type safety throughout the entire application
+- Simpler deployment and maintenance
+
+Each domain maintains its own set of handlers, services, schemas, and types while sharing core infrastructure like database access and authentication.
+
 ## Implementation Strategy
 
 The Leger implementation strategy leverages modern frontend and edge computing technologies:
@@ -98,11 +115,13 @@ This approach combines the best aspects of serverless, edge computing, and moder
 
 For successful implementation, special attention should be paid to:
 
-1. **Authentication Integration**: Mapping Cloudflare Access identities to internal account records
-2. **Authorization Logic**: Implementing robust access control at the application level
-3. **Versioning System**: Implementing explicit versioning code without database triggers
-4. **Subscription Controls**: Maintaining feature access based on subscription status
-5. **Resource Provisioning**: Automating the creation and management of per-tenant resources
-6. **Worker Size Optimization**: Ensuring the Worker stays within size limits through code splitting and optimizations
+1. **Authentication Integration**: Implementing JWT validation for Cloudflare Access with proper caching to minimize overhead
+2. **Authorization Logic**: Using middleware-based access controls with role verification before business logic execution
+3. **Versioning System**: Implementing explicit versioning with transaction-based operations and proper rollback handling
+4. **Subscription Controls**: Creating helper functions to verify feature access based on subscription status
+5. **Resource Provisioning**: Utilizing background queues for non-blocking resource provisioning operations
+6. **Worker Size Optimization**: Employing code splitting and tree shaking to keep the Worker bundle within size limits
+7. **Error Handling**: Implementing consistent error response formats with appropriate status codes and error messages
+8. **Edge Caching**: Strategically caching responses to improve performance while maintaining data consistency
 
-By carefully implementing the business logic with these considerations in mind, Leger will provide a powerful, efficient platform for managing OpenWebUI deployments.
+By carefully implementing the business logic with these considerations in mind, Leger will provide a powerful, efficient platform for managing OpenWebUI deployments with minimal operational overhead.

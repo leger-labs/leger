@@ -97,6 +97,85 @@ Each domain contains its own:
 - Validation schemas
 - Type definitions
 
+```markdown
+## Worker Structure and Request Flow
+
+The Worker follows a structured request processing pipeline to ensure consistent handling of all operations:
+
+```mermaid
+flowchart TD
+    Request[Client Request] --> Router[Worker Router]
+    Router --> AuthMiddleware[Authentication Middleware]
+    AuthMiddleware --> ValidationMiddleware[Validation Middleware]
+    ValidationMiddleware --> DomainHandler[Domain-Specific Handler]
+    DomainHandler --> ServiceLayer[Domain Service]
+    ServiceLayer --> DB[(Cloudflare D1)]
+    ServiceLayer --> Resources[(Tenant Resources)]
+    ServiceLayer --> Response[Response Formatter]
+    Response --> Client[Client Application]
+```
+
+1. **Router**: Matches incoming requests to appropriate domain handlers
+2. **Middleware Pipeline**:
+   - Authentication: Verifies Cloudflare Access JWT and maps to user
+   - Validation: Uses Zod schemas to validate request data
+   - Authorization: Checks permissions based on account role and subscription
+3. **Domain Handler**: Extracts necessary data and calls domain service
+4. **Service Layer**: Executes business logic with error handling
+5. **Data Access**: Performs database operations via Drizzle ORM
+6. **Response Formatting**: Creates consistent response structure
+
+This workflow ensures that:
+- All requests follow a consistent processing pattern
+- Validation occurs before business logic execution
+- Error handling is uniform across all domains
+- Type safety is maintained throughout the request lifecycle
+
+### Error Handling Strategy
+
+Errors are handled consistently throughout the Worker:
+
+1. **Standard Error Format**:
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "request_id": "unique-request-id",
+    "validation": [...]  // Optional validation details
+  }
+}
+```
+
+2. **Error Propagation**:
+   - Domain-specific errors are created in the service layer
+   - A central error middleware catches and formats all errors
+   - Request IDs are preserved for troubleshooting
+   - Appropriate HTTP status codes are set based on error type
+
+3. **Error Categories**:
+   - Validation errors (400): Invalid input data
+   - Authentication errors (401): Invalid or missing JWT
+   - Authorization errors (403): Insufficient permissions
+   - Not found errors (404): Resource doesn't exist
+   - Quota errors (429): Rate or resource limits exceeded
+   - Server errors (500): Unexpected system failures
+
+## Worker Optimization Techniques
+
+The single Worker architecture employs several optimization techniques:
+
+1. **Lightweight Router**: Simple path-based routing using a trie structure for efficiency
+2. **Selective Middleware**: Middleware functions that run only for applicable routes
+3. **Response Streaming**: Streaming large responses where appropriate
+4. **Cold Start Optimization**: Minimizing dependencies to reduce cold start times
+5. **Bundle Size Management**: Code splitting and tree shaking to keep Worker size within limits
+6. **Connection Pooling**: Efficient reuse of database connections within request context
+7. **Strategic Caching**: Response caching with appropriate cache invalidation
+8. **Tenant Isolation**: Ensuring multi-tenant operations maintain proper isolation
+
+These optimizations ensure the Worker remains performant even as the application grows, while maintaining the simplicity of a single deployment unit.
+
 ## Multi-Tenant Resource Provisioning
 
 A key feature of Leger is its ability to provision dedicated resources for each tenant account:

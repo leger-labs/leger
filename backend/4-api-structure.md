@@ -31,6 +31,57 @@ Each route handler follows a consistent pattern:
 - Standardized response formatting
 - Consistent error handling
 
+## Domain-Driven API Structure
+
+Instead of a traditional REST architecture, Leger adopts a domain-driven API structure that aligns with the single Cloudflare Worker approach. This structure provides several advantages:
+
+1. **Business-Oriented Organization**: Routes reflect business domains rather than technical resources
+2. **Streamlined Validation**: Validation logic and schemas organized by domain
+3. **Consistent Error Handling**: Domain-specific error types and responses
+4. **Clarity of Purpose**: Each endpoint's intent is clear from its domain and path
+
+This approach ensures the API structure stays aligned with the application's business logic as it evolves.
+
+## Edge-Optimized API Design
+
+The API is designed to leverage Cloudflare's edge computing capabilities:
+
+1. **Efficient Routing**: Lightweight path-based routing with minimal overhead
+2. **Streamlined Middleware**: Purpose-built middleware functions for authentication, validation, and error handling
+3. **Response Streaming**: Support for streaming responses when appropriate
+4. **Edge Caching**: Strategic cache directives for improved performance
+
+These optimizations ensure the API remains responsive even under high load.
+
+## Request Pipeline Architecture
+
+Each API request follows a consistent processing pipeline:
+
+```mermaid
+flowchart TD
+    Request[Client Request] --> Router[Route Matching]
+    Router --> AuthMiddleware[Authentication Middleware]
+    AuthMiddleware --> ValidationMiddleware[Validation Middleware]
+    ValidationMiddleware --> Handler[Domain Handler]
+    Handler --> Service[Domain Service]
+    Service --> Database[(Cloudflare D1)]
+    Service --> ResponseFormatter[Response Formatter]
+    ResponseFormatter --> Response[Client Response]
+    
+    AuthMiddleware -- Error --> ErrorMiddleware[Error Middleware]
+    ValidationMiddleware -- Error --> ErrorMiddleware
+    Handler -- Error --> ErrorMiddleware
+    Service -- Error --> ErrorMiddleware
+    ErrorMiddleware --> ErrorResponse[Error Response]
+```
+
+This pipeline architecture ensures:
+
+- Consistent Processing: All requests follow the same flow
+- Separation of Concerns: Each component has a clear responsibility
+- Centralized Error Handling: Errors are caught and processed uniformly
+- Type Safety: Strong typing throughout the request lifecycle
+
 ## Authentication Integration
 
 Authentication is handled by Cloudflare Access:
@@ -40,6 +91,38 @@ Authentication is handled by Cloudflare Access:
 - The JWT is verified and decoded to extract user information
 - The user is mapped to an internal user record
 - Authorization is checked based on the route requirements
+
+## Advanced Authentication Patterns
+
+The Cloudflare Access authentication integration employs several advanced patterns:
+
+### JWT Verification Optimization
+
+JWT verification is optimized for performance:
+
+1. **Key Caching**: JWKS keys cached with appropriate TTL
+2. **Verification Caching**: Verified token results cached for the token lifetime
+3. **Minimal Parsing**: Token parsing optimized to minimize overhead
+
+### Identity Reconciliation
+
+The system carefully reconciles Cloudflare identities with internal user records:
+
+1. **JIT Provisioning**: Users automatically created on first authentication
+2. **Identity Matching**: Cloudflare identities matched to existing accounts by email
+3. **Profile Synchronization**: User profile data kept in sync with Cloudflare
+4. **Session Mapping**: Cloudflare sessions mapped to internal session management
+
+### Authorization Framework
+
+Beyond authentication, the system implements a comprehensive authorization framework:
+
+1. **Role-Based Access Control**: Permissions assigned based on user roles
+2. **Resource Ownership**: Resource access restricted to appropriate owners
+3. **Subscription-Based Features**: Feature access controlled by subscription status
+4. **Context-Aware Permissions**: Permissions adjusted based on request context
+
+This layered security approach ensures proper access controls throughout the application.
 
 ## Authentication Endpoints
 
@@ -1030,6 +1113,149 @@ Validation errors include details about the specific fields that failed validati
 }
 ```
 
+## API Response Formatting
+
+The API implements consistent response formatting across all endpoints:
+
+### Success Response Format
+
+Successful responses follow these patterns:
+
+1. **Single Resource Response**: Returns the resource directly as a JSON object
+```json
+{
+  "config_id": "cuid",
+  "name": "Configuration Name",
+  "description": "Description text",
+  // Other resource properties
+}
+```
+
+2. Collection Response: Returns an array of resources with pagination metadata
+
+```json
+{
+  "data": [
+    {
+      "config_id": "cuid1",
+      "name": "Configuration 1"
+      // Other resource properties
+    },
+    {
+      "config_id": "cuid2",
+      "name": "Configuration 2"
+      // Other resource properties
+    }
+  ],
+  "pagination": {
+    "total": 42,
+    "page": 1,
+    "page_size": 10,
+    "next_page": 2,
+    "prev_page": null
+  }
+}
+```
+
+3. **Action Response**: Returns action result with confirmation
+```json
+{
+  "success": true,
+  "message": "Configuration deployed successfully",
+  "resource_id": "cuid",
+  "status": "pending"
+}
+```
+
+### HTTP Status Codes
+
+The API uses appropriate HTTP status codes:
+
+| Code | Description | Example Usage |
+|------|-------------|---------------|
+| 200  | OK | Successful GET, PUT, DELETE operations |
+| 201  | Created | Successful resource creation |
+| 204  | No Content | Successful operation with no response body |
+| 400  | Bad Request | Invalid input data |
+| 401  | Unauthorized | Missing or invalid authentication |
+| 403  | Forbidden | Authenticated but insufficient permissions |
+| 404  | Not Found | Resource not found |
+| 409  | Conflict | Resource state conflict |
+| 422  | Unprocessable Entity | Valid data but business rule violation |
+| 429  | Too Many Requests | Rate limit exceeded |
+| 500  | Internal Server Error | Unexpected system error |
+
+These consistent patterns make the API predictable and easier to integrate with.
+
+## Advanced Validation Patterns
+
+The API validation uses several advanced techniques:
+
+### Cross-Field Validation
+
+Validations that span multiple fields:
+
+1. **Dependency Validation**: Fields required based on other field values
+2. **Exclusivity Rules**: Fields that cannot be used together
+3. **Conditional Requirements**: Context-specific validation rules
+
+### Complex Data Validation
+
+Specialized validation for complex data types:
+
+1. **JSON Schema Validation**: Complex nested structures validated against JSON schemas
+2. **Configuration-Specific Rules**: Domain-specific validation for configuration data
+3. **Semantic Validation**: Validation of meaning and relationships, not just syntax
+
+### Contextual Validation
+
+Validation rules that depend on external context:
+
+1. **User Role Validation**: Different validation based on user role
+2. **Subscription-Based Validation**: Features validated against subscription status
+3. **State-Based Validation**: Rules that depend on resource state
+
+These advanced validation patterns ensure data integrity while providing clear feedback to users.
+
+## API Versioning Approach
+
+The API is designed with a forward-compatible versioning strategy:
+
+### Versioning Philosophy
+
+1. **Non-Breaking Extensions**: New fields and endpoints added without breaking existing clients
+2. **Graceful Deprecation**: Deprecated features marked and supported for transition period
+3. **Explicit Breaking Changes**: Major changes introduced with clear version indicators
+
+### Implementation Mechanism
+
+The versioning mechanism uses a pragmatic approach:
+
+1. **Content Negotiation**: Clients can request specific versions via Accept header
+2. **Default Latest Stable**: Unversioned requests receive latest stable behavior
+3. **Gradual Feature Transition**: Features move through preview, stable, and deprecated stages
+
+This approach balances stability for existing clients with the ability to evolve the API.
+
+## API Documentation Strategy
+
+The API documentation follows these principles:
+
+### Documentation Sources
+
+1. **Schema-Driven**: Core documentation generated from validation schemas
+2. **Code Examples**: Real-world usage examples for each endpoint
+3. **Contextual Annotations**: Business rules and constraints clearly documented
+
+### Documentation Format
+
+1. **OpenAPI Specification**: Formal API documentation following OpenAPI standards
+2. **Interactive Documentation**: Live testing capabilities for developers
+3. **SDK Generation**: Type-safe client libraries generated from specifications
+
+This documentation approach ensures developers have comprehensive, accurate references for API integration.
+
+
 ## Caching Strategy
 
 The Worker implements an efficient caching strategy:
@@ -1256,3 +1482,63 @@ Applies a template to create a new configuration.
   "is_public": false,
   "version": 1,
   "created_at
+
+## Testing Architecture
+
+The API includes a comprehensive testing architecture:
+
+### Test Categories
+
+1. **Unit Tests**: Isolated testing of domain services and utilities
+2. **Integration Tests**: Testing of service interactions and database operations
+3. **API Tests**: End-to-end testing of API endpoints
+4. **Load Tests**: Performance testing under various load conditions
+
+### Test Infrastructure
+
+1. **Test Database**: Isolated test database for integration testing
+2. **Mocking Framework**: Consistent approach to mocking external dependencies
+3. **Fixtures and Factories**: Standard test data generation
+4. **Assertions Library**: Domain-specific assertions for validation
+
+This testing architecture ensures the API remains stable and reliable through development iterations.
+
+## Security Architecture
+
+The API implements multiple security layers:
+
+### Request Security
+
+1. **Input Sanitization**: Prevention of injection attacks
+2. **Content Security Policies**: Protection against XSS attacks
+3. **CORS Configuration**: Controlled cross-origin access
+4. **Rate Limiting**: Protection against abuse and DoS attacks
+
+### Data Security
+
+1. **Encryption at Rest**: Sensitive data encrypted in storage
+2. **Transport Security**: All communications encrypted with TLS
+3. **Field-Level Security**: Access control at the data field level
+4. **Audit Logging**: Comprehensive activity logging for security events
+
+These security measures protect both the API and its data from various threat vectors.
+
+## Performance Optimization
+
+The API is optimized for performance in several ways:
+
+### Database Optimization
+
+1. **Query Optimization**: Efficient database queries with proper indexing
+2. **Connection Pooling**: Reuse of database connections
+3. **Batch Operations**: Grouping of related operations for efficiency
+4. **Pagination Guidelines**: Consistent approach to result pagination
+
+### Worker Optimization
+
+1. **Cold Start Minimization**: Code organization to reduce cold start impact
+2. **Bundle Size Management**: Dependencies optimized for minimal size
+3. **Memory Usage Patterns**: Careful management of memory within Worker constraints
+4. **Request Prioritization**: Critical paths optimized for minimal latency
+
+These optimizations ensure the API remains responsive even under high load conditions.

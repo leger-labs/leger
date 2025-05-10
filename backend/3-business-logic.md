@@ -367,6 +367,129 @@ export async function canUseAdvancedFeatures(
 2. Worker enforces limits based on the current subscription status
 3. Clear error messages explain subscription requirements when access is denied
 
+## Request Validation Architecture
+
+The validation architecture ensures all incoming data is properly validated before business logic executes:
+
+### Centralized Schema Repository
+
+Validation schemas are centralized in a shared directory and imported by both frontend and backend code, ensuring consistent validation:
+
+1. **Schema Definition**: All validation schemas are defined using Zod and exported as shared types
+2. **Frontend Integration**: These schemas are used directly with React Hook Form for client-side validation
+3. **Backend Validation**: The same schemas validate incoming API requests before reaching business logic
+4. **Type Inference**: TypeScript types are inferred directly from schemas to ensure consistency
+
+### Progressive Validation Strategy
+
+To optimize performance and user experience, validation occurs in multiple stages:
+
+1. **Frontend Validation**: Immediate feedback during form input
+2. **API Request Validation**: Middleware validates all incoming requests
+3. **Business Rule Validation**: Domain-specific rules checked in service layer
+4. **Database Constraints**: Final safety net for data integrity
+
+This layered approach ensures data consistency while providing appropriate feedback at each level.
+
+## Error Handling Architecture
+
+The application implements a comprehensive error handling strategy:
+
+### Error Classification
+
+Errors are classified into distinct types with appropriate handling:
+
+1. **Validation Errors**: Client errors from invalid input (400)
+2. **Authentication Errors**: Missing or invalid credentials (401)
+3. **Authorization Errors**: Permission-related issues (403)
+4. **Not Found Errors**: Requested resource doesn't exist (404)
+5. **Business Logic Errors**: Violations of business rules (422)
+6. **External Service Errors**: Problems with third-party services (502)
+7. **Internal Errors**: Unexpected system failures (500)
+
+### Error Propagation
+
+The error handling flow ensures appropriate responses:
+
+1. **Error Creation**: Domain-specific errors created at source
+2. **Error Enrichment**: Contextual information added as errors bubble up
+3. **Middleware Capture**: Central error middleware formats responses
+4. **Logging and Monitoring**: All errors recorded for analysis
+
+This approach ensures users receive helpful error messages while providing the information needed for debugging.
+
+## Caching Strategy
+
+The application implements a multi-layered caching strategy:
+
+### Cache Layers
+
+1. **Edge Caching**: Cloudflare's edge cache for static assets and public content
+2. **KV Caching**: In-memory KV store for frequently accessed data
+3. **Application Caching**: In-memory cache for computed values within request context
+4. **Data Access Caching**: Query result caching for expensive database operations
+
+### Cache Invalidation
+
+Cache invalidation follows these patterns:
+
+1. **Time-Based Expiration**: Automatic expiration for time-sensitive data
+2. **Explicit Invalidation**: Cache entries invalidated on related data changes
+3. **Soft Invalidation**: Background refresh of cache entries while serving stale data
+4. **Cache Tags**: Related cache entries grouped for efficient invalidation
+
+This strategy balances performance with data freshness across the application.
+
+## Deployments Architecture
+
+The deployment system is designed for reliability and efficiency:
+
+### Deployment Workflow
+
+The deployment process follows a staged approach:
+
+1. **Configuration Validation**: Comprehensive validation of deployment parameters
+2. **Resource Allocation**: Reservation of necessary compute resources
+3. **Secret Injection**: Secure injection of credentials via Beam.cloud secrets
+4. **Deployment Creation**: API call to create deployment with appropriate parameters
+5. **Status Monitoring**: Background process monitors deployment progress
+6. **Health Checking**: Verification of deployment health before marking as ready
+
+### Deployment Monitoring
+
+Deployments are monitored through several mechanisms:
+
+1. **Health Probes**: Regular health checks to verify deployment status
+2. **Log Streaming**: Real-time log access for monitoring and debugging
+3. **Metrics Collection**: Resource usage and performance metrics
+4. **Alert Thresholds**: Automated alerts for abnormal conditions
+
+This approach ensures reliable deployments with appropriate visibility for administrators.
+
+## Tenant Resource Management
+
+The multi-tenant architecture implements strict resource isolation:
+
+### Resource Provisioning
+
+Resources are provisioned using these patterns:
+
+1. **Tenant Isolation**: Dedicated resources for each tenant account
+2. **Provisioning Queue**: Asynchronous resource creation to avoid blocking
+3. **Credential Management**: Secure storage and access of resource credentials
+4. **Resource Tagging**: Consistent tagging for resource identification and management
+
+### Resource Access
+
+Resource access follows these security principles:
+
+1. **Just-in-Time Access**: Resources accessed only when needed
+2. **Least Privilege**: Minimal permissions for each resource access
+3. **Credential Rotation**: Regular rotation of resource credentials
+4. **Access Auditing**: Comprehensive logging of resource access
+
+This architecture ensures complete tenant isolation while maintaining operational efficiency.
+
 ## Deployment Logic
 
 Leger implements a seamless deployment workflow for OpenWebUI configurations.
@@ -395,3 +518,63 @@ Leger implements a seamless deployment workflow for OpenWebUI configurations.
 - Beam.cloud API client for Pod management
 - Configuration transformation utilities
 - Status tracking and updates
+
+## Background Processing Architecture
+
+For operations that may take significant time or should run asynchronously, the application uses a background processing architecture:
+
+### Worker Queues
+
+Background operations are handled through queues:
+
+1. **Task Queuing**: Long-running operations are queued for asynchronous processing
+2. **Worker Processing**: Dedicated workers handle background tasks
+3. **Status Tracking**: Task status tracked in database for monitoring
+4. **Retry Mechanisms**: Automatic retries with exponential backoff for failed tasks
+
+This approach keeps the main request handling responsive while ensuring complex operations complete reliably.
+
+### Background Task Types
+
+The system handles several types of background tasks:
+
+1. **Resource Provisioning**: Creating tenant-specific resources
+2. **Deployment Monitoring**: Tracking status of OpenWebUI deployments
+3. **Batch Processing**: Handling bulk operations efficiently
+4. **Scheduled Maintenance**: Regular cleanup and optimization tasks
+
+Each task type follows consistent patterns for queuing, execution, and error handling to ensure reliability and observability.
+
+## Webhook Processing Architecture
+
+Webhooks from external services (like Stripe) follow a robust processing pattern:
+
+### Webhook Handling Flow
+
+1. **Signature Verification**: Cryptographic verification of webhook origin
+2. **Idempotent Processing**: Prevention of duplicate event processing
+3. **Event Logging**: Persistent logging of all webhook events
+4. **Atomic Processing**: Transaction-based event handling
+5. **Retry Mechanisms**: Graceful handling of temporary failures
+
+This approach ensures reliable webhook processing even with network instability or service disruptions.
+
+## Transactional Email Architecture
+
+The email notification system follows these architectural patterns:
+
+### Email Delivery
+
+1. **Templating System**: Structured templates for all email types
+2. **Delivery Tracking**: Tracking of email delivery status
+3. **Rate Limiting**: Prevention of excessive email sending
+4. **Batching**: Efficient delivery of bulk notifications
+
+### Email Content
+
+1. **Responsive Design**: Mobile-friendly email templates
+2. **Localization Support**: Multi-language email content
+3. **Personalization**: Dynamic content based on recipient
+4. **Action Tracking**: Metrics on email engagement
+
+This architecture provides reliable, professional communication while maintaining deliverability and compliance.

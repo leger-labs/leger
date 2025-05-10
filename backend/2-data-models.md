@@ -304,6 +304,396 @@ export const deployments = sqliteTable('deployments', {
 });
 ```
 
+## Drizzle ORM Best Practices from SaaS Stack
+
+To optimize the Drizzle ORM implementation for Cloudflare D1, the following patterns should be adopted:
+
+### Connection Management
+
+```typescript
+// db/index.ts
+import { drizzle } from "drizzle-orm/d1";
+import * as schema from "./schema";
+
+// Create a global drizzle instance
+export const db = drizzle(process.env.DATABASE, { schema });
+
+// For efficient usage in transaction blocks
+export async function withTransaction<T>(
+  callback: (tx: typeof db) => Promise<T>
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    return await callback(tx);
+  });
+}
+```
+
+### Query Building and Execution
+
+```typescript
+// Example efficient repository pattern
+// repositories/configurations.ts
+import { eq, and, desc } from "drizzle-orm";
+import { db, withTransaction } from "../db";
+import { configurations, configurationVersions } from "../db/schema";
+import type { Configuration, ConfigurationVersion } from "../types";
+
+export async function getConfigurationsByAccount(accountId: string): Promise<Configuration[]> {
+  return await db
+    .select()
+    .from(configurations)
+    .where(eq(configurations.account_id, accountId))
+    .orderBy(desc(configurations.updated_at));
+}
+
+export async function createConfigurationWithVersion(
+  data: Omit<Configuration, "config_id" | "created_at" | "updated_at" | "version">,
+  versionData: Omit<ConfigurationVersion, "version_id" | "created_at" | "version">
+): Promise<Configuration> {
+  return await withTransaction(async (tx) => {
+    const [config] = await tx
+      .insert(configurations)
+      .values({
+        account_id: data.account_id,
+        name: data.name,
+        description: data.description,
+        config_data: data.config_data,
+        is_template: data.is_template || false,
+        is_public: data.is_public || false,
+        created_by: data.created_by,
+        updated_by: data.created_by,
+      })
+      .returning();
+
+    await tx.insert(configurationVersions).values({
+      config_id: config.config_id,
+      version: 1,
+      config_data: data.config_data,
+      created_by: data.created_by,
+      change_description: versionData.change_description || "Initial version",
+    });
+
+    return config;
+  });
+}
+```
+
+### Efficient Relation Handling
+
+For better query performance with D1, implement manual joins when needed:
+
+```typescript
+// Example efficient relation query
+// repositories/accounts.ts
+import { eq } from "drizzle-orm";
+import { db } from "../db";
+import { accounts, accountUsers, users } from "../db/schema";
+import type { AccountWithMembers } from "../types";
+
+export async function getAccountWithMembers(accountId: string): Promise<AccountWithMembers | null> {
+  const account = await db
+    .select()
+    .from(accounts)
+    .where(eq(accounts.id, accountId))
+    .limit(1)
+    .then((rows) => rows[0] || null);
+
+  if (!account) return null;
+
+  const members = await db
+    .select({
+      user_id: users.id,
+      name: users.name,
+      email: users.email,
+      role: accountUsers.account_role,
+    })
+    .from(accountUsers)
+    .innerJoin(users, eq(accountUsers.user_id, users.id))
+    .where(eq(accountUsers.account_id, accountId));
+
+  return {
+    ...account,
+    members,
+  };
+}
+```
+
+### Pagination Implementation
+
+Implement efficient cursor-based pagination for large dataset queries:
+
+```typescript
+// Example cursor pagination
+// repositories/deployments.ts
+import { eq, and, lt, desc } from "drizzle-orm";
+import { db } from "../db";
+import { deployments } from "../db/schema";
+import type { PaginatedResult, Deployment } from "../types";
+
+export async function getDeploymentsPaginated(
+  accountId: string,
+  cursor?: string,
+  limit = 20
+): Promise<PaginatedResult<Deployment>> {
+  const query = db
+    .select()
+    .from(deployments)
+    .where(eq(deployments.account_id, accountId))
+    .orderBy(desc(deployments.created_at))
+    .limit(limit + 1);
+
+  if (cursor) {
+    query.where(lt(deployments.created_at, cursor));
+  }
+
+  const results = await query;
+  const hasNextPage = results.length > limit;
+  const data = hasNextPage ? results.slice(0, -1) : results;
+  
+  return {
+    data,
+    hasNextPage,
+    nextCursor: hasNextPage ? data[data.length - 1]?.created_at : undefined,
+  };
+}
+```
+
+### Optimized Batch Operations
+
+For batch operations, utilize SQLite's efficient mechanisms:
+
+```typescript
+// Example batch insert
+// repositories/imports.ts
+import { db } from "../db";
+import { configurations } from "../db/schema";
+import type { ConfigurationImport } from "../types";
+
+export async function batchImportConfigurations(
+  imports: ConfigurationImport[]
+): Promise<void> {
+  // Split into chunks to avoid exceeding parameter limits
+  const chunkSize = 100;
+  for (let i = 0; i < imports.length; i += chunkSize) {
+    const chunk = imports.slice(i, i + chunkSize);
+    await db.insert(configurations).values(chunk);
+  }
+}
+```
+
+### JSON Handling Utilities
+
+Provide utilities for efficient JSON operations:
+
+```typescript
+// utils/json.ts
+import { z } from "zod";
+
+export function safeParseJSON<T>(
+  jsonString: string,
+  schema: z.ZodType<T>
+): { success: true; data: T } | { success: false; error: z.ZodError } {
+  try {
+    const parsed = JSON.parse(jsonString);
+    const result = schema.safeParse(parsed);
+    return result;
+  } catch (error) {
+    // Handle JSON.parse errors by returning a ZodError-like structure
+    return {
+      success: false,
+      error: new z.ZodError([
+        {
+          code: z.ZodIssueCode.custom,
+          path: [],
+          message: "Invalid JSON string",
+        },
+      ]),
+    };
+  }
+}
+
+export function safeStringifyJSON(data: unknown): string {
+  try {
+    return JSON.stringify(data);
+  } catch (error) {
+    console.error("Error stringifying JSON:", error);
+    return "{}";
+  }
+}
+```
+```
+
+### Addition: Add this content after the "## Data Access Patterns" section
+
+```markdown
+## Scheduled Data Operations
+
+For operations that need to run on a schedule (such as cleanups, aggregations, or metrics collection), leverage Cloudflare's Cron Triggers:
+
+```typescript
+// workers/scheduled-tasks.ts
+export default {
+  async scheduled(event, env, ctx) {
+    const { cron } = event;
+    console.log(`Running scheduled task: ${cron}`);
+
+    switch (cron) {
+      case "*/30 * * * *": // Every 30 minutes
+        await cleanupExpiredSessions(env.DATABASE);
+        break;
+      case "0 0 * * *": // Daily at midnight
+        await generateDailyMetrics(env.DATABASE);
+        break;
+      case "0 2 * * 0": // Weekly on Sunday at 2 AM
+        await cleanupOldVersions(env.DATABASE);
+        break;
+    }
+  },
+};
+
+async function cleanupExpiredSessions(db) {
+  const now = new Date().getTime();
+  await db.delete(sessions).where(lt(sessions.expires, now));
+}
+
+async function generateDailyMetrics(db) {
+  // Aggregate usage data for the previous day
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const startOfDay = new Date(yesterday.setHours(0, 0, 0, 0)).toISOString();
+  const endOfDay = new Date(yesterday.setHours(23, 59, 59, 999)).toISOString();
+
+  // Example aggregation
+  const result = await db
+    .select({
+      account_id: deployments.account_id,
+      count: sql`count(*)`.mapWith(Number),
+    })
+    .from(deployments)
+    .where(
+      and(
+        gte(deployments.created_at, startOfDay),
+        lte(deployments.created_at, endOfDay)
+      )
+    )
+    .groupBy(deployments.account_id);
+
+  // Store metrics
+  for (const row of result) {
+    await db.insert(accountMetrics).values({
+      account_id: row.account_id,
+      date: startOfDay.split("T")[0],
+      deployment_count: row.count,
+    });
+  }
+}
+
+async function cleanupOldVersions(db) {
+  // Find configurations with more than 50 versions
+  const configurationsWithManyVersions = await db
+    .select({
+      config_id: configurationVersions.config_id,
+      count: sql`count(*)`.mapWith(Number),
+    })
+    .from(configurationVersions)
+    .groupBy(configurationVersions.config_id)
+    .having(sql`count(*) > 50`);
+
+  // For each configuration, keep the 50 most recent versions
+  for (const config of configurationsWithManyVersions) {
+    const versionsToKeep = await db
+      .select()
+      .from(configurationVersions)
+      .where(eq(configurationVersions.config_id, config.config_id))
+      .orderBy(desc(configurationVersions.created_at))
+      .limit(50);
+
+    const oldestVersionToKeep = versionsToKeep[versionsToKeep.length - 1];
+
+    // Delete older versions
+    if (oldestVersionToKeep) {
+      await db
+        .delete(configurationVersions)
+        .where(
+          and(
+            eq(configurationVersions.config_id, config.config_id),
+            lt(configurationVersions.created_at, oldestVersionToKeep.created_at)
+          )
+        );
+    }
+  }
+}
+```
+
+## Effective Error Handling in Database Operations
+
+Implement consistent error handling patterns for database operations:
+
+```typescript
+// utils/db-error.ts
+import { DrizzleError } from "drizzle-orm";
+
+export class DatabaseError extends Error {
+  constructor(
+    message: string,
+    public cause: unknown,
+    public code?: string
+  ) {
+    super(message);
+    this.name = "DatabaseError";
+  }
+
+  static fromError(error: unknown): DatabaseError {
+    if (error instanceof DrizzleError) {
+      return new DatabaseError(
+        "Database operation failed",
+        error,
+        "DB_OPERATION_FAILED"
+      );
+    }
+
+    if (error instanceof Error) {
+      // SQLite specific error handling
+      if (error.message.includes("UNIQUE constraint failed")) {
+        return new DatabaseError(
+          "Resource already exists with the same unique identifier",
+          error,
+          "UNIQUE_VIOLATION"
+        );
+      }
+
+      if (error.message.includes("FOREIGN KEY constraint failed")) {
+        return new DatabaseError(
+          "Referenced resource does not exist",
+          error,
+          "FOREIGN_KEY_VIOLATION"
+        );
+      }
+    }
+
+    return new DatabaseError(
+      "Unexpected database error",
+      error,
+      "UNKNOWN_DB_ERROR"
+    );
+  }
+}
+
+// Example usage in a repository
+export async function createUser(userData: UserInput): Promise<User> {
+  try {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning();
+    return user;
+  } catch (error) {
+    throw DatabaseError.fromError(error);
+  }
+}
+```
+```
+
 ## Data Access Patterns
 
 The application uses Drizzle ORM to interact with the Cloudflare D1 database. This provides type-safe queries and ensures data integrity through the type system.

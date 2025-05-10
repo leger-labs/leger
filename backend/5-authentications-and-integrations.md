@@ -101,6 +101,55 @@ export async function sendSubscriptionStatusEmail(
 }
 ```
 
+## Cloudflare Access Integration Strategy
+
+Cloudflare Access provides a robust authentication solution but requires thoughtful integration with the application's user management system. The integration strategy follows these principles:
+
+### Identity Mapping Architecture
+
+The application maps Cloudflare Access identities to internal user records through a carefully designed process:
+
+1. **JWT Validation**: Cloudflare Access JWT tokens are validated cryptographically
+2. **Identity Extraction**: Email and name are extracted from verified JWT
+3. **User Lookup**: The system checks for an existing user record matching the email
+4. **User Creation**: If no user exists, a new record is created automatically
+5. **Session Establishment**: The user identity is established for the request
+
+This architecture ensures seamless authentication while maintaining user record integrity.
+
+### JWT Verification Strategy
+
+JWT verification is implemented with security and performance in mind:
+
+1. **Key Discovery**: JWKS keys fetched from Cloudflare's published endpoint
+2. **Key Caching**: Keys cached with appropriate TTL to minimize external requests
+3. **Signature Verification**: Token signatures verified using appropriate algorithm
+4. **Claim Validation**: Required claims validated for completeness and correctness
+5. **Issuer Verification**: Token issuer verified against configured team domain
+
+### Performance Optimizations
+
+Several optimizations improve authentication performance:
+
+1. **Key Caching**: JWKS keys cached in KV store with TTL-based expiration
+2. **Verification Result Caching**: Successful verification results cached briefly
+3. **Minimal Parsing**: JWT parsing optimized to minimize computational overhead
+4. **Batched User Creation**: For bulk operations, user creation batched when possible
+
+These optimizations ensure authentication adds minimal overhead to request processing.
+
+### Security Considerations
+
+The implementation addresses several security considerations:
+
+1. **Algorithm Restriction**: Only secure signing algorithms accepted
+2. **Clock Skew Handling**: Small clock skew tolerance for distributed systems
+3. **Audience Validation**: Token audience verified against configured values
+4. **Expiration Enforcement**: Token expiration strictly enforced
+5. **Scope Validation**: Required permission scopes verified when present
+
+These security measures prevent various token-based attacks while maintaining usability.
+
 ## Multi-Tenant Resource Provisioning
 
 The system provisions and manages dedicated resources for each tenant account:
@@ -217,6 +266,53 @@ export async function getRedisClient(accountId: string, env: Env) {
 }
 ```
 
+## Resource Provisioning Implementation Strategy
+
+For multi-tenant resource provisioning, the application implements a robust strategy that ensures isolation, security, and reliability:
+
+### Provisioning Workflow Architecture
+
+The provisioning workflow uses a staged approach:
+
+1. **Request Validation**: Validate the provisioning request for completeness
+2. **Quota Verification**: Check against tenant-specific resource limits
+3. **Resource Allocation**: Reserve resource identifiers and prepare configuration
+4. **Asynchronous Creation**: Initiate resource creation as a background task
+5. **Status Tracking**: Monitor and report provision status
+6. **Credential Management**: Securely store and manage access credentials
+
+### Resource Isolation Patterns
+
+Several patterns ensure complete resource isolation:
+
+1. **Tenant-Specific Naming**: Resources named using tenant-specific prefixes
+2. **Access Control Lists**: Resources configured with strict access controls
+3. **Separate Credential Sets**: Each tenant receives dedicated credentials
+4. **Network Isolation**: Resources isolated at the network level where applicable
+5. **Usage Monitoring**: Resource usage tracked and attributed by tenant
+
+### Credential Management Strategy
+
+Credential management follows security best practices:
+
+1. **Encryption at Rest**: Credentials encrypted before storage
+2. **Minimal Exposure**: Credentials only decrypted when needed
+3. **Rotation Policy**: Regular credential rotation with zero-downtime transition
+4. **Principle of Least Privilege**: Credentials scoped to minimum necessary permissions
+5. **Access Logging**: All credential usage logged for audit purposes
+
+### Provisioning Reliability Patterns
+
+Several patterns ensure reliable resource provisioning:
+
+1. **Idempotent Operations**: Operations designed to be safely retryable
+2. **Transactional Approach**: Multiple resources provisioned in logical transactions
+3. **Rollback Mechanisms**: Automated rollback in case of partial failures
+4. **Provisioning Queues**: Background processing for long-running operations
+5. **Health Verification**: Resources verified for health before being marked as ready
+
+These patterns ensure that resource provisioning remains reliable even under failure conditions.
+
 ## Edge Caching Strategy
 
 The Worker implements strategic caching to optimize performance:
@@ -297,150 +393,104 @@ export async function invalidateCache(
 }
 ```
 
-## Additional Security Measures
+## Integration Architecture Patterns
 
-Beyond authentication and authorization, the system implements several security measures:
+The application implements several key integration patterns for external services:
 
-### 1. Secure Headers
+### Service Client Pattern
 
-```typescript
-// middleware/security.ts
-export function securityHeadersMiddleware(request: Request) {
-  return {
-    headers: {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.cloudflare.com; font-src 'self' data:; connect-src 'self' https://*.stripe.com",
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY',
-      'X-XSS-Protection': '1; mode=block',
-      'Referrer-Policy': 'strict-origin-when-cross-origin',
-      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
-    }
-  };
-}
-```
+External service integrations follow a consistent client pattern:
 
-### 2. Rate Limiting
+1. **Service Client Abstraction**: Each integration encapsulated behind a client interface
+2. **Configuration Injection**: Service endpoints and credentials injected at runtime
+3. **Retry Logic**: Automatic retries with exponential backoff for transient failures
+4. **Circuit Breaking**: Circuit breaker pattern to prevent cascading failures
+5. **Response Mapping**: Standardized mapping from service responses to domain models
 
-```typescript
-// middleware/rate-limit.ts
-export async function rateLimitMiddleware(
-  request: Request,
-  env: Env
-) {
-  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const url = new URL(request.url);
-  const path = url.pathname;
-  
-  // Define limits for different paths
-  let limit = 60; // Default: 60 requests per minute
-  let ttl = 60;   // Default: 1 minute window
-  
-  if (path.startsWith('/billing')) {
-    limit = 20;   // More sensitive endpoints
-  } else if (path.startsWith('/auth')) {
-    limit = 10;   // Authentication endpoints
-  }
-  
-  // Create cache key
-  const cacheKey = `ratelimit:${ip}:${path}`;
-  
-  // Get current count
-  const currentValue = await env.CACHE.get(cacheKey);
-  const count = currentValue ? parseInt(currentValue) : 0;
-  
-  // Check if limit exceeded
-  if (count >= limit) {
-    return new Response('Too Many Requests', { status: 429 });
-  }
-  
-  // Increment count
-  await env.CACHE.put(cacheKey, (count + 1).toString(), { expirationTtl: ttl });
-  
-  // Continue to handler
-  return null;
-}
-```
+This pattern ensures consistent, reliable external service communication.
 
-### 3. Credentials Encryption
+### Webhook Processing Pattern
 
-```typescript
-// utils/crypto.ts
-export async function encryptCredentials(
-  credentials: any,
-  key: string
-): Promise<string> {
-  // Convert credentials to JSON string
-  const plaintext = JSON.stringify(credentials);
-  
-  // Get encryption key
-  const encryptionKey = await crypto.subtle.importKey(
-    'raw',
-    base64ToArrayBuffer(key),
-    { name: 'AES-GCM' },
-    false,
-    ['encrypt']
-  );
-  
-  // Generate random IV
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  
-  // Encrypt data
-  const encryptedData = await crypto.subtle.encrypt(
-    {
-      name: 'AES-GCM',
-      iv
-    },
-    encryptionKey,
-    new TextEncoder().encode(plaintext)
-  );
-  
-  // Combine IV and encrypted data
-  const combined = new Uint8Array(iv.length + encryptedData.byteLength);
-  combined.set(iv);
-  combined.set(new Uint8Array(encryptedData), iv.length);
-  
-  // Return as base64 string
-  return arrayBufferToBase64(combined);
-}
+Webhooks from external services follow a robust processing pattern:
 
-export async function decryptCredentials(
-  encryptedData: string,
-  key: string
-): Promise<any> {
-  // Decode base64
-  const combined = base64ToArrayBuffer(encryptedData);
-  
-  // Extract IV
-  const iv = combined.slice(0, 12);
-  
-  // Extract ciphertext
-  const ciphertext = combined.slice(12);
-  
-  // Get decryption key
-  const decryptionKey = await crypto.subtle.importKey(
-    'raw',
-    base64ToArrayBuffer(key),
-    { name: 'AES-GCM' },
-    false,
-    ['decrypt']
-  );
-  
-  // Decrypt data
-  const decrypted = await crypto.subtle.decrypt(
-    {
-      name: 'AES-GCM',
-      iv: new Uint8Array(iv)
-    },
-    decryptionKey,
-    ciphertext
-  );
-  
-  // Parse JSON
-  return JSON.parse(new TextDecoder().decode(decrypted));
-}
-```
+1. **Signature Verification**: Cryptographic verification of webhook origin
+2. **Event Logging**: All webhook events logged before processing
+3. **Idempotent Processing**: Duplicate events detected and skipped
+4. **Transaction-Based Processing**: Event handling wrapped in database transactions
+5. **Failure Recovery**: Failed event processing tracked for manual intervention
+
+### API Integration Strategy
+
+The application follows a structured approach to API integrations:
+
+1. **API Versioning Awareness**: Integrations specify and track API versions used
+2. **Feature Detection**: Capabilities discovered rather than assumed where possible
+3. **Response Validation**: All external API responses validated before processing
+4. **Rate Limit Awareness**: Automatic throttling to respect service rate limits
+5. **Monitoring**: Integration health and performance continuously monitored
+
+### Error Handling Strategy
+
+Error handling for integrations follows a comprehensive approach:
+
+1. **Error Classification**: Errors categorized as transient or permanent
+2. **Structured Logging**: Error details recorded with structured metadata
+3. **Failure Isolation**: Integration failures contained to prevent broader impact
+4. **Graceful Degradation**: Non-critical integrations fail safely with fallbacks
+5. **Administrative Alerts**: Critical integration failures trigger alerts
+
+These patterns ensure the application maintains stability even when external services experience issues.
+
+## Comprehensive Security Architecture
+
+Beyond authentication and authorization, the system implements several advanced security measures:
+
+### Data Protection Strategy
+
+The application protects sensitive data through multiple mechanisms:
+
+1. **Encryption Layers**: 
+   - Transport Encryption: All communication secured with TLS
+   - Storage Encryption: Sensitive data encrypted at rest
+   - Field-Level Encryption: Selected fields encrypted independently
+   - Key Rotation: Regular rotation of encryption keys
+
+2. **Secure Credential Management**:
+   - Credential Encryption: API keys and secrets stored encrypted
+   - Just-in-Time Access: Credentials decrypted only when needed
+   - Credential Isolation: Tenant credentials stored separately
+   - Access Logging: All credential usage logged for audit purposes
+
+3. **Request Security**:
+   - Input Validation: All inputs validated with strict schemas
+   - Content Security Policies: Protection against XSS attacks
+   - Secure Headers: Additional security headers on all responses
+   - Rate Limiting: Protection against abuse attempts
+
+### Secure Development Practices
+
+The development process incorporates security throughout:
+
+1. **Dependency Management**:
+   - Dependency Scanning: Automated vulnerability scanning in dependencies
+   - Minimal Dependencies: Limited external dependencies to reduce attack surface
+   - Dependency Updates: Regular updates to maintain security patches
+
+2. **Secure Coding Standards**:
+   - Static Analysis: Automated code scanning for security issues
+   - Code Review: Security-focused code review requirements
+   - Security Testing: Dedicated security testing alongside functional tests
+
+3. **Security Monitoring**:
+   - Activity Logging: Comprehensive logging of security-relevant events
+   - Anomaly Detection: Monitoring for unusual access patterns
+   - Alert Thresholds: Automated alerts for suspicious activity
+
+These security measures create a defense-in-depth approach that protects the application and its data at multiple levels.
 
 These integrations and security measures ensure that the single Worker architecture can securely and efficiently handle all aspects of the Leger application while providing robust multi-tenant isolation.
+
+```
  from '../types';
 
 export async function authMiddleware(
@@ -910,3 +960,86 @@ export async function sendInvitationEmail(
     `
   });
 }
+```
+
+## Integration Testing Strategy
+
+The application includes a comprehensive testing strategy for external integrations:
+
+### Testing Layers
+
+Integration testing occurs at multiple layers:
+
+1. **Unit Testing**: Service client interfaces tested with mocked responses
+2. **Integration Testing**: Services tested against staging environments
+3. **Contract Testing**: API contracts verified for compatibility
+4. **End-to-End Testing**: Critical flows tested through complete integrations
+
+### Mock Service Pattern
+
+For development and testing, mock services follow a consistent pattern:
+
+1. **API Compatibility**: Mocks implement the same interface as real services
+2. **Configurable Behavior**: Failure modes and edge cases can be simulated
+3. **Response Recording**: Real service responses recorded for replay
+4. **Environment-Based Switching**: Testing environments use mocks automatically
+
+### Production Verification
+
+In production, integrations are verified through several mechanisms:
+
+1. **Health Probes**: Regular health checks verify integration status
+2. **Synthetic Transactions**: Automated tests run against production integrations
+3. **Canary Testing**: New integration versions tested with limited traffic
+4. **Monitoring and Alerting**: Continuous monitoring with appropriate alerts
+
+This testing strategy ensures integrations remain reliable and compatible across changes.
+
+## Feature Flag Architecture
+
+The application implements a feature flag system to control integration behavior:
+
+### Flag Categories
+
+Feature flags are organized into several categories:
+
+1. **Release Flags**: Control rollout of new integration features
+2. **Operational Flags**: Enable/disable integrations or specific features
+3. **Experimental Flags**: Control access to experimental integrations
+4. **Kill Switches**: Immediately disable problematic integrations
+
+### Flag Implementation
+
+The feature flag system follows these patterns:
+
+1. **Centralized Configuration**: Flags managed in centralized configuration
+2. **Context-Aware Evaluation**: Flags evaluated based on context (user, tenant, etc.)
+3. **Default Safety**: Safe defaults if flag configuration unavailable
+4. **Audit Trail**: Changes to flag states logged for auditing
+
+This feature flag architecture enables controlled deployment of integration changes and quick response to integration issues.
+
+## Documentation Strategy
+
+The application maintains comprehensive integration documentation:
+
+### Integration Documentation
+
+Each integration includes detailed documentation:
+
+1. **Setup Requirements**: Prerequisites and configuration details
+2. **Authentication Methods**: Supported authentication approaches
+3. **Endpoint References**: Detailed API endpoint documentation
+4. **Error Handling**: Common error scenarios and handling approaches
+5. **Example Implementations**: Reference implementations for common use cases
+
+### Maintenance Documentation
+
+Operational aspects are documented for each integration:
+
+1. **Health Monitoring**: How to verify integration health
+2. **Troubleshooting Guide**: Steps for diagnosing common issues
+3. **Failure Recovery**: Procedures for recovering from integration failures
+4. **Version Compatibility**: Compatible versions and upgrade considerations
+
+This documentation strategy ensures both developers and operators can work effectively with the integrations.
