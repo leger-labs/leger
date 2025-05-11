@@ -156,3 +156,5 @@ Do NOT reproduce the entire component inventory table. Instead, provide only the
 Similarly, provide UX patterns and entity analyses as separate sections that the human will compile into separate documentation. This approach avoids potential errors from attempting to regenerate entire documents.
 
 Your goal is to provide a comprehensive, multi-level analysis that enables the effective implementation of Vercel-like configuration management interfaces for the Leger platform.
+
+Make sure to produce outputs for each section in a different markdown artifact to make it easier to read.
