@@ -66,6 +66,17 @@ I've analyzed the authentication and deployment protection screenshots, identify
 | Up-to-date URL Reference | P1 | Shareable Links | References special URL format for secure access | Interactive link to detailed URL pattern information | Text link with specialized styling for URLs |
 | Plan Restriction Indicator | P0 | Multiple (Password Protection, Deployment Protection) | Communicates feature availability based on plan | Greys out entire section with pricing and upgrade information | Custom compound component combining disabled state with plan information |
 | Feature Availability Label | P0 | Multiple (Password Protection, Trusted IPs) | Shows plan-specific feature status | Displays pricing and plan details with appropriate action button | Alert with action button and pricing information |
+| **Framework Configuration Components** |
+| Framework Introduction Text | P1 | Framework Settings | Explains automatic framework detection functionality | Static informational content that establishes context | Use shadcn/ui Text component with muted styling |
+| Command Field Group | P0 | Framework Settings | Organizes related command settings with consistent styling | Container for command label, input field, help icon, and override toggle | Create a reusable composition of shadcn/ui components |
+| Override Toggle | P0 | Framework Settings | Controls editability of preconfigured command fields | Changes input field from read-only to editable | Use shadcn/ui Switch component with state connection to input field |
+| Command Default Value | P1 | Framework Settings | Shows recommended command configurations | Static text that appears in disabled input field | Style disabled state of shadcn/ui Input to maintain legibility |
+| Directory Path Input | P1 | Framework Settings | Captures filesystem paths with appropriate validation | Text input with path format validation | shadcn/ui Input with custom validation for path format |
+| Command Information Icon | P2 | Framework Settings | Provides contextual help for specific command purposes | Reveals explanatory tooltip on hover | shadcn/ui Tooltip with information icon trigger |
+| Feature Documentation Link | P2 | Framework Settings | Links to detailed external documentation | Position consistently at bottom of sections | shadcn/ui Link with consistent positioning and styling |
+| Framework Preset Selector | P0 | Framework Settings | Selects preconfigured framework settings | Dropdown that triggers automatic configuration of multiple settings | shadcn/ui Select component with framework options |
+| Framework Icon | P2 | Framework Settings | Provides visual identification of selected framework | Icon appears alongside framework name in selector | Custom component for framework-specific icons |
+| Independent Section Save | P0 | Framework Settings | Saves configuration changes for specific section | Disabled until changes are detected, positioned consistently | shadcn/ui Button with disabled state management |
 
 ## Components by Priority
 

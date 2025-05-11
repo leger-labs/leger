@@ -247,106 +247,126 @@ The Authentication and Deployment Protection interface organizes security featur
 - No active data flow due to plan restriction
 - Enterprise plan action would change account status, potentially enabling this feature
 
-# Vercel Authentication UX Pattern Analysis
+# Vercel Framework Settings Entity Analysis
 
-The Vercel Authentication and Deployment Protection interface demonstrates sophisticated UX patterns that create an intuitive, informative security configuration experience. These patterns establish consistency while providing appropriate guidance for complex security decisions.
+The Framework Settings interface organizes configuration controls into logical entities that manage different aspects of the build and deployment process. Each entity maintains clear boundaries while following consistent patterns for overriding defaults and saving changes.
 
-## Pattern: Tiered Feature Access Signaling
+## Entity: Framework Selection
 
-**Description**: Features that require higher-tier plans are visually distinct with a consistent treatment that combines disabled controls, reduced opacity, pricing information, and appropriate action buttons (Upgrade or Contact Sales).
+**Purpose**: Establishes the fundamental build environment by selecting the appropriate framework preset
 
-**Usage**: Applied to Password Protection, Deployment Protection Exceptions, and Trusted IPs features, each showing which specific plan tier enables the feature.
+**Components**:
+- Explanatory introduction text about framework auto-detection
+- Framework Preset dropdown with framework icon
+- Framework-specific default configuration values (applied to command fields)
 
-**User Benefit**: Creates clear understanding of feature availability without removing visibility of premium features, communicates value proposition, and provides direct upgrade paths.
+**Conditional Logic**:
+- Selection of a framework preset automatically populates all command fields with appropriate defaults
+- Changes to the framework selection likely trigger visual indication of pending changes
+- Framework auto-detection may initialize this selection based on project code analysis
 
-**Implementation Consideration**: Develop a consistent pattern for rendering plan-restricted features that maintains visibility while preventing interaction, coupled with appropriate upgrade actions based on plan tier.
+**Data Flow**:
+- Framework selection influences default values across all command fields
+- Changes remain local until explicitly saved
+- Framework selection affects the underlying build environment configuration
 
-## Pattern: Security Bypass Guidance
+## Entity: Build Command Configuration
 
-**Description**: When providing mechanisms to bypass security (for automation or specific paths), the interface combines clear warnings with specific implementation examples to guide proper usage.
+**Purpose**: Defines the exact command used to build the project during deployment
 
-**Usage**: Used in Protection Bypass for Automation with HTTP header example and in OPTIONS Allowlist with path pattern guidance.
+**Components**:
+- "Build Command" label with descriptive text
+- Command information icon with tooltip
+- Command input field containing default value
+- Override toggle to enable manual editing
+- Default command value (framework-specific)
 
-**User Benefit**: Reduces implementation errors when configuring security exceptions, provides exact syntax for developers, and maintains security context even when creating exceptions.
+**Conditional Logic**:
+- Input field is read-only until Override toggle is activated
+- Default value is determined by the selected framework preset
+- Override toggle enables/disables the input field
 
-**Implementation Consideration**: Create a standardized format for displaying code snippets, headers, and other technical implementation details alongside security guidance.
+**Data Flow**:
+- Command value is read from framework presets initially
+- Manual edits replace the default value when override is enabled
+- Final value is used during the build process on deployment
 
-## Pattern: Dynamic Path Collection
+## Entity: Output Directory Configuration
 
-**Description**: The path management system combines suggested path formats, intuitive add/remove controls, and consistent path entry fields to manage variable numbers of exclusion paths.
+**Purpose**: Specifies which directory contains the build output files to be served
 
-**Usage**: The OPTIONS Allowlist entity uses this pattern to manage multiple API paths that bypass authentication.
+**Components**:
+- "Output Directory" label with descriptive text  
+- Directory information icon with tooltip
+- Directory path input field containing default value
+- Override toggle to enable manual editing
+- Default directory value (framework-specific)
 
-**User Benefit**: Provides flexible management of security exceptions without fixed limitations, offers guidance on common patterns, and maintains consistent interaction across all paths.
+**Conditional Logic**:
+- Input field is read-only until Override toggle is activated
+- Default value is determined by the selected framework preset
+- Override toggle enables/disables the input field
 
-**Implementation Consideration**: Implement a reusable dynamic collection component that handles addition, removal, and suggested formats for path-based configurations.
+**Data Flow**:
+- Directory value is read from framework presets initially
+- Manual edits replace the default value when override is enabled
+- Final value determines which files are deployed to production
 
-## Pattern: Authorization Level Progression
+## Entity: Install Command Configuration
 
-**Description**: Security features are organized in a progression from least restrictive (basic authentication) to most restrictive (trusted IPs), allowing users to understand the security continuum.
+**Purpose**: Defines the command used to install dependencies before building
 
-**Usage**: The entire authentication page follows this pattern, starting with basic authentication and progressing through various protection mechanisms.
+**Components**:
+- "Install Command" label with descriptive text
+- Command information icon with tooltip
+- Command input field containing default value
+- Override toggle to enable manual editing
+- Default command value showing multiple package manager options
 
-**User Benefit**: Helps users understand the relationship between different security features and make appropriate choices based on their security requirements.
+**Conditional Logic**:
+- Input field is read-only until Override toggle is activated
+- Default value shows multiple package manager commands as alternatives
+- Override toggle enables/disables the input field
 
-**Implementation Consideration**: Organize security features in a logical progression from basic to advanced, maintaining consistent sectioning and visual hierarchy.
+**Data Flow**:
+- Command value is read from framework presets initially
+- Manual edits replace the default value when override is enabled
+- Final value is executed during the dependency installation phase
 
-## Pattern: Technical Reference Integration
+## Entity: Development Command Configuration
 
-**Description**: Technical references (environment variables, headers, URLs) are styled distinctively and often linked to more detailed documentation, making them stand out from regular text.
+**Purpose**: Specifies the command used for development environment execution
 
-**Usage**: System Environment Variable references, HTTP header examples, and URL patterns are all given special treatment.
+**Components**:
+- "Development Command" label with descriptive text
+- Command information icon with tooltip
+- Command input field containing default value
+- Override toggle to enable manual editing
+- Default command value (framework-specific)
 
-**User Benefit**: Makes technical implementation details immediately recognizable, distinguishes code-like elements from regular text, and provides access to deeper documentation.
+**Conditional Logic**:
+- Input field is read-only until Override toggle is activated
+- Default value is determined by the selected framework preset
+- Override toggle enables/disables the input field
 
-**Implementation Consideration**: Create consistent styling for technical references, combining monospace typography with subtle background styling and appropriate linking behavior.
+**Data Flow**:
+- Command value is read from framework presets initially
+- Manual edits replace the default value when override is enabled
+- Final value is used when running the development environment
 
-## Pattern: Contextual Documentation Links
+## Entity: Section-Level Persistence
 
-**Description**: Each configuration section includes a "Learn more about" link at the bottom, maintaining consistent positioning and phrasing across all security features.
+**Purpose**: Preserves configuration changes and applies them to the deployment system
 
-**Usage**: Every entity in the authentication interface (Vercel Authentication, Protection Bypass, Shareable Links, OPTIONS Allowlist) includes this pattern in the same location.
+**Components**:
+- Documentation link for additional information
+- Save button with enabled/disabled states
 
-**User Benefit**: Provides consistent access to deeper documentation exactly when and where users might need additional context, without cluttering the main interface.
+**Conditional Logic**:
+- Save button is disabled until changes are made to any component within the section
+- Documentation link provides context without affecting entity state
 
-**Implementation Consideration**: Implement a standard documentation link component that appears in a consistent location for each configuration section with appropriate linking behavior.
-
-## Pattern: Save-State Context Feedback
-
-**Description**: Save buttons dynamically reflect the current state of the configuration, becoming enabled only when changes have been made and returning to disabled state after saving.
-
-**Usage**: Applied consistently across configurable sections in the authentication interface.
-
-**User Benefit**: Provides clear visual feedback about unsaved changes, reduces anxiety about unintentional changes, and creates natural checkpoints in complex configuration.
-
-**Implementation Consideration**: Implement state tracking that compares current values against saved values to determine if changes exist, affecting the disabled/enabled state of save buttons.
-
-## Pattern: Feature Explanation Proximity
-
-**Description**: Explanatory text appears directly beneath section headers, providing immediate context about the feature's purpose before presenting configuration options.
-
-**Usage**: Every section in the authentication interface begins with clear explanatory text that frames the purpose and implications of the feature.
-
-**User Benefit**: Builds understanding before decision-making, reduces cognitive load by providing context at the point of need, and helps users make informed configuration choices.
-
-**Implementation Consideration**: Create a consistent layout pattern where explanatory text appears between section headers and interactive controls.
-
-## Pattern: Progressive Feature Disclosure
-
-**Description**: Configuration options are revealed progressively, with basic functionality enabled through toggles that then reveal more detailed configuration options.
-
-**Usage**: The OPTIONS Allowlist toggle reveals path management controls, and the Authentication toggle would likely enable the Protection Mode selector.
-
-**User Benefit**: Reduces visual complexity by showing only relevant controls, creates a natural configuration flow from basic to detailed settings, and prevents configuration of inactive features.
-
-**Implementation Consideration**: Implement conditional rendering that responds to toggle states, revealing detailed configuration only when a feature is enabled.
-
-## Pattern: Consistent Visual Grammar for Restrictions
-
-**Description**: Plan-restricted features use a consistent visual language with subtly greyed-out controls, cursor changes to indicate non-interactivity, and clear alternative actions (Upgrade, Contact Sales).
-
-**Usage**: Applied uniformly across Password Protection, Deployment Protection Exceptions, and Trusted IPs features.
-
-**User Benefit**: Creates immediate recognition of feature availability, sets clear expectations about what is accessible, and provides straightforward upgrade paths.
-
-**Implementation Consideration**: Develop consistent styling for disabled states that communicates both the unavailability and the reason (plan restriction), along with appropriate upgrade actions.
+**Data Flow**:
+- Changes to any field remain local until explicitly saved
+- Save action persists all configuration changes in the section simultaneously
+- Saved configuration affects future builds and deployments
