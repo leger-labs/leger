@@ -94,3 +94,259 @@ The Account Settings section organizes user profile management into distinct fun
 **Data Flow**:
 - Triggers permanent data deletion processes on the backend
 - Represents a terminal state for the account
+
+# Vercel Authentication Entity Analysis
+
+The Authentication and Deployment Protection interface organizes security features into distinct functional entities. Each entity represents a logical grouping of security controls that together serve a specific protection purpose. These entities follow consistent patterns while addressing different security concerns.
+
+## Entity: Core Authentication
+
+**Purpose**: Controls the primary authentication mechanism for deployment access
+
+**Components**:
+- Section heading with explanatory text
+- Authentication toggle switch
+- Protection mode selector dropdown
+- Information icon with additional context
+- Learn more documentation link
+- Save button
+
+**Conditional Logic**:
+- Protection mode selector is only active when authentication is enabled
+- Save button is disabled until changes are made to authentication settings
+- Documentation link provides context without affecting entity state
+
+**Data Flow**:
+- Authentication state determines whether visitors must authenticate
+- Protection mode selection affects how authentication credentials are validated
+- Changes remain local until explicitly saved via the save button
+
+## Entity: Protection Bypass for Automation
+
+**Purpose**: Enables automated systems to access protected deployments without manual authentication
+
+**Components**:
+- Section heading with explanatory text
+- System Environment Variable reference link
+- Secret field placeholder
+- Secret creation guidance text
+- HTTP header example with syntax formatting
+- Learn more documentation link
+
+**Conditional Logic**:
+- This entity doesn't appear to have toggles but likely is only relevant when authentication is enabled
+- Secret creation appears to be an optional enhancement to the protection system
+
+**Data Flow**:
+- Created secrets generate access tokens that can be used in HTTP headers
+- System environment variables store the created secret values
+- Documentation link provides additional context without changing entity state
+
+## Entity: Shareable Links
+
+**Purpose**: Enables controlled sharing of protected deployments with external collaborators
+
+**Components**:
+- Section heading with explanatory text
+- Detailed description of shareable link functionality
+- Up-to-date URL reference link
+- Learn more documentation link
+
+**Conditional Logic**:
+- This entity appears to be informational rather than configurable in the current view
+- Described functionality indicates conditional behavior based on deployment type
+
+**Data Flow**:
+- Explanatory text indicates links can be created elsewhere (deployment page, toolbar)
+- Links appear to bypass normal authentication requirements under specific conditions
+
+## Entity: OPTIONS Allowlist
+
+**Purpose**: Creates exceptions to authentication requirements for specific API paths
+
+**Components**:
+- Section heading with explanatory text
+- CORS preflight reference link
+- Feature toggle switch
+- Path input fields with path suggestions (/api)
+- Add path button
+- Remove path buttons for each path
+- Learn more documentation link
+- Save button
+
+**Conditional Logic**:
+- Path input fields and management controls only appear when the feature is enabled
+- Path inputs have suggested format (/api) as placeholder guidance
+- Save button is disabled unless changes have been made
+- Ability to add multiple paths with consistent interface
+
+**Data Flow**:
+- Toggling the feature affects whether OPTIONS requests can bypass authentication
+- Adding/removing paths updates the list of routes exempt from authentication
+- Changes remain local until explicitly saved
+
+## Entity: Password Protection
+
+**Purpose**: Implements simple password-based access control for deployments
+
+**Components**:
+- Section heading with explanatory text
+- Feature toggle (disabled - plan restricted)
+- Password input field (disabled - plan restricted)
+- Plan restriction message with pricing information
+- Upgrade button
+
+**Conditional Logic**:
+- Entire entity is disabled due to plan restrictions
+- Visual styling indicates feature unavailability with reduced opacity
+- Upgrade button provides clear path to enable the feature
+
+**Data Flow**:
+- No active data flow due to plan restriction
+- Upgrade action would change account status, potentially enabling this feature
+
+## Entity: Deployment Protection Exceptions
+
+**Purpose**: Creates domain-based exceptions to authentication requirements
+
+**Components**:
+- Section heading with explanatory text
+- Explanatory text about domain exclusion
+- Add Domain button (disabled - plan restricted)
+- Plan restriction message with pricing information
+- Upgrade button
+
+**Conditional Logic**:
+- Entire entity is disabled due to plan restrictions
+- Visual styling indicates feature unavailability with reduced opacity
+- Upgrade button provides clear path to enable the feature
+
+**Data Flow**:
+- No active data flow due to plan restriction
+- Upgrade action would change account status, potentially enabling this feature
+
+## Entity: Trusted IPs
+
+**Purpose**: Restricts deployment access to specific IP addresses
+
+**Components**:
+- Section heading with explanatory text
+- Feature toggle (disabled - plan restricted)
+- CIDR notation helper icon
+- IP address input fields (disabled - plan restricted)
+- Add another button (disabled - plan restricted)
+- Plan restriction message with pricing information
+- Contact Sales button
+
+**Conditional Logic**:
+- Entire entity is disabled due to plan restrictions
+- Visual styling indicates feature unavailability with reduced opacity
+- Contact Sales button provides path to enterprise features
+
+**Data Flow**:
+- No active data flow due to plan restriction
+- Enterprise plan action would change account status, potentially enabling this feature
+
+# Vercel Authentication UX Pattern Analysis
+
+The Vercel Authentication and Deployment Protection interface demonstrates sophisticated UX patterns that create an intuitive, informative security configuration experience. These patterns establish consistency while providing appropriate guidance for complex security decisions.
+
+## Pattern: Tiered Feature Access Signaling
+
+**Description**: Features that require higher-tier plans are visually distinct with a consistent treatment that combines disabled controls, reduced opacity, pricing information, and appropriate action buttons (Upgrade or Contact Sales).
+
+**Usage**: Applied to Password Protection, Deployment Protection Exceptions, and Trusted IPs features, each showing which specific plan tier enables the feature.
+
+**User Benefit**: Creates clear understanding of feature availability without removing visibility of premium features, communicates value proposition, and provides direct upgrade paths.
+
+**Implementation Consideration**: Develop a consistent pattern for rendering plan-restricted features that maintains visibility while preventing interaction, coupled with appropriate upgrade actions based on plan tier.
+
+## Pattern: Security Bypass Guidance
+
+**Description**: When providing mechanisms to bypass security (for automation or specific paths), the interface combines clear warnings with specific implementation examples to guide proper usage.
+
+**Usage**: Used in Protection Bypass for Automation with HTTP header example and in OPTIONS Allowlist with path pattern guidance.
+
+**User Benefit**: Reduces implementation errors when configuring security exceptions, provides exact syntax for developers, and maintains security context even when creating exceptions.
+
+**Implementation Consideration**: Create a standardized format for displaying code snippets, headers, and other technical implementation details alongside security guidance.
+
+## Pattern: Dynamic Path Collection
+
+**Description**: The path management system combines suggested path formats, intuitive add/remove controls, and consistent path entry fields to manage variable numbers of exclusion paths.
+
+**Usage**: The OPTIONS Allowlist entity uses this pattern to manage multiple API paths that bypass authentication.
+
+**User Benefit**: Provides flexible management of security exceptions without fixed limitations, offers guidance on common patterns, and maintains consistent interaction across all paths.
+
+**Implementation Consideration**: Implement a reusable dynamic collection component that handles addition, removal, and suggested formats for path-based configurations.
+
+## Pattern: Authorization Level Progression
+
+**Description**: Security features are organized in a progression from least restrictive (basic authentication) to most restrictive (trusted IPs), allowing users to understand the security continuum.
+
+**Usage**: The entire authentication page follows this pattern, starting with basic authentication and progressing through various protection mechanisms.
+
+**User Benefit**: Helps users understand the relationship between different security features and make appropriate choices based on their security requirements.
+
+**Implementation Consideration**: Organize security features in a logical progression from basic to advanced, maintaining consistent sectioning and visual hierarchy.
+
+## Pattern: Technical Reference Integration
+
+**Description**: Technical references (environment variables, headers, URLs) are styled distinctively and often linked to more detailed documentation, making them stand out from regular text.
+
+**Usage**: System Environment Variable references, HTTP header examples, and URL patterns are all given special treatment.
+
+**User Benefit**: Makes technical implementation details immediately recognizable, distinguishes code-like elements from regular text, and provides access to deeper documentation.
+
+**Implementation Consideration**: Create consistent styling for technical references, combining monospace typography with subtle background styling and appropriate linking behavior.
+
+## Pattern: Contextual Documentation Links
+
+**Description**: Each configuration section includes a "Learn more about" link at the bottom, maintaining consistent positioning and phrasing across all security features.
+
+**Usage**: Every entity in the authentication interface (Vercel Authentication, Protection Bypass, Shareable Links, OPTIONS Allowlist) includes this pattern in the same location.
+
+**User Benefit**: Provides consistent access to deeper documentation exactly when and where users might need additional context, without cluttering the main interface.
+
+**Implementation Consideration**: Implement a standard documentation link component that appears in a consistent location for each configuration section with appropriate linking behavior.
+
+## Pattern: Save-State Context Feedback
+
+**Description**: Save buttons dynamically reflect the current state of the configuration, becoming enabled only when changes have been made and returning to disabled state after saving.
+
+**Usage**: Applied consistently across configurable sections in the authentication interface.
+
+**User Benefit**: Provides clear visual feedback about unsaved changes, reduces anxiety about unintentional changes, and creates natural checkpoints in complex configuration.
+
+**Implementation Consideration**: Implement state tracking that compares current values against saved values to determine if changes exist, affecting the disabled/enabled state of save buttons.
+
+## Pattern: Feature Explanation Proximity
+
+**Description**: Explanatory text appears directly beneath section headers, providing immediate context about the feature's purpose before presenting configuration options.
+
+**Usage**: Every section in the authentication interface begins with clear explanatory text that frames the purpose and implications of the feature.
+
+**User Benefit**: Builds understanding before decision-making, reduces cognitive load by providing context at the point of need, and helps users make informed configuration choices.
+
+**Implementation Consideration**: Create a consistent layout pattern where explanatory text appears between section headers and interactive controls.
+
+## Pattern: Progressive Feature Disclosure
+
+**Description**: Configuration options are revealed progressively, with basic functionality enabled through toggles that then reveal more detailed configuration options.
+
+**Usage**: The OPTIONS Allowlist toggle reveals path management controls, and the Authentication toggle would likely enable the Protection Mode selector.
+
+**User Benefit**: Reduces visual complexity by showing only relevant controls, creates a natural configuration flow from basic to detailed settings, and prevents configuration of inactive features.
+
+**Implementation Consideration**: Implement conditional rendering that responds to toggle states, revealing detailed configuration only when a feature is enabled.
+
+## Pattern: Consistent Visual Grammar for Restrictions
+
+**Description**: Plan-restricted features use a consistent visual language with subtly greyed-out controls, cursor changes to indicate non-interactivity, and clear alternative actions (Upgrade, Contact Sales).
+
+**Usage**: Applied uniformly across Password Protection, Deployment Protection Exceptions, and Trusted IPs features.
+
+**User Benefit**: Creates immediate recognition of feature availability, sets clear expectations about what is accessible, and provides straightforward upgrade paths.
+
+**Implementation Consideration**: Develop consistent styling for disabled states that communicates both the unavailability and the reason (plan restriction), along with appropriate upgrade actions.

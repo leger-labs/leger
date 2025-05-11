@@ -58,6 +58,14 @@ I've analyzed the authentication and deployment protection screenshots, identify
 | **Team Components** |
 | Team Selector Chip | P0 | Default Team | Displays selected team with visual identifier | Shows team data with color indicator and removal option | Custom component with avatar and dismiss button |
 | Learn More Link | P2 | Multiple Sections | Provides access to detailed documentation | Link with icon pointing to external documentation | Text link with external link icon |
+| **Security Components** |
+| System Environment Variable Link | P1 | Protection Bypass | References system-level configuration variables | Interactive link to detailed variable information | Uses shadcn Link component with specialized styling for system entities |
+| Security Bypass Header Example | P1 | Protection Bypass | Displays exact header syntax for automation | Static code-like display of required header format | Monospace text with subtle background styling |
+| Secret Field Placeholder | P0 | Protection Bypass | Provides contextual guidance in empty secret field | Placeholder text describing expected input content and format | Custom input field with dedicated placeholder styling |
+| Feature Information Icon | P2 | Authentication | Provides additional context about a feature | Reveals explanatory tooltip on hover | Button with Info icon triggering popover or tooltip |
+| Up-to-date URL Reference | P1 | Shareable Links | References special URL format for secure access | Interactive link to detailed URL pattern information | Text link with specialized styling for URLs |
+| Plan Restriction Indicator | P0 | Multiple (Password Protection, Deployment Protection) | Communicates feature availability based on plan | Greys out entire section with pricing and upgrade information | Custom compound component combining disabled state with plan information |
+| Feature Availability Label | P0 | Multiple (Password Protection, Trusted IPs) | Shows plan-specific feature status | Displays pricing and plan details with appropriate action button | Alert with action button and pricing information |
 
 ## Components by Priority
 
