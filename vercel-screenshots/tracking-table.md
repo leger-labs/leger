@@ -9,3 +9,4 @@
 | Authentication | Y |
 | Integrations | N |
 | Main Configuration Dashboard | N |
+| Configuration Manager | Y |

@@ -77,6 +77,12 @@ I've analyzed the authentication and deployment protection screenshots, identify
 | Framework Preset Selector | P0 | Framework Settings | Selects preconfigured framework settings | Dropdown that triggers automatic configuration of multiple settings | shadcn/ui Select component with framework options |
 | Framework Icon | P2 | Framework Settings | Provides visual identification of selected framework | Icon appears alongside framework name in selector | Custom component for framework-specific icons |
 | Independent Section Save | P0 | Framework Settings | Saves configuration changes for specific section | Disabled until changes are detected, positioned consistently | shadcn/ui Button with disabled state management |
+| **Error Handling Components** |
+| Field Error Indicator | P0 | Multiple (URL slug, Developer, Contact Email, Support Email) | Visually identifies invalid input fields | Applies red border to input field when validation fails, persists until error is resolved | Can be implemented using shadcn/ui Form components with error state styling |
+| Inline Error Message | P0 | Multiple (URL slug, Developer, Contact Email, Support Email) | Communicates specific validation error for a field | Appears below field with clear error text and warning icon, persists until error is resolved | Use shadcn/ui FormMessage component with red styling and icon |
+| Toast Error Notification | P0 | Global | Provides temporary high-visibility notification of validation errors | Appears in bottom-right corner, automatically dismisses after ~10 seconds, includes manual dismiss option | Can be implemented using shadcn/ui Toast with destructive variant |
+| Validation Error Summary | P1 | Global | Summarizes multiple validation errors | Displays detailed list of all validation issues in the toast notification | Should link error descriptions to corresponding fields |
+
 
 ## Components by Priority
 
