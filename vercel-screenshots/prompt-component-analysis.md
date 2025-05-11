@@ -15,7 +15,9 @@ Your analysis will help implement similar functionality for the Leger platform u
 Before beginning your analysis, carefully review these specific files from the Leger GitHub repository:
 
 1. `leger/vercel-screenshots/WIP-component-inventory-table.md` - Contains the current component inventory
-2. `leger/vercel-screenshots/personal-investigation.md` - Contains notes and observations about the Vercel UI
+2. `leger/vercel-screenshots/WIP-entity-analysis.md` - Contains the current entity analysis 
+3. `leger/vercel-screenshots/WIP-pattern-analysis.md` - Contains the current pattern analysis
+4. `leger/vercel-screenshots/personal-investigation.md` - Contains notes and observations about the Vercel UI
 
 These files provide critical context for your analysis. You MUST thoroughly review both files to:
 - Avoid duplicating components already identified in the inventory

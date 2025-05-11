@@ -45,6 +45,19 @@ I've analyzed the authentication and deployment protection screenshots, identify
 | IP Address Input | P1 | Authentication | Captures IP addresses for trusted access | Validates input format with optional CIDR notation | Text input with validation and placeholder |
 | Dynamic Field Collection | P0 | Multiple (Authentication, Environment Variables) | Manages variable-length collections of inputs | Allows adding and removing items with consistent UI | Reusable pattern for multiple input types |
 | Authentication Toggle | P0 | Authentication | Enables/disables authentication methods | Changes state of related configuration options | Switch with conditional field display |
+| **Profile Components** |
+| Avatar Upload Area | P1 | Account Settings | Enables users to set profile image | Clickable area that triggers file upload dialog | Can be implemented with shadcn AspectRatio with click handler |
+| Character Limit Indicator | P1 | Display Name, Username | Communicates input constraints | Static guidance showing maximum allowed characters | Text component with muted styling |
+| Prefix Field Label | P1 | Username | Shows fixed prefix that can't be edited | Static display of domain prefix before editable field | Input group with disabled prefix segment |
+| Verification Badge | P1 | Email | Indicates verified status of credential | Static indicator of verification state | Badge component with verified styling |
+| Primary Email Indicator | P1 | Email | Shows which email is set as primary | Static badge showing primary status | Badge component with primary styling |
+| Email Action Menu | P1 | Email | Provides actions for email management | Three-dot menu with contextual email options | shadcn DropdownMenu with appropriate actions |
+| Country Code Selector | P1 | Phone Number | Allows selection of international dialing codes | Dropdown with country flags and codes | Custom select with flag icons |
+| Copy To Clipboard | P2 | Vercel ID | Copies uneditable value to clipboard | Button that triggers copy action with confirmation | Button with copy icon and toast notification |
+| Dangerous Action Button | P0 | Delete Account | Initiates destructive account action | High-visibility destructive action button | shadcn Button with destructive variant |
+| **Team Components** |
+| Team Selector Chip | P0 | Default Team | Displays selected team with visual identifier | Shows team data with color indicator and removal option | Custom component with avatar and dismiss button |
+| Learn More Link | P2 | Multiple Sections | Provides access to detailed documentation | Link with icon pointing to external documentation | Text link with external link icon |
 
 ## Components by Priority
 
