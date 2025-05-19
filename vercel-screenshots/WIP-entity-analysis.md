@@ -545,4 +545,51 @@ The Environment Variables interface in Vercel organizes configuration data into 
 - Security settings affect how variable values are stored and displayed
 - Sensitive variables require explicit action to view values
 
+# Vercel Navigation Entity Analysis
 
+The navigation interface in Vercel organizes components into distinct functional entities that serve specific navigational purposes. Each entity creates a coherent interaction zone that helps users move through the application efficiently.
+
+## Entity: Main Navigation Bar
+
+**Purpose**: Provides global navigation across the platform while displaying current account context and key actions.
+
+**Components**:
+- Brand logo/home link
+- Account Switcher
+- Primary navigation tabs (Overview, Activity, Settings)
+- Navigation Indicator (underline)
+- Secondary navigation actions (Ship tickets, Feedback)
+- Documentation/Help links
+- User avatar/menu trigger
+
+**Conditional Logic**:
+- Navigation indicator appears only under the currently active section
+- Navigation options may change based on user permissions or subscription tier
+
+**Data Flow**:
+- Receives current account context from authentication system
+- Passes selected navigation destination to content area
+- May synchronize with URL/router state
+
+## Entity: User Account Menu
+
+**Purpose**: Provides account management functions, preferences, and shortcuts to key account-related destinations.
+
+**Components**:
+- User identity block (username and email)
+- Primary account destinations (Dashboard, Account Settings)
+- Team management action (Create Team with icon)
+- Utility functions (Command Menu, Theme Selector)
+- Secondary account destinations (Home Page)
+- Session management (Log Out)
+- Account Upgrade CTA
+
+**Conditional Logic**:
+- Team creation may be conditional on permissions
+- Upgrade CTA visibility depends on current account tier
+- Menu visibility toggles based on user avatar click state
+
+**Data Flow**:
+- Receives user account information from authentication system
+- Theme selection updates application-wide theme state
+- Log Out initiates session termination flow

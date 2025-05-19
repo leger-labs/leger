@@ -97,7 +97,13 @@ I've analyzed the authentication and deployment protection screenshots, identify
 | Deployment Status Notification | P1 | Environment Variables | Informs about deployment requirements | Alert indicating deployment needs for changes to take effect | Use shadcn/ui Alert with appropriate styling |
 | Environment Selector Dropdown | P0 | Environment Variables | Controls variable visibility filtering | Dropdown for selecting environment scope to view | shadcn/ui Select with environment options |
 | Sensitive Variable Toggle | P0 | Environment Variables | Controls visibility of variable values after creation | Toggle that determines whether values can be viewed after saving | Use shadcn/ui Switch with security-focused styling |
-
+| **Navigation** |
+| Account Switcher | P1 | Header | Enables switching between accounts or teams | Displays current account with dropdown indicator | Should include visual indicator of current selection and support keyboard navigation |
+| Navigation Indicator | P1 | Header | Shows current active section | Underlines the currently active navigation item | Provides clear visual feedback about current location in the app |
+| Keyboard Shortcut Display | P2 | User Menu | Informs users of available keyboard shortcuts | Displays key combinations next to menu items | Right-aligned within menu items for consistent placement |
+| Theme Selector | P2 | User Menu | Allows switching between UI themes | Presents system/light/dark mode options as toggle buttons | Implement as button group with selected state |
+| Navigation Icon | P2 | User Menu | Provides visual indicators for navigation destinations | Shows icons representing navigation targets | Uses consistent, meaningful iconography for improved recognition |
+| Account Upgrade CTA | P0 | User Menu | Promotes premium tier subscription | Appears as high-contrast button at bottom of user menu | Should be visually distinct from other menu items |
 
 ## Components by Priority
 
