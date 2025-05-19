@@ -593,3 +593,65 @@ The navigation interface in Vercel organizes components into distinct functional
 - Receives user account information from authentication system
 - Theme selection updates application-wide theme state
 - Log Out initiates session termination flow
+
+# Vercel Integration Configuration Entity Analysis
+
+The Vercel integration configuration interface organizes entities in a logical hierarchy, with primary navigation sections containing related form fields grouped into cohesive functional units. This organization helps users understand the different aspects of integration configuration.
+
+## Entity: Integration Configuration Navigation Structure
+
+**Purpose**: Provides a hierarchical organization of all form sections needed to configure an integration.
+
+**Components**:
+- Hierarchical Navigation Panel
+- Section Accordion
+- Navigation Item Status Indicator
+
+**Conditional Logic**: 
+- Navigation items can be expanded or collapsed
+- Each section can be independently accessed
+- Second screenshot shows the collapsed state of the navigation, showing only primary sections
+
+**Data Flow**:
+- Current section selection determines which form fields are displayed in the main content area
+- Navigation may reflect completion status of each section based on form field values
+
+## Entity: Integration Profile Form Section
+
+**Purpose**: Captures essential identifying information about the integration.
+
+**Components**:
+- Section header
+- Form fields for Name, URL Slug, Developer, Contact Email, etc.
+- Character counters
+- Visibility notices
+- Documentation link
+
+**Conditional Logic**:
+- Support contact email field becomes available when "Use the same contact information" is unchecked
+- Field validation enforces character limits and required fields
+
+**Data Flow**:
+- Form data is collected across multiple fields
+- Character counters update based on text input
+- Some fields have specific formatting requirements (URLs, emails)
+
+## Entity: Contact Information Management
+
+**Purpose**: Manages different contact points for the integration with clear privacy indicators.
+
+**Components**:
+- Contact Email field
+- Support Contact Email field
+- Same Information Checkbox
+- Visibility notices
+
+**Conditional Logic**:
+- When "Use the same contact information" is checked, the Support Contact Email field is populated with the same value as Contact Email
+- Different privacy notices for each field (one public, one private)
+
+**Data Flow**:
+- Data from Contact Email can flow to Support Contact Email when checkbox is selected
+- Both fields have separate validation for email format
+
+

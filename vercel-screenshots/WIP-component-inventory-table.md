@@ -104,6 +104,14 @@ I've analyzed the authentication and deployment protection screenshots, identify
 | Theme Selector | P2 | User Menu | Allows switching between UI themes | Presents system/light/dark mode options as toggle buttons | Implement as button group with selected state |
 | Navigation Icon | P2 | User Menu | Provides visual indicators for navigation destinations | Shows icons representing navigation targets | Uses consistent, meaningful iconography for improved recognition |
 | Account Upgrade CTA | P0 | User Menu | Promotes premium tier subscription | Appears as high-contrast button at bottom of user menu | Should be visually distinct from other menu items |
+| **Navigation Components** |
+| Hierarchical Navigation Panel | P0 | Integration Configuration | Provides a structured navigation system organized in logical sections | Displays all form sections in a hierarchical structure, allowing users to quickly navigate between different parts of a multi-section form | Should support collapsed/expanded states and visual indicators for completed/incomplete sections |
+| Section Accordion | P0 | Integration Configuration | Groups related configuration fields into collapsible sections | Can be expanded or collapsed to show/hide subsections, reducing visual complexity | Each section should maintain state independently |
+| Navigation Item Status Indicator | P1 | Integration Configuration | Communicates completion status of each form section | Visually indicates whether a section is complete, incomplete, or has errors | Could be implemented using subtle color/icon changes |
+| **Form Components** |
+| Character Counter | P1 | Form Fields | Shows remaining characters for text inputs with length restrictions | Displays current character count and maximum allowed | Should update in real-time as user types |
+| Visibility Notice | P2 | Form Fields | Indicates whether field information will be publicly visible | Clarifies privacy implications of each field | Best implemented as subtle text indicators near relevant fields |
+| Same Information Checkbox | P2 | Multiple Email Fields | Allows reusing the same contact information across multiple fields | When checked, copies information from one field to another | Should be paired with clear labeling to explain its function |
 
 ## Components by Priority
 
