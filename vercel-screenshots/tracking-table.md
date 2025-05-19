@@ -3,6 +3,7 @@
 | Build & Deploy | Y |
 | Domain Management | Y |
 | Environment Variables | Y |
+| Environment | Y |
 | Security & Authentication | N |
 | Team Management | N |
 | Account Settings | Y |

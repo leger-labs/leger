@@ -318,118 +318,94 @@ This analysis focuses specifically on the error handling patterns evident in the
 
 # Vercel Environment Variables UX Pattern Analysis
 
-The Environment Variables interface in Vercel demonstrates several sophisticated UX patterns that create an efficient, secure configuration experience. These patterns establish consistency while providing appropriate safeguards for sensitive deployment configuration.
+The Environment Variables interface in Vercel demonstrates several sophisticated UX patterns that create an efficient, secure configuration experience while maintaining usability. These patterns establish consistency while providing appropriate functionality for managing deployment configuration.
 
-## Pattern: In-Context Variable Management
+## Pattern: In-Context Form Expansion
 
-**Description**: Variable creation, editing, and deletion happen within the same view context, expanding panels in-place rather than navigating to separate pages. This maintains user context and workflow continuity while providing all necessary functionality.
+**Description**: Instead of navigating to separate pages, the interface expands forms within the current view context, allowing users to create and edit variables while maintaining awareness of the overall variable collection.
 
-**Usage**: The main environment variables table serves as the persistent context, with creation and editing panels expanding within this view rather than navigating away.
+**Usage**: When adding or editing a variable, the form expands directly within the main view rather than redirecting to a new page.
 
-**User Benefit**: Maintains orientation within the configuration space, reduces context switching, preserves visibility of other variables during editing, and creates a seamless workflow for managing multiple variables.
+**User Benefit**: Maintains contextual awareness, reduces disorientation, provides constant reference to other variables, and streamlines the workflow for managing multiple related variables.
 
-**Implementation Consideration**: Create a responsive layout that accommodates expanded panels without disrupting the overall page structure, with smooth transitions between states.
+**Implementation Consideration**: Design expandable components that can grow within the page flow without disrupting adjacent content, with smooth transitions between states.
 
-## Pattern: Progressive Security Disclosure
+## Pattern: Progressive Security Controls
 
-**Description**: Secret values are masked by default with explicit user action required to reveal them, creating a security-first approach that reduces the risk of credential exposure while maintaining usability.
+**Description**: The interface implements a security-first approach where sensitive values are managed differently from regular values, with explicit controls for visibility and access.
 
-**Usage**: Secret variable types use masked input fields with explicit reveal/hide functionality that immediately re-masks after viewing.
+**Usage**: The "Sensitive" toggle in the variable form changes how values are handled, with masked display and limited visibility after creation.
 
-**User Benefit**: Prevents accidental exposure of sensitive information, creates appropriate security friction, communicates the sensitive nature of the data, and builds secure handling habits.
+**User Benefit**: Creates appropriate security barriers for sensitive information, communicates the different handling requirements for secrets, and reduces risk of credential exposure.
 
-**Implementation Consideration**: Implement masking that works consistently across creation, viewing, and editing contexts, with appropriate visual indicators of masked state.
+**Implementation Consideration**: Implement a distinct input type for sensitive values with appropriate masking, reveal controls, and security indicators that persist throughout the interface.
 
-## Pattern: Environment Scope Visualization
+## Pattern: Multi-Environment Targeting
 
-**Description**: Clear visual indicators show which environments each variable applies to, using consistent color coding and terminology to communicate scope boundaries.
+**Description**: The interface provides a hierarchical approach to environment targeting, starting with broad categories before offering more granular selection where applicable.
 
-**Usage**: Variables are visually grouped by environment scope (All, Production, Preview, Development) with distinct styling for each scope type.
+**Usage**: The environment scope selector first offers high-level choices (All, Production, Preview, Development) before conditionally presenting more specific options.
 
-**User Benefit**: Creates immediate recognition of variable availability across environments, reduces configuration errors, and builds consistent mental model of environment hierarchy.
+**User Benefit**: Simplifies complex environment targeting with a logical progression, creates a clear mental model of environment hierarchy, and prevents overly complex initial choices.
 
-**Implementation Consideration**: Develop a consistent visual language for different environment scopes that can be applied across all variable representations.
+**Implementation Consideration**: Design a multi-stage selection system that adapts based on initial scope choices, with appropriate visual hierarchy and conditional options.
 
-## Pattern: Key-Value Paired Actions
+## Pattern: Dynamic Row Management
 
-**Description**: Each key-value pair includes dedicated action controls (edit, delete) that appear on hover or focus, maintaining a clean interface while providing immediate access to relevant operations.
+**Description**: The interface allows adding, removing, and managing any number of configuration rows within a consistent visual framework, supporting both individual and batch operations.
 
-**Usage**: Individual variable rows in the table display action buttons on hover/focus, with consistent positioning and behavior.
+**Usage**: Key-value pairs can be added indefinitely with consistent styling and interaction patterns for each row, including hover-based action menus.
 
-**User Benefit**: Reduces visual clutter while maintaining access to common actions, creates predictable interaction patterns, and enables efficient variable management.
+**User Benefit**: Provides flexibility for projects of any size, maintains consistent interaction regardless of variable count, and scales visually from small to large configurations.
+
+**Implementation Consideration**: Implement a virtualized list that can handle large numbers of variables while maintaining performance, with consistent interaction patterns across all rows.
+
+## Pattern: Contextual Documentation Integration
+
+**Description**: The ability to add notes to variables provides just-in-time documentation that stays with the configuration, supporting team knowledge sharing.
+
+**Usage**: Optional note fields can be added to any variable, providing context and explanation that travels with the configuration.
+
+**User Benefit**: Improves team communication, provides rationale and context for future reference, reduces dependency on external documentation, and supports maintenance activities.
+
+**Implementation Consideration**: Create an expandable note system that balances visibility with space efficiency, with appropriate styling to distinguish documentation from configuration.
+
+## Pattern: Import Flexibility
+
+**Description**: The interface supports different methods for adding variables, accommodating both manual entry and bulk import to support different workflow needs.
+
+**Usage**: Users can choose between individual variable creation and importing from .env files, with appropriate UI for each path.
+
+**User Benefit**: Supports migration scenarios, accommodates different team workflows, reduces manual entry errors, and improves efficiency for large configurations.
+
+**Implementation Consideration**: Design parallel workflows for different import methods that converge to consistent results, with appropriate guidance and preview capabilities.
+
+## Pattern: Deployment Status Awareness
+
+**Description**: The interface communicates the deployment implications of configuration changes, making users aware that new deployments may be necessary.
+
+**Usage**: A notification alerts users that deployment is required for changes to take effect.
+
+**User Benefit**: Creates appropriate expectations about when changes will become active, reduces confusion about configuration timing, and prevents mistaken assumptions about immediate effect.
+
+**Implementation Consideration**: Implement a consistent notification system for deployment requirements that appears when relevant without being excessively intrusive.
+
+## Pattern: Hover-Based Actions
+
+**Description**: Row-specific actions are revealed on hover or focus, maintaining a clean interface while providing immediate access to relevant operations.
+
+**Usage**: Edit and delete controls appear when hovering over specific variable rows.
+
+**User Benefit**: Reduces visual clutter while maintaining accessibility of common actions, creates a clean interface that scales to many variables, and provides consistent interaction pattern.
 
 **Implementation Consideration**: Implement hover/focus action containers with appropriate accessibility considerations to ensure actions are discoverable by all users.
 
-## Pattern: Variable Type Differentiation
+## Pattern: Variable Search and Filtering
 
-**Description**: Plain text and secret variables are visually differentiated with consistent indicators that communicate their nature and handling requirements.
+**Description**: The interface provides multiple methods for finding specific variables in large collections, combining free-text search with predefined filters.
 
-**Usage**: Secret variables use masked value displays and security-oriented icons that distinguish them from plain text variables.
+**Usage**: A search box allows keyword filtering while environment dropdown filters by scope.
 
-**User Benefit**: Creates immediate recognition of sensitive variables, reinforces security consciousness, and reduces risk of inappropriate handling.
+**User Benefit**: Improves efficiency when working with large variable collections, allows focusing on relevant subsets of variables, and supports different search strategies.
 
-**Implementation Consideration**: Create consistent visual treatment for different variable types that carries through all contexts (table, edit form, creation form).
-
-## Pattern: Hierarchical Environment Selection
-
-**Description**: Environment scope selection follows a hierarchical pattern, starting with broad categories (All, Production, Preview, Development) before offering more granular selection where applicable.
-
-**Usage**: The scope selector first requires selection of primary environment type, then conditionally offers more specific options (like individual preview environments).
-
-**User Benefit**: Simplifies complex environment targeting by breaking selection into logical steps, reduces cognitive load, and creates a clear mental model of environment hierarchy.
-
-**Implementation Consideration**: Implement a multi-stage selection system that adapts based on initial scope choices, with appropriate visual hierarchy in the interface.
-
-## Pattern: Bulk and Individual Operations
-
-**Description**: The interface supports both individual variable management for precision and bulk operations for efficiency, accommodating different user workflows within the same interface.
-
-**Usage**: Individual editing controls exist alongside bulk import functionality, with appropriate guidance for each path.
-
-**User Benefit**: Accommodates different workflow needs and variable volumes, supports migration scenarios, and improves efficiency for common operations.
-
-**Implementation Consideration**: Design the interface to make both individual and bulk operations discoverable without overwhelming users with too many options simultaneously.
-
-## Pattern: Variable Inheritance Indication
-
-**Description**: Variables that apply across multiple environments through inheritance have clear visual indicators that communicate their cascade behavior.
-
-**Usage**: Variables with "All" scope show inheritance indicators that communicate their availability in all environment types.
-
-**User Benefit**: Creates clear understanding of variable availability, prevents redundant configuration, and communicates the relationship between environments.
-
-**Implementation Consideration**: Develop consistent visual indicators for inherited variables that communicate both the fact of inheritance and the source.
-
-## Pattern: Contextual Variable Documentation
-
-**Description**: Variables can include optional documentation notes that explain their purpose, usage, or other relevant details, supporting team collaboration and future maintenance.
-
-**Usage**: The variable creation and edit forms include optional note fields that can store explanatory text visible to team members.
-
-**User Benefit**: Improves team knowledge sharing, provides context for variable usage, aids in troubleshooting, and reduces dependency on tribal knowledge.
-
-**Implementation Consideration**: Implement collapsible note fields that balance visibility of documentation with space efficiency in the interface.
-
-## Pattern: Format-Aware Import
-
-**Description**: The bulk import functionality automatically detects and adapts to common environment variable formats, reducing friction when migrating from different environments.
-
-**Usage**: Pasted or uploaded .env files are automatically parsed with format detection and preview before confirmation.
-
-**User Benefit**: Simplifies migration from local development or other platforms, reduces manual entry errors, and accelerates configuration setup.
-
-**Implementation Consideration**: Implement robust format detection that can handle variations in common formats (.env, JSON, YAML) with appropriate preview and validation.
-
-## Implementation Recommendations
-
-1. **Security-First Design**: Prioritize secure handling of sensitive values throughout the interface, with appropriate masking, reveal controls, and security indicators.
-
-2. **Contextual Actions**: Maintain the pattern of showing relevant actions in context (on hover/focus) to keep the interface clean while ensuring discoverability.
-
-3. **Environment Hierarchy Visualization**: Create a consistent visual language for representing environment scope and inheritance that helps users build an accurate mental model.
-
-4. **In-Context Form Expansion**: Preserve the pattern of expanding forms within the current view rather than navigating to separate pages, maintaining user context throughout the workflow.
-
-5. **Progressive Disclosure**: Follow Vercel's approach of revealing additional options only when they become relevant based on previous selections, reducing cognitive load.
-
-The key-value management pattern highlighted is particularly valuable, with its combination of clean default presentation and contextual action availability. This pattern should be carried forward as a core interaction model for configuration management in Leger.
+**Implementation Consideration**: Implement a unified search and filter system that combines different filtering methods while maintaining consistent results presentation.
