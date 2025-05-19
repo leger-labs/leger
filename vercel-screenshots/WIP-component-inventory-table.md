@@ -82,6 +82,17 @@ I've analyzed the authentication and deployment protection screenshots, identify
 | Inline Error Message | P0 | Multiple (URL slug, Developer, Contact Email, Support Email) | Communicates specific validation error for a field | Appears below field with clear error text and warning icon, persists until error is resolved | Use shadcn/ui FormMessage component with red styling and icon |
 | Toast Error Notification | P0 | Global | Provides temporary high-visibility notification of validation errors | Appears in bottom-right corner, automatically dismisses after ~10 seconds, includes manual dismiss option | Can be implemented using shadcn/ui Toast with destructive variant |
 | Validation Error Summary | P1 | Global | Summarizes multiple validation errors | Displays detailed list of all validation issues in the toast notification | Should link error descriptions to corresponding fields |
+| **Environment Variable Management Components** |
+| Variable Row Action Controls | P0 | Environment Variables | Provides inline actions for each variable | Displays edit and delete buttons that appear on hover or focus | Can be implemented with shadcn Button components with appropriate icons, appearing conditionally |
+| Environment Variable Type Selector | P0 | Environment Variables | Specifies the type of environment variable (plain text or secret) | Toggles between different input modes with appropriate security handling | Radio or toggle group that changes the input field behavior |
+| Preview Environment Selector | P1 | Environment Variables | Allows selection of specific preview environments for variable scoping | Multi-select functionality with individual environment targeting | shadcn MultiSelect with custom rendering of environment options |
+| Environment Variable Grouping Header | P1 | Environment Variables | Visually separates variables by environment scope | Collapsible section header showing environment name with count | shadcn Collapsible with custom header styling |
+| System-Reserved Variable Indicator | P1 | Environment Variables | Indicates system-controlled variables that cannot be modified | Visual styling showing restricted status with information icon | Badge or tag with information tooltip |
+| Variable Inheritance Indicator | P1 | Environment Variables | Shows when a variable is inherited from a parent environment | Visual indicator showing inheritance source | Badge with appropriate styling and tooltip |
+| Variable Value Peek | P2 | Environment Variables | Allows temporary viewing of masked secret values | Click-to-reveal functionality with automatic re-masking | Custom input component with toggle visibility |
+| Variable Export Format Selector | P2 | Environment Variables | Enables exporting variables in different formats | Dropdown with format options (.env, JSON, etc.) | shadcn Select with download trigger |
+| Variable Search Highlight | P2 | Environment Variables | Highlights matching text when searching variables | Visual highlighting of search terms in variable names and values | Text component with conditional styling for matched segments |
+| Environment Variable Reference Copy | P2 | Environment Variables | Provides one-click copying of variable reference syntax | Button that copies the proper syntax for referencing the variable in code | Button with clipboard functionality and confirmation feedback |
 
 
 ## Components by Priority
@@ -176,4 +187,19 @@ I've analyzed the authentication and deployment protection screenshots, identify
 The authentication and protection screenshots have revealed important patterns around feature availability based on plan tiers, dynamic field collection management, and security configuration workflows. These screenshots show how Vercel handles premium features with clear upgrade paths while still allowing users to understand the value of restricted functionality. 
 
 The consistent treatment of documentation links and contextual help across all sections reinforces our understanding of Vercel's design philosophy around self-documentation and guided configuration. The interface shows remarkable consistency in how similar patterns (like adding multiple items to a list) are implemented across entirely different functional areas (paths, IPs, environment variables), suggesting a well-designed component system underpinning the entire interface.
+
+## Implementation Recommendations Specific to Environment Variables
+
+1. **Masked Value Handling**: Implement a consistent pattern for handling masked values (secrets) with appropriate reveal/hide functionality that prioritizes security.
+
+2. **Environment Scope Visualization**: Create a visual system for indicating which environments a variable applies to, with consistent styling for development, preview, and production environments.
+
+3. **Variable Inheritance Chain**: Design a visual grammar for showing how variables cascade from global scope to specific environments, making inheritance patterns clear to users.
+
+4. **Hover Action States**: Implement a consistent pattern for showing variable actions on hover/focus to keep the interface clean while maintaining accessibility.
+
+5. **Key-Value Pattern Consistency**: Ensure that key-value pair patterns are consistent across all configuration areas (not just environment variables), maintaining predictable interaction models.
+
+The environment variable interface demonstrates Vercel's thoughtful approach to managing sensitive configuration data. The patterns here could be applied to other configuration areas in Leger that involve key-value pairs, secrets management, or environment-specific settings.
+
 

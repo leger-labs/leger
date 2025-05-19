@@ -413,3 +413,158 @@ This analysis focuses exclusively on how error validation entities function with
 - Form submission triggers validation across all fields
 - Validation failures generate both field-level indicators and global notification
 - Notification system manages display timing and dismissal
+
+# Vercel Environment Variables Entity Analysis
+
+The Environment Variables section of Vercel organizes configuration data into distinct functional entities that manage different aspects of application configuration across deployment environments. Each entity represents a logical grouping of controls that together serve a specific purpose in the configuration workflow.
+
+## Entity: Environment Variable Workspace
+
+**Purpose**: Provides an overview of all environment variables with filtering, search, and management capabilities
+
+**Components**:
+- Section header with environment variable count
+- Search and filter bar
+- Environment variable table
+- Add variable button
+- Bulk import control
+- Variable grouping headers by environment
+
+**Conditional Logic**:
+- Search functionality filters visible variables in real-time
+- Environment-based grouping organizes variables visually
+- Add button initiates creation workflow without leaving the current context
+
+**Data Flow**:
+- Search queries filter the visible subset of variables
+- All variable management actions remain within the same workspace view
+- Adding or editing variables expands in-place rather than navigating to new pages
+
+## Entity: Variable Creation Panel
+
+**Purpose**: Collects all necessary information to create a new environment variable within the appropriate scope
+
+**Components**:
+- Variable name input
+- Variable value input with type selector (plain/secret)
+- Environment scope selector
+- Optional note field
+- Preview environment multi-selector (when applicable)
+- Create button
+- Cancel button
+
+**Conditional Logic**:
+- Value input changes behavior based on variable type selection
+- Preview environment selector only appears when Preview environment scope is selected
+- Create button is disabled until required fields are completed
+- Note field is optional and can be toggled/expanded
+
+**Data Flow**:
+- Form data is collected locally before submission
+- Creation adds the new variable to the workspace table immediately
+- Variable availability in deployments follows scope selection rules
+
+## Entity: Variable Edit Panel
+
+**Purpose**: Modifies existing environment variables while maintaining appropriate security and scope controls
+
+**Components**:
+- Pre-filled variable name input
+- Variable value input with current value (plaintext or masked)
+- Current environment scope selector
+- Existing note field (if present)
+- Update button
+- Cancel button
+- Delete option
+
+**Conditional Logic**:
+- Secret values remain masked unless explicitly revealed
+- Scope changes may trigger warnings about impact on deployments
+- Update button is disabled until changes are made
+- Delete option requires confirmation
+
+**Data Flow**:
+- Original values are displayed until modified
+- Updates are reflected immediately in the workspace table
+- Changes to production variables may require deployment to take effect
+
+## Entity: Bulk Import Workflow
+
+**Purpose**: Enables efficient migration of multiple environment variables from external sources like .env files
+
+**Components**:
+- Import method selector (paste/upload)
+- Text area for pasted content
+- File upload control
+- Format detection and preview
+- Environment scope selector 
+- Confirmation button
+- Cancel button
+
+**Conditional Logic**:
+- Interface adapts based on import method selection
+- Preview shows detected variables before final import
+- Confirmation requires preview acknowledgment
+
+**Data Flow**:
+- External data is parsed and validated before import
+- Variables are created in batch with consistent scope
+- Existing variables with same names prompt conflict resolution options
+
+## Entity: Variable Actions Context
+
+**Purpose**: Provides contextual operations for individual environment variables
+
+**Components**:
+- Edit button
+- Delete button
+- Copy reference button
+- Duplicate button
+
+**Conditional Logic**:
+- Actions appear on hover/focus for specific variables
+- System-defined variables may have restricted action sets
+- Delete actions require confirmation
+- Copy provides temporary success feedback
+
+**Data Flow**:
+- Actions operate on the specific variable row
+- Edits expand in-context rather than navigating away
+- Deletion removes from both UI and configuration
+- Copy captures appropriately formatted reference syntax
+
+## Entity: Environment Scope Management
+
+**Purpose**: Controls which deployment environments have access to specific variables
+
+**Components**:
+- Environment scope selector (All/Production/Preview/Development)
+- Preview environment multi-selector
+- Scope explanation text
+- Inheritance indicators
+
+**Conditional Logic**:
+- Preview environment selection only appears for Preview scope
+- Detailed selection options change based on primary scope selection
+- Inheritance indicators appear based on variable scope relationships
+
+**Data Flow**:
+- Scope selection determines variable visibility across environments
+- Inheritance relationships create implicit availability
+- Scope changes may require redeployment to take effect
+
+## Implementation Considerations
+
+Vercel's environment variable management demonstrates several important patterns that should be maintained in the Leger implementation:
+
+1. **In-Context Editing**: Variable creation and editing happen within the same view rather than navigating to separate pages, maintaining user context.
+
+2. **Progressive Disclosure**: Complex options like preview environment selection only appear when relevant to the selected scope.
+
+3. **Scope Visualization**: Clear visual indicators show which environments variables apply to, with consistent color and icon conventions.
+
+4. **Security-First Design**: Secret values are masked by default with explicit user action required to reveal them temporarily.
+
+5. **Batch Operations**: Support for both individual and bulk operations accommodates different user workflows and migration scenarios.
+
+The entity design prioritizes maintaining context while providing appropriate guardrails for sensitive operations, a pattern that should be preserved in the Leger implementation.

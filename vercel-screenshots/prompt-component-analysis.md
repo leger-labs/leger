@@ -183,3 +183,5 @@ Do not mention or describe:
 6. **Explicitly acknowledge existing components** - if you find a component that's already in the WIP inventory, note that you're not adding it to avoid duplication.
 
 Your goal is to provide a comprehensive, multi-level analysis that enables the effective implementation of Vercel-like configuration management interfaces for the Leger platform while building upon the existing documentation and avoiding duplication.
+
+IMPORTANT: I have included the WIP files so make sure that the information we are adding in there is not redundant with the existing investigation done. Remember, we are not copying vercel s functionality, but their user interface and form best practices

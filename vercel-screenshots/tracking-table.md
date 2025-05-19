@@ -1,8 +1,8 @@
 | Section Name | Processed? (Y/N) |
 |--------------|------------------|
 | Build & Deploy | Y |
-| Domain Management | N |
-| Environment Variables | N |
+| Domain Management | Y |
+| Environment Variables | Y |
 | Security & Authentication | N |
 | Team Management | N |
 | Account Settings | Y |
