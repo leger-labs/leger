@@ -654,4 +654,88 @@ The Vercel integration configuration interface organizes entities in a logical h
 - Data from Contact Email can flow to Support Contact Email when checkbox is selected
 - Both fields have separate validation for email format
 
+# Vercel Integration Configuration Entity Analysis
 
+The Integration Configuration interface organizes components into logical entities that work together to fulfill specific configuration purposes. Each entity represents a cohesive functional unit with clear boundaries and relationships between components.
+
+## Entity: Rich Text Content Management
+
+**Purpose**: Provides an enhanced input mechanism for formatted content with appropriate guidance and constraints
+
+**Components**:
+- Section header (Overview, Additional Information)
+- Section description explaining purpose
+- Markdown-enabled text area with expanded height
+- Markdown support indicator with external link
+- Character limit indicator showing maximum allowed characters
+
+**Conditional Logic**:
+- Character limit indicator likely changes color or provides warning as user approaches limit
+- Markdown syntax is processed and rendered differently than plain text
+
+**Data Flow**:
+- Content entered maintains markdown formatting for storage
+- Character count is continuously calculated and updated
+- Maximum character limits are enforced during input and submission
+
+## Entity: Integration Identification
+
+**Purpose**: Establishes core identity and access points for the integration
+
+**Components**:
+- Support URL section header
+- Support URL description text
+- URL input field with validation
+- URL placeholder showing expected format
+
+**Conditional Logic**:
+- URL field likely validates format as user types
+- Submit action would be prevented if URL format is invalid
+
+**Data Flow**:
+- URL value is stored and used as a reference point for support access
+- Format validation ensures stored URLs are functional
+
+## Entity: API Permission Management
+
+**Purpose**: Controls the level of access the integration has to different Vercel API functionalities
+
+**Components**:
+- Settings section header
+- Configuration description text
+- External documentation link
+- Permission scope rows (multiple)
+- Permission scope descriptions
+- Help icons with tooltips
+- Permission level dropdowns
+
+**Conditional Logic**:
+- Each permission is independently configurable
+- Some permissions may have dependencies or recommendations based on integration type
+- The first permission (Integration Configuration) is shown as already set to "Read"
+- Remaining permissions default to "None" but can be individually changed
+
+**Data Flow**:
+- Permission selections determine API access boundaries
+- Changes to permissions likely require explicit save action
+- Permissions are translated to API tokens or credentials with appropriate scopes
+
+## Entity: OAuth Redirect Configuration
+
+**Purpose**: Establishes secure communication channel for authorization flow
+
+**Components**:
+- Redirect URL section header
+- Redirect URL description text
+- URL input field with validation
+- URL placeholder showing expected format
+- External documentation link
+
+**Conditional Logic**:
+- URL field likely validates format and security requirements
+- OAuth flow would fail if URL is misconfigured
+
+**Data Flow**:
+- Redirect URL is registered with the authentication system
+- User authentication requests are directed back to this URL
+- Authentication tokens are processed at this endpoint

@@ -497,3 +497,67 @@ The Vercel integration configuration interface demonstrates several sophisticate
 **User Benefit**: Streamlines the form completion process by reducing repetitive data entry while still maintaining flexibility for cases where different values are needed.
 
 **Implementation Consideration**: The relationship between fields should be clearly explained, and the option to use the same value should be easily toggleable. When toggled on, the dependent field should be visually indicated as auto-populated.
+
+# Vercel Integration Configuration UX Pattern Analysis
+
+The Integration Configuration interface demonstrates several sophisticated UX patterns designed to enhance the configuration experience while guiding users toward proper setup. These patterns work together to create a cohesive, intuitive interface for complex configuration tasks.
+
+## Pattern: Rich Text Content Areas with Guidance
+
+**Description**: Larger text input areas that support enhanced formatting come with explicit formatting capability notices and character constraints, providing users with clear guidance on input capabilities and limitations.
+
+**Usage**: Applied to the Overview and Additional Information sections where longer, formatted text is expected. Each area includes both a Markdown support indicator and character count limitation.
+
+**User Benefit**: Communicates input expectations clearly, prevents submission errors, empowers users to create better formatted content, and eliminates confusion about what formatting is supported.
+
+**Implementation Consideration**: The markdown support indicator should be visually distinct but not overpowering. Character limits should update in real-time, potentially changing color as users approach the limit. Consider providing a markdown cheat sheet or preview functionality.
+
+## Pattern: Stepped Permission Configuration
+
+**Description**: API permissions are presented as a vertical sequence of similar configuration controls, each following identical patterns but controlling distinct permission scopes.
+
+**Usage**: In the API Scopes section, multiple permission rows follow the same structural pattern, each with description text, help icon, and permission level dropdown.
+
+**User Benefit**: Creates a consistent mental model for permission configuration, allows quick scanning of current permission states, and maintains clear separation between different API capabilities.
+
+**Implementation Consideration**: Maintain absolutely consistent positioning and styling across all permission rows. Consider visual indicators that distinguish between default and modified permission levels. Group related permissions logically and provide clear scope descriptions.
+
+## Pattern: Contextual Explanation Proximity
+
+**Description**: Each configuration section begins with clear explanatory text that establishes purpose and expected input before presenting interactive elements.
+
+**Usage**: Every section (Support URL, Overview, Additional Information, Redirect URL, API Scopes) starts with descriptive text that frames the purpose of the fields that follow.
+
+**User Benefit**: Builds understanding before decision-making, reduces confusion about field purpose, and creates context for proper configuration decisions.
+
+**Implementation Consideration**: Create a consistent layout where descriptive text appears immediately after section headers and before interactive elements. Ensure text is concise but informative.
+
+## Pattern: Graduated Input Field Sizing
+
+**Description**: Input field height corresponds to expected input length and complexity, with single-line fields for simple values and expanded multi-line areas for richer content.
+
+**Usage**: Contrast between the compact URL input fields and expanded text areas for Overview and Additional Information sections.
+
+**User Benefit**: Creates visual affordance that indicates expected input complexity, provides appropriate space for different content types, and implicitly communicates input expectations.
+
+**Implementation Consideration**: Establish consistent sizing ratios for different field types. Consider allowing text areas to expand further as content grows while maintaining the larger initial size as a visual cue.
+
+## Pattern: Format-Specific Field Guidance
+
+**Description**: Input fields provide format guidance through a combination of descriptive text, placeholders, and real-time validation.
+
+**Usage**: URL fields include placeholders showing expected URL format (https://my-app.com/support), creating immediate pattern recognition.
+
+**User Benefit**: Reduces input errors by showing expected formats before typing begins, creates clear mental model of valid inputs, and prevents submission errors.
+
+**Implementation Consideration**: Use placeholders consistently for format examples, but ensure they don't replace clear labels. Consider adding subtle validation indicators that appear during typing.
+
+## Pattern: External Documentation Integration
+
+**Description**: Context-specific documentation links appear alongside relevant configuration sections, providing direct access to detailed guidance without cluttering the main interface.
+
+**Usage**: "Markdown is supported" links in text areas and "Learn More" links in API configuration sections provide paths to deeper documentation.
+
+**User Benefit**: Offers just-in-time access to detailed information for users who need it while maintaining a clean interface for experienced users. Creates consistent pattern for finding help.
+
+**Implementation Consideration**: Use consistent styling and positioning for documentation links across different sections. Consider whether links open in new tabs or provide in-context help.

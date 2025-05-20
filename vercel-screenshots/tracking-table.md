@@ -9,7 +9,7 @@
 | Account Settings | Y |
 | Authentication | Y |
 | Integrations | N |
-| Main Configuration Dashboard | N |
+| Main Configuration Dashboard | Y |
 | Configuration Manager | Y |
 
-Later: add menu with ctrl K 
+Later: add menu with ctrl K, team mgmt (not implemented)

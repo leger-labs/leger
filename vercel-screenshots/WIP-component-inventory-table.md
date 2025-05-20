@@ -112,6 +112,21 @@ I've analyzed the authentication and deployment protection screenshots, identify
 | Character Counter | P1 | Form Fields | Shows remaining characters for text inputs with length restrictions | Displays current character count and maximum allowed | Should update in real-time as user types |
 | Visibility Notice | P2 | Form Fields | Indicates whether field information will be publicly visible | Clarifies privacy implications of each field | Best implemented as subtle text indicators near relevant fields |
 | Same Information Checkbox | P2 | Multiple Email Fields | Allows reusing the same contact information across multiple fields | When checked, copies information from one field to another | Should be paired with clear labeling to explain its function |
+| **Text Input Components** |
+| Markdown-Enabled Text Area | P0 | Overview, Additional Information | Provides larger input area for rich text content with markdown support | Expands to accommodate multi-line content with character count limits | Should include markdown support notice and character counter that updates in real-time |
+| URL Input Field | P0 | Support URL, Redirect URL | Captures properly formatted URLs for integration configuration | Validates URL format while typing | Include placeholder showing expected format (https://my-app.com/support) |
+| **Documentation Components** |
+| Markdown Support Indicator | P1 | Overview, Additional Information | Informs users that markdown formatting is supported | Static informational link with external icon | Should be positioned consistently below relevant text areas |
+| Character Limit Indicator | P1 | Overview, Additional Information | Communicates input constraints for text areas | Static guidance showing maximum allowed characters | Should update in real-time as user types |
+| **API Configuration Components** |
+| Permission Scope Row | P0 | API Scopes | Organizes individual API permission with description and access level selector | Groups related information about a specific API permission | Each row should maintain consistent layout with description and dropdown |
+| Permission Level Dropdown | P0 | API Scopes | Allows selecting appropriate access level for each API scope | Toggles between permission levels (None, Read) | Use consistent dropdown styling with clearly distinguished permission levels |
+| Help Icon | P1 | API Scopes | Provides additional context about specific API scopes | Reveals explanatory tooltip on hover | Position consistently after each scope title |
+| **Section Components** |
+| Section Header | P0 | Multiple (Support URL, Overview, Additional Information) | Visually separates and identifies distinct configuration sections | Static heading that establishes section context | Use consistent typography and spacing across all section headers |
+| Section Description | P1 | Multiple (Support URL, Overview, Additional Information) | Provides contextual explanation of section purpose | Static text positioned directly below section header | Use consistent styling and positioning below section headers |
+| **Navigation Components** |
+| External Documentation Link | P2 | API Scopes, Redirect URL | Provides access to detailed documentation | Opens external documentation in new tab | Use consistent icon and styling for all external links |
 
 ## Components by Priority
 
