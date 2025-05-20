@@ -3,7 +3,7 @@
   "info": {
     "title": "OpenWebUI Configuration",
     "description": "Configuration schema for OpenWebUI environment variables",
-    "version": "0.7.0"
+    "version": "0.0.1"
   },
   "paths": {},
   "components": {
