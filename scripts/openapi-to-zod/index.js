@@ -12,9 +12,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// We'll determine paths relative to the repo root, not this script's location
-const REPO_ROOT = process.cwd(); // This will be the directory where the script is run from
-const SCRIPT_DIR = __dirname;
+// The script should find files relative to the repository root
+// When run from scripts/openapi-to-zod, we need to go up one level
+const REPO_ROOT = path.resolve(__dirname, '../..');
+console.log('Repository root directory:', REPO_ROOT);
 
 // Configuration with paths relative to repo root
 const INPUT_SCHEMA_PATH = path.join(REPO_ROOT, 'schemas/openwebui-config-schema.json');
@@ -33,7 +34,9 @@ async function main() {
     // Verify the OpenAPI schema file exists
     if (!fs.existsSync(INPUT_SCHEMA_PATH)) {
       console.error(`\x1b[31mError: OpenAPI schema file not found at ${INPUT_SCHEMA_PATH}\x1b[0m`);
-      console.log('Make sure you run this script from the repository root or specify the correct path.');
+      console.log('Files in schemas directory:', fs.existsSync(path.join(REPO_ROOT, 'schemas')) 
+        ? fs.readdirSync(path.join(REPO_ROOT, 'schemas')).join(', ') 
+        : 'schemas directory not found');
       process.exit(1);
     }
     
@@ -123,6 +126,10 @@ async function main() {
     process.exit(1);
   }
 }
+
+// Run the conversion
+main();
+
 
 // Run the conversion
 main();

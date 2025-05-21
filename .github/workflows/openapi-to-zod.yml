@@ -18,6 +18,13 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Debug repository structure
+        run: |
+          echo "Repository root contents:"
+          ls -la
+          echo "Schemas directory contents:"
+          ls -la schemas || echo "Schemas directory not found"
+
       - name: Install converter dependencies
         run: |
           cd scripts/openapi-to-zod
