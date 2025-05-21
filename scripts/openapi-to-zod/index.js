@@ -1,13 +1,19 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const fs = require('fs');
-const SwaggerParser = require('@apidevtools/swagger-parser');
-const { generateFile } = require('typed-openapi');
-const { processZodSchema } = require('./zod-processor');
+// Use ES modules for typed-openapi compatibility
+import path from 'path';
+import fs from 'fs';
+import SwaggerParser from '@apidevtools/swagger-parser';
+import { generateFile, mapOpenApiEndpoints } from 'typed-openapi';
+import { processZodSchema } from './zod-processor.js';
+import { fileURLToPath } from 'url';
+
+// Get the directory name properly in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // We'll determine paths relative to the repo root, not this script's location
-const REPO_ROOT = process.cwd();  // This will be the directory where the script is run from
+const REPO_ROOT = process.cwd(); // This will be the directory where the script is run from
 const SCRIPT_DIR = __dirname;
 
 // Configuration with paths relative to repo root
@@ -43,25 +49,30 @@ async function main() {
     
     // Generate Zod schemas using typed-openapi
     console.log('Generating Zod schemas...');
-    // The API might have changed in v1.4.2, let's try both approaches
     let generatedContent;
+    
     try {
-      // Try the new API first
-      generatedContent = generateFile({
-        doc: openApiDoc,
-        runtime: 'zod',
-        schemasOnly: true,
-      });
-    } catch (error) {
-      console.log('Trying alternative API approach...');
-      // Fall back to using the mapOpenApiEndpoints function if available
-      const { mapOpenApiEndpoints } = require('typed-openapi');
+      // First try using mapOpenApiEndpoints (which is the likely approach in newer versions)
       const ctx = mapOpenApiEndpoints(openApiDoc);
       generatedContent = generateFile({
         ...ctx,
         runtime: 'zod',
         schemasOnly: true,
       });
+    } catch (error) {
+      console.log('First approach failed, trying alternative:', error.message);
+      
+      // Try direct approach as fallback
+      try {
+        generatedContent = generateFile({
+          doc: openApiDoc,
+          runtime: 'zod',
+          schemasOnly: true,
+        });
+      } catch (innerError) {
+        console.error('Both approaches failed:', innerError.message);
+        throw new Error('Failed to generate schemas using typed-openapi');
+      }
     }
     
     if (!generatedContent) {
@@ -75,8 +86,10 @@ async function main() {
     // Format with prettier if available
     let formattedSchemasContent = schemasContent;
     let formattedIndexContent = indexContent;
+    
     try {
-      const prettier = require('prettier');
+      // Dynamic import for prettier (ESM compatibility)
+      const prettier = await import('prettier');
       const options = {
         parser: 'typescript',
         printWidth: 100,
@@ -86,11 +99,12 @@ async function main() {
         trailingComma: 'all',
       };
       
-      formattedSchemasContent = await prettier.format(schemasContent, options);
-      formattedIndexContent = await prettier.format(indexContent, options);
+      formattedSchemasContent = await prettier.default.format(schemasContent, options);
+      formattedIndexContent = await prettier.default.format(indexContent, options);
       console.log('Formatted schemas with prettier.');
     } catch (error) {
       console.warn('Warning: Could not format with prettier. Using unformatted output.');
+      console.warn(error.message);
     }
     
     // Write the output files

@@ -7,7 +7,7 @@
  * @param {string} generatedContent - Raw generated content from typed-openapi
  * @returns {object} Object with schemasContent and indexContent
  */
-async function processZodSchema(generatedContent) {
+export async function processZodSchema(generatedContent) {
   // Extract schemas section
   const schemaContent = extractSchemaSection(generatedContent);
   
@@ -38,6 +38,14 @@ function extractSchemaSection(content) {
   
   if (!match) {
     console.warn('Warning: Could not find schemas section in generated content');
+    // Attempt to extract anything that looks like a schema definition as fallback
+    const fallbackRegex = /export (type|const) \w+(_Schema)? = z\.[^;]+(;|}\))/g;
+    const fallbackMatches = [...content.matchAll(fallbackRegex)];
+    
+    if (fallbackMatches.length > 0) {
+      return fallbackMatches.map(m => m[0]).join('\n\n');
+    }
+    
     return '';
   }
   
@@ -131,7 +139,3 @@ function createIndexFileContent() {
 export * from './generated-schemas';
 `;
 }
-
-module.exports = {
-  processZodSchema
-};
