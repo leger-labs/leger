@@ -50,13 +50,28 @@ async function main() {
     console.log(`Parsing OpenAPI schema from ${INPUT_SCHEMA_PATH}...`);
     const openApiDoc = await SwaggerParser.bundle(INPUT_SCHEMA_PATH);
     
+    // Ensure we have the necessary structure
+    if (!openApiDoc.components || !openApiDoc.components.schemas || !openApiDoc.components.schemas.OpenWebUIConfig) {
+      console.error('\x1b[31mError: The OpenAPI schema does not contain the expected OpenWebUIConfig component\x1b[0m');
+      process.exit(1);
+    }
+    
+    // Extract the main config schema to provide better context for generation
+    const configSchema = openApiDoc.components.schemas.OpenWebUIConfig;
+    console.log(`Found OpenWebUIConfig with ${Object.keys(configSchema.properties || {}).length} properties`);
+    
     // Generate Zod schemas using typed-openapi
     console.log('Generating Zod schemas...');
     let generatedContent;
     
     try {
-      // First try using mapOpenApiEndpoints (which is the likely approach in newer versions)
-      const ctx = mapOpenApiEndpoints(openApiDoc);
+      // First try using mapOpenApiEndpoints with just the relevant schema
+      const ctx = mapOpenApiEndpoints({
+        ...openApiDoc,
+        // Focus just on the components part to avoid endpoint generation
+        paths: {}
+      });
+      
       generatedContent = generateFile({
         ...ctx,
         runtime: 'zod',
@@ -126,10 +141,6 @@ async function main() {
     process.exit(1);
   }
 }
-
-// Run the conversion
-main();
-
 
 // Run the conversion
 main();

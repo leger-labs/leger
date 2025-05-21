@@ -8,22 +8,27 @@
  * @returns {object} Object with schemasContent and indexContent
  */
 export async function processZodSchema(generatedContent) {
-  // Extract schemas section
-  const schemaContent = extractSchemaSection(generatedContent);
-  
-  // Process the schemas to match our formatting requirements
-  const processedSchemas = processSchemas(schemaContent);
-  
-  // Create the final schema file content
-  const schemasContent = createSchemasFileContent(processedSchemas);
-  
-  // Create the index file content
-  const indexContent = createIndexFileContent();
-  
-  return {
-    schemasContent,
-    indexContent
-  };
+  try {
+    // Extract schemas section
+    const schemaContent = extractSchemaSection(generatedContent);
+    
+    // Process the schemas to match our formatting requirements
+    const processedSchemas = processSchemas(schemaContent);
+    
+    // Create the final schema file content
+    const schemasContent = createSchemasFileContent(processedSchemas);
+    
+    // Create the index file content
+    const indexContent = createIndexFileContent();
+    
+    return {
+      schemasContent,
+      indexContent
+    };
+  } catch (error) {
+    console.error('Error processing Zod schema:', error);
+    throw error;
+  }
 }
 
 /**
@@ -58,39 +63,88 @@ function extractSchemaSection(content) {
  * @returns {object} Object with processed schemas and schema names
  */
 function processSchemas(schemasContent) {
-  // Get all schema definitions
-  const schemaRegex = /export (type|const) (\w+) =/g;
-  let match;
-  const schemaNames = [];
-  
-  while ((match = schemaRegex.exec(schemasContent)) !== null) {
-    schemaNames.push(match[2]);
-  }
-  
-  // Normalize schema names to ensure they end with _Schema
-  const normalizedContent = schemasContent.replace(
-    /export (type|const) (\w+) =/g,
-    (match, exportType, name) => {
-      // Only add _Schema suffix if it doesn't already have it
-      const normalizedName = name.endsWith('_Schema') ? name : `${name}_Schema`;
-      schemaNames.push(normalizedName);
-      return `export ${exportType} ${normalizedName} =`;
+  try {
+    // First, let's identify if we have a main OpenWebUIConfig schema or need to build it
+    const hasMainSchema = schemasContent.includes('export const OpenWebUIConfig =') || 
+                         schemasContent.includes('export type OpenWebUIConfig =');
+    
+    // Identify the component schemas from the OpenAPI spec
+    const schemaRegex = /export (type|const) (\w+) =/g;
+    let match;
+    const schemaNames = [];
+    
+    // Extract existing schema names
+    while ((match = schemaRegex.exec(schemasContent)) !== null) {
+      if (match[2] !== 'OpenWebUIConfig' && match[2] !== 'OpenWebUIConfigSchema') {
+        schemaNames.push(match[2]);
+      }
     }
-  );
-  
-  // Handle Zod patterns and specific schema tweaks
-  let processedContent = normalizedContent
-    // Fix z.nativeEnum to use z.enum for better TypeScript compatibility
-    .replace(/z\.nativeEnum/g, 'z.enum')
-    // Add .describe() for properties with descriptions
-    .replace(/\/\/ (.*?)\nz\./g, (_, description) => 
-      `z.`.concat(`/* ${description} */`)
+    
+    // Fix order and names: const schema definition must come before type definition
+    let processedContent = schemasContent;
+    
+    // First, fix type definitions that appear before their schema definitions
+    const typeBeforeSchemaRegex = /export type (\w+)_Schema = z\.infer<typeof (\w+)>;([\s\S]*?)export const \1_Schema = /g;
+    processedContent = processedContent.replace(typeBeforeSchemaRegex, (match, typeName, refName, betweenContent) => {
+      // Move the type definition after the const definition
+      return `export const ${typeName}_Schema = `;
+    });
+    
+    // Now, ensure schema names end with _Schema
+    processedContent = processedContent.replace(
+      /export (type|const) (\w+)(?!_Schema)(\s+)=/g,
+      (match, exportType, name, spacing) => {
+        // Skip certain special schemas
+        if (name === 'OpenWebUIConfig' || name === 'OpenWebUIConfigSchema') {
+          return match;
+        }
+        // Add _Schema suffix
+        return `export ${exportType} ${name}_Schema${spacing}=`;
+      }
     );
-  
-  return {
-    content: processedContent,
-    schemaNames: [...new Set(schemaNames)] // Remove duplicates
-  };
+    
+    // Fix z.nativeEnum to use z.enum for better TypeScript compatibility
+    processedContent = processedContent.replace(/z\.nativeEnum/g, 'z.enum');
+    
+    // Fix schema definitions whose type definitions were moved
+    processedContent = processedContent.replace(
+      /export const (\w+)_Schema = ([\s\S]*?)(;|},\s*\{.*?\}\))/g,
+      (match, name, definition, ending) => {
+        // Add inferred type after schema definition
+        if (!match.includes(`export type ${name}_Schema =`)) {
+          return `export const ${name}_Schema = ${definition}${ending}\nexport type ${name} = z.infer<typeof ${name}_Schema>;`;
+        }
+        return match;
+      }
+    );
+    
+    // Add descriptions from comments as .describe() calls
+    processedContent = processedContent.replace(
+      /\/\*\s*(.*?)\s*\*\/\s*z\./g, 
+      (match, description) => {
+        // Escape quotes in description
+        const safeDescription = description.replace(/"/g, '\\"');
+        return `z.`.concat('').concat(` /* ${safeDescription} */`);
+      }
+    );
+    
+    // Get final list of unique schema names with _Schema suffix
+    const finalSchemaRegex = /export const (\w+)_Schema =/g;
+    const finalSchemaNames = [];
+    let finalMatch;
+    
+    while ((finalMatch = finalSchemaRegex.exec(processedContent)) !== null) {
+      finalSchemaNames.push(`${finalMatch[1]}_Schema`);
+    }
+    
+    return {
+      content: processedContent,
+      schemaNames: [...new Set(finalSchemaNames)] // Remove duplicates
+    };
+  } catch (error) {
+    console.error('Error processing schemas:', error);
+    throw error;
+  }
 }
 
 /**
@@ -106,6 +160,7 @@ function createSchemasFileContent(processed) {
     name.endsWith('_Schema') ? name.slice(0, -7) : name
   );
   
+  // Create the final content with proper schema structure
   return `/**
  * Generated Zod schemas from OpenWebUI OpenAPI configuration
  * DO NOT EDIT DIRECTLY - Changes will be overwritten
