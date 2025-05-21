@@ -43,11 +43,30 @@ async function main() {
     
     // Generate Zod schemas using typed-openapi
     console.log('Generating Zod schemas...');
-    const generatedContent = generateFile({
-      doc: openApiDoc,
-      runtime: 'zod',
-      schemasOnly: true, // Only generate schemas, not the full client
-    });
+    // The API might have changed in v1.4.2, let's try both approaches
+    let generatedContent;
+    try {
+      // Try the new API first
+      generatedContent = generateFile({
+        doc: openApiDoc,
+        runtime: 'zod',
+        schemasOnly: true,
+      });
+    } catch (error) {
+      console.log('Trying alternative API approach...');
+      // Fall back to using the mapOpenApiEndpoints function if available
+      const { mapOpenApiEndpoints } = require('typed-openapi');
+      const ctx = mapOpenApiEndpoints(openApiDoc);
+      generatedContent = generateFile({
+        ...ctx,
+        runtime: 'zod',
+        schemasOnly: true,
+      });
+    }
+    
+    if (!generatedContent) {
+      throw new Error('Failed to generate schemas using typed-openapi');
+    }
     
     // Process the generated content
     console.log('Processing and formatting the generated Zod schemas...');
