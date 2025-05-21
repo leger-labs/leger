@@ -1,0 +1,35 @@
+name: OpenAPI to Zod Schema Conversion
+
+on:
+  push:
+    paths:
+      - 'schemas/openwebui-config-schema.json'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install converter dependencies
+        run: |
+          cd scripts/openapi-to-zod
+          npm install
+          # Make sure zod is available globally for the conversion
+          npm install -g zod
+
+      - name: Run conversion script
+        run: node scripts/openapi-to-zod/index.js
+
+      - name: Commit generated files
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "chore: update generated Zod schemas from OpenAPI"
+          file_pattern: "src/schemas/*.ts"

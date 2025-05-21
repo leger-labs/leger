@@ -1,0 +1,16 @@
+{
+  "name": "openapi-to-zod-converter",
+  "version": "1.0.0",
+  "description": "Internal tool to convert OpenWebUI OpenAPI config schema to Zod schemas",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "convert": "node index.js",
+    "postinstall": "node -e \"console.log('\\x1b[36m', 'OpenAPI to Zod converter installed. Run `npm run convert` to generate schemas', '\\x1b[0m')\""
+  },
+  "dependencies": {
+    "@apidevtools/swagger-parser": "^10.1.0",
+    "prettier": "^3.1.0",
+    "typed-openapi": "^0.5.3"
+  }
+}
