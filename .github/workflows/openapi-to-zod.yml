@@ -12,6 +12,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          # Needed for the commit-push action to work correctly
+          token: ${{ secrets.PAT }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -40,3 +43,8 @@ jobs:
         with:
           commit_message: "chore: update generated Zod schemas from OpenAPI"
           file_pattern: "src/schemas/*.ts"
+          # Use the same token for the commit-push action
+          push_options: "--force"
+          commit_user_name: "GitHub Action Bot"
+          commit_user_email: "actions@github.com"
+          commit_author: "GitHub Action Bot <actions@github.com>"
