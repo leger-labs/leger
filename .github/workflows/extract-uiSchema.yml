@@ -1,0 +1,50 @@
+name: OpenAPI to uiSchema Extraction
+
+on:
+  push:
+    paths:
+      - 'schemas/openwebui-config-schema.json'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # Needed for the commit-push action to work correctly
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Debug repository structure
+        run: |
+          echo "Repository root contents:"
+          ls -la
+          echo "Schemas directory contents:"
+          ls -la schemas || echo "Schemas directory not found"
+
+      - name: Install extraction dependencies
+        run: |
+          cd scripts/extract-uiSchema
+          npm install
+
+      - name: Run uiSchema extraction script
+        run: |
+          cd scripts/extract-uiSchema
+          node index.js
+
+      - name: Commit generated uiSchema files
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "chore: update generated uiSchema from OpenAPI"
+          file_pattern: "src/schemas/generated-uiSchema.ts"
+          # Use the same token for the commit-push action
+          push_options: "--force"
+          commit_user_name: "GitHub Action Bot"
+          commit_user_email: "actions@github.com"
+          commit_author: "GitHub Action Bot <actions@github.com>"

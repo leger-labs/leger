@@ -1,0 +1,17 @@
+{
+  "name": "openapi-to-uischema-extractor",
+  "version": "1.0.0",
+  "description": "Internal tool to extract UI organization metadata from OpenWebUI OpenAPI schema",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "extract": "node index.js",
+    "postinstall": "node -e \"console.log('\\x1b[36m', 'OpenAPI to uiSchema extractor installed', '\\x1b[0m')\""
+  },
+  "dependencies": {
+    "@apidevtools/swagger-parser": "^10.1.0",
+    "lodash": "^4.17.21",
+    "prettier": "^3.1.0"
+  }
+}
