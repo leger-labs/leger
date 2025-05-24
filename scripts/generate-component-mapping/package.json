@@ -1,0 +1,16 @@
+{
+  "name": "component-mapping-generator",
+  "version": "1.0.0",
+  "description": "Internal tool to generate component mappings from uiSchema and Zod schemas using declarative design rules",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "generate": "node index.js",
+    "postinstall": "node -e \"console.log('\\x1b[36m', 'Component mapping generator installed', '\\x1b[0m')\""
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "prettier": "^3.1.0"
+  }
+}
