@@ -86,7 +86,7 @@ jobs:
           for script_dir in "openapi-to-zod" "extract-uiSchema" "generate-component-mapping"; do
             echo "  Installing dependencies for $script_dir..."
             cd "scripts/$script_dir"
-            npm ci --quiet
+            npm install --quiet
             cd "../.."
           done
           
