@@ -39,9 +39,9 @@ jobs:
           # Enable caching for faster pipeline execution
           cache: 'npm'
           cache-dependency-path: |
-            scripts/openapi-to-zod/package-lock.json
-            scripts/extract-uiSchema/package-lock.json
-            scripts/generate-component-mapping/package-lock.json
+            scripts/openapi-to-zod/package.json
+            scripts/extract-uiSchema/package.json
+            scripts/generate-component-mapping/package.json
 
       - name: Validate pipeline prerequisites
         run: |
