@@ -307,18 +307,3 @@ jobs:
           echo "  - Integrate the generated mappings with your form rendering system"
           echo ""
           echo "📚 For maintenance guidance, see: scripts/generate-component-mapping/README.md"
-
-  # Job for cleaning up old workflow runs to prevent storage bloat
-  cleanup:
-    runs-on: ubuntu-latest
-    needs: form-generation
-    if: always()
-    
-    steps:
-      - name: Cleanup old workflow runs
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          retain_days: 30
-          keep_minimum_runs: 10
