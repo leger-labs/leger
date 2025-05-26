@@ -1,0 +1,37 @@
+name = "leger"
+main = "src/api/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[site]
+bucket = "./dist"
+
+[build]
+command = "npm run build"
+
+# Development environment
+[env.development]
+name = "leger-dev"
+
+# Production environment  
+[env.production]
+name = "leger-prod"
+routes = [
+  { pattern = "leger.run", custom_domain = true },
+  { pattern = "*.leger.run", custom_domain = true }
+]
+
+# If you need KV storage for configuration caching
+# [[kv_namespaces]]
+# binding = "CONFIG_CACHE"
+# id = "your-kv-namespace-id"
+
+# If you need D1 database
+# [[d1_databases]]
+# binding = "DB"
+# database_id = "your-d1-database-id"
+
+# If you need R2 storage
+# [[r2_buckets]]
+# binding = "STORAGE"
+# bucket_name = "leger-storage"

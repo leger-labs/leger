@@ -1,0 +1,309 @@
+name: OpenWebUI Form Generation Pipeline
+
+on:
+  push:
+    paths:
+      - 'schemas/openwebui-config-schema.json'
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      step:
+        description: 'Which step to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'zod-schemas'
+          - 'ui-schema'
+          - 'component-mapping'
+
+jobs:
+  # Comprehensive form generation pipeline that runs all transformation steps in sequence
+  # This replaces the individual workflows to prevent race conditions and ensure consistency
+  form-generation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Use a dedicated token for pipeline operations to ensure proper permissions
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          # Fetch full history to enable proper diff detection
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          # Enable caching for faster pipeline execution
+          cache: 'npm'
+          cache-dependency-path: |
+            scripts/openapi-to-zod/package.json
+            scripts/extract-uiSchema/package.json
+            scripts/generate-component-mapping/package.json
+
+      - name: Validate pipeline prerequisites
+        run: |
+          echo "🔍 Validating pipeline prerequisites..."
+          
+          # Check that the source schema exists
+          if [ ! -f "schemas/openwebui-config-schema.json" ]; then
+            echo "❌ OpenAPI schema file not found"
+            exit 1
+          fi
+          
+          # Validate schema is valid JSON
+          if ! jq empty schemas/openwebui-config-schema.json; then
+            echo "❌ OpenAPI schema is not valid JSON"
+            exit 1
+          fi
+          
+          # Check that all pipeline scripts exist
+          for script_dir in "openapi-to-zod" "extract-uiSchema" "generate-component-mapping"; do
+            if [ ! -d "scripts/$script_dir" ]; then
+              echo "❌ Pipeline script directory missing: scripts/$script_dir"
+              exit 1
+            fi
+            if [ ! -f "scripts/$script_dir/package.json" ]; then
+              echo "❌ Package.json missing in scripts/$script_dir"
+              exit 1
+            fi
+          done
+          
+          echo "✅ Pipeline prerequisites validated"
+          
+          # Log schema statistics for monitoring
+          echo "📊 Schema Statistics:"
+          echo "  - Schema file size: $(stat -c%s schemas/openwebui-config-schema.json) bytes"
+          echo "  - Properties count: $(jq '.components.schemas.OpenWebUIConfig.properties | length' schemas/openwebui-config-schema.json)"
+
+      - name: Install pipeline dependencies
+        run: |
+          echo "📦 Installing dependencies for all pipeline steps..."
+          
+          # Install dependencies for each pipeline step
+          for script_dir in "openapi-to-zod" "extract-uiSchema" "generate-component-mapping"; do
+            echo "  Installing dependencies for $script_dir..."
+            cd "scripts/$script_dir"
+            npm install --quiet
+            cd "../.."
+          done
+          
+          echo "✅ All pipeline dependencies installed"
+
+      # Step 1: Generate Zod validation schemas from OpenAPI
+      - name: Generate Zod schemas
+        if: github.event.inputs.step == 'all' || github.event.inputs.step == 'zod-schemas' || github.event.inputs.step == ''
+        run: |
+          echo "🏗️  Step 1: Generating Zod validation schemas..."
+          cd scripts/openapi-to-zod
+          
+          # Run with error handling and detailed output
+          if node index.js; then
+            echo "✅ Zod schema generation completed successfully"
+            
+            # Validate output was generated
+            if [ -f "../../src/schemas/generated-schemas.ts" ]; then
+              echo "📄 Generated file: src/schemas/generated-schemas.ts ($(stat -c%s ../../src/schemas/generated-schemas.ts) bytes)"
+            else
+              echo "❌ Expected output file not generated"
+              exit 1
+            fi
+          else
+            echo "❌ Zod schema generation failed"
+            exit 1
+          fi
+
+      # Step 2: Extract UI organization metadata from OpenAPI extensions
+      - name: Extract uiSchema metadata
+        if: github.event.inputs.step == 'all' || github.event.inputs.step == 'ui-schema' || github.event.inputs.step == ''
+        run: |
+          echo "🎨 Step 2: Extracting uiSchema organization metadata..."
+          cd scripts/extract-uiSchema
+          
+          # Run with error handling and detailed output
+          if node index.js; then
+            echo "✅ uiSchema extraction completed successfully"
+            
+            # Validate output was generated
+            if [ -f "../../src/schemas/generated-uiSchema.ts" ]; then
+              echo "📄 Generated file: src/schemas/generated-uiSchema.ts ($(stat -c%s ../../src/schemas/generated-uiSchema.ts) bytes)"
+            else
+              echo "❌ Expected output file not generated"
+              exit 1
+            fi
+          else
+            echo "❌ uiSchema extraction failed"
+            exit 1
+          fi
+
+      # Step 3: Generate component mappings using declarative design rules
+      - name: Generate component mappings
+        if: github.event.inputs.step == 'all' || github.event.inputs.step == 'component-mapping' || github.event.inputs.step == ''
+        run: |
+          echo "🎯 Step 3: Generating component mappings with design rules..."
+          cd scripts/generate-component-mapping
+          
+          # Run with error handling and detailed output
+          if node index.js; then
+            echo "✅ Component mapping generation completed successfully"
+            
+            # Validate output was generated
+            if [ -f "../../src/schemas/generated-component-mapping.ts" ]; then
+              echo "📄 Generated file: src/schemas/generated-component-mapping.ts ($(stat -c%s ../../src/schemas/generated-component-mapping.ts) bytes)"
+            else
+              echo "❌ Expected output file not generated"
+              exit 1
+            fi
+          else
+            echo "❌ Component mapping generation failed"
+            exit 1
+          fi
+
+      - name: Validate generated files integration
+        run: |
+          echo "🔗 Validating generated files integration..."
+          
+          # Check that all expected files were generated
+          expected_files=(
+            "src/schemas/generated-schemas.ts"
+            "src/schemas/generated-uiSchema.ts" 
+            "src/schemas/generated-component-mapping.ts"
+            "src/schemas/index.ts"
+          )
+          
+          for file in "${expected_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file exists ($(stat -c%s "$file") bytes)"
+            else
+              echo "❌ Missing expected file: $file"
+              exit 1
+            fi
+          done
+          
+          # Basic syntax validation for TypeScript files
+          echo "🔍 Performing basic TypeScript syntax validation..."
+          
+          for ts_file in src/schemas/generated-*.ts; do
+            if ! node -c "$ts_file" 2>/dev/null; then
+              echo "⚠️  Syntax validation failed for $ts_file (this may be normal for TypeScript-specific syntax)"
+            fi
+          done
+          
+          # Check for expected exports in generated files
+          echo "📋 Validating expected exports..."
+          
+          # Validate Zod schemas exports
+          if grep -q "export const OpenWebUIConfigSchema" src/schemas/generated-schemas.ts; then
+            echo "✅ Zod schemas contain expected exports"
+          else
+            echo "❌ Zod schemas missing expected exports"
+            exit 1
+          fi
+          
+          # Validate uiSchema exports  
+          if grep -q "export const categoryOrganization" src/schemas/generated-uiSchema.ts; then
+            echo "✅ uiSchema contains expected exports"
+          else
+            echo "❌ uiSchema missing expected exports"
+            exit 1
+          fi
+          
+          # Validate component mapping exports
+          if grep -q "export const componentMappings" src/schemas/generated-component-mapping.ts; then
+            echo "✅ Component mappings contain expected exports"
+          else
+            echo "❌ Component mappings missing expected exports"
+            exit 1
+          fi
+          
+          echo "✅ Generated files integration validation completed"
+
+      - name: Generate pipeline statistics
+        run: |
+          echo "📊 Generating pipeline execution statistics..."
+          
+          # Count generated exports and content
+          echo "### Pipeline Execution Summary" > pipeline-stats.md
+          echo "" >> pipeline-stats.md
+          echo "**Generated Files:**" >> pipeline-stats.md
+          
+          for file in src/schemas/generated-*.ts; do
+            if [ -f "$file" ]; then
+              size=$(stat -c%s "$file")
+              lines=$(wc -l < "$file")
+              exports=$(grep -c "^export " "$file" || echo "0")
+              echo "- \`$(basename "$file")\`: ${size} bytes, ${lines} lines, ${exports} exports" >> pipeline-stats.md
+            fi
+          done
+          
+          echo "" >> pipeline-stats.md
+          echo "**OpenAPI Schema Analysis:**" >> pipeline-stats.md
+          properties_count=$(jq '.components.schemas.OpenWebUIConfig.properties | length' schemas/openwebui-config-schema.json)
+          echo "- Total configuration properties: ${properties_count}" >> pipeline-stats.md
+          
+          # Try to extract some statistics from generated files
+          if [ -f "src/schemas/generated-component-mapping.ts" ]; then
+            # Count component mappings (rough estimate)
+            mapping_count=$(grep -c "component:" src/schemas/generated-component-mapping.ts || echo "unknown")
+            echo "- Component mappings generated: ${mapping_count}" >> pipeline-stats.md
+          fi
+          
+          echo "" >> pipeline-stats.md
+          echo "**Pipeline Execution:**" >> pipeline-stats.md
+          echo "- Execution time: $(date)" >> pipeline-stats.md
+          echo "- Git commit: ${GITHUB_SHA:0:8}" >> pipeline-stats.md
+          echo "- Triggered by: ${{ github.event_name }}" >> pipeline-stats.md
+          
+          echo "📋 Pipeline statistics:"
+          cat pipeline-stats.md
+
+      - name: Commit generated files
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: |
+            chore: update generated form schemas and component mappings
+            
+            Generated from OpenAPI schema changes in commit ${{ github.sha }}
+            
+            Pipeline execution summary:
+            - Zod validation schemas: ✅ generated
+            - uiSchema organization: ✅ generated  
+            - Component mappings: ✅ generated
+            
+            Files updated:
+            - src/schemas/generated-schemas.ts
+            - src/schemas/generated-uiSchema.ts
+            - src/schemas/generated-component-mapping.ts
+            
+            This commit was generated automatically by the form generation pipeline.
+          file_pattern: 'src/schemas/generated-*.ts src/schemas/index.ts'
+          push_options: '--force-with-lease'
+          commit_user_name: 'OpenWebUI Form Pipeline'
+          commit_user_email: 'pipeline@openwebui.com'
+          commit_author: 'OpenWebUI Form Pipeline <pipeline@openwebui.com>'
+
+      - name: Pipeline completion summary
+        run: |
+          echo ""
+          echo "🎉 OpenWebUI Form Generation Pipeline Completed Successfully!"
+          echo ""
+          echo "📋 What was accomplished:"
+          echo "  ✅ Generated type-safe Zod validation schemas"
+          echo "  ✅ Extracted UI organization metadata with intelligent component suggestions"
+          echo "  ✅ Applied declarative design rules to create final component mappings"
+          echo "  ✅ Validated integration between all generated files"
+          echo "  ✅ Committed all changes to the repository"
+          echo ""
+          echo "🔗 Generated files:"
+          echo "  - src/schemas/generated-schemas.ts (Zod validation schemas)"
+          echo "  - src/schemas/generated-uiSchema.ts (UI organization metadata)"  
+          echo "  - src/schemas/generated-component-mapping.ts (Component mappings)"
+          echo ""
+          echo "💡 Next steps:"
+          echo "  - Review the generated component mappings for any fields needing design attention"
+          echo "  - Update component-mapping-config.js if you want to change component assignments"
+          echo "  - Integrate the generated mappings with your form rendering system"
+          echo ""
+          echo "📚 For maintenance guidance, see: scripts/generate-component-mapping/README.md"
