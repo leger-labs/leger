@@ -30,26 +30,26 @@ This document outlines key considerations for implementing the Leger system usin
    - Trial to paid conversion flow
    - Subscription management via Customer Portal
 
-## Beam.cloud Integration via fly.io
+## Direct Beam.cloud Integration
 
-A critical component of the Leger architecture is the deployment of OpenWebUI instances through Beam.cloud, which requires fly.io as a middle layer:
+A critical component of the Leger architecture is the deployment of OpenWebUI instances through Beam.cloud using Cloudflare Workers Python runtime:
 
-### fly.io Middleware for Beam.cloud
+### Cloudflare Workers Python for Beam.cloud
 
 1. **Architecture**:
-   - Cloudflare Worker cannot directly create Beam.cloud pods (requires Python)
-   - fly.io hosts a lightweight serverless function acting as a bridge
-   - Worker makes requests to fly.io API which then interacts with Beam.cloud
+   - Cloudflare Worker uses Python runtime to directly create Beam.cloud pods
+   - Worker makes direct requests to Beam.cloud API using the Python SDK
+   - Native Python environment supports Beam.cloud SDK execution
 
 2. **Implementation Pattern**:
 ```
-Leger Worker → fly.io API → Beam.cloud API → OpenWebUI Pod
+Leger Worker → Beam.cloud API → OpenWebUI Pod
 ```
 
-3. **fly.io Service**:
-   - Implements a REST API endpoint for pod management
-   - Translates Worker requests to Beam.cloud Python SDK calls
-   - Returns pod status and details to Worker
+3. **Direct Integration**:
+   - Implements direct API calls for pod management
+   - Uses Beam.cloud Python SDK calls within the Worker
+   - Returns pod status and details directly
    - Handles authentication and error management
 
 4. **Communication Flow**:
@@ -71,11 +71,11 @@ async function createDeployment(configId, accountId, userId, env) {
   }, env.DB);
   
   try {
-    // Call fly.io API which bridges to Beam.cloud
-    const response = await fetch(`${env.FLY_API_URL}/deployments`, {
+    // Call Beam.cloud API directly
+    const response = await fetch(`${env.BEAM_API_URL}/deployments`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${env.FLY_API_KEY}`,
+        'Authorization': `Bearer ${env.BEAM_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -86,7 +86,7 @@ async function createDeployment(configId, accountId, userId, env) {
     });
     
     if (!response.ok) {
-      throw new Error(`fly.io API error: ${response.status}`);
+      throw new Error(`Beam.cloud API error: ${response.status}`);
     }
     
     const result = await response.json();
@@ -152,7 +152,7 @@ The single Worker architecture organizes code by business domain rather than tec
 │   │   ├── webhook.ts          # Stripe webhook handling
 │   │   └── types.ts
 │   │
-│   ├── deployments/            # Beam.cloud deployments via fly.io
+│   ├── deployments/            # Beam.cloud deployments
 │   │   ├── handlers.ts
 │   │   ├── service.ts
 │   │   ├── monitor.ts          # Deployment monitoring
@@ -187,8 +187,7 @@ The single Worker architecture organizes code by business domain rather than tec
 │   ├── errors.ts               # Error classes
 │   ├── logging.ts              # Logging utilities
 │   ├── json.ts                 # JSON handling utilities
-│   ├── crypto.ts               # Encryption utilities
-│   └── fly.ts                  # fly.io client utilities
+│   └── crypto.ts               # Encryption utilities
 │
 ├── frontend/                   # Frontend React application
 │   ├── components/             # React components
@@ -330,7 +329,7 @@ export async function storeSecret(tenantId, key, value, env) {
   // Store in Cloudflare KV
   await env.SECRETS.put(kvKey, encryptedValue);
   
-  // Sync to Beam.cloud via fly.io
+  // Sync to Beam.cloud directly
   await syncSecretToBeam(tenantId, key, value, env);
   
   return true;
@@ -352,11 +351,11 @@ export async function getSecret(tenantId, key, env) {
 }
 
 async function syncSecretToBeam(tenantId, key, value, env) {
-  // Call fly.io endpoint to sync secret to Beam.cloud
-  const response = await fetch(`${env.FLY_API_URL}/secrets`, {
+  // Call Beam.cloud API directly to sync secret
+  const response = await fetch(`${env.BEAM_API_URL}/secrets`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${env.FLY_API_KEY}`,
+      'Authorization': `Bearer ${env.BEAM_API_KEY}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
@@ -674,7 +673,7 @@ export function validateRequest(schema) {
    - Validate tenant ownership on all operations
    - Prevent cross-tenant data access
 
-By following these implementation considerations, the Leger system can be effectively built using Cloudflare's edge computing platform with fly.io as a bridge to Beam.cloud, providing a performant, secure, and scalable solution for OpenWebUI configuration management.
+By following these implementation considerations, the Leger system can be effectively built using Cloudflare's edge computing platform with direct Beam.cloud integration, providing a performant, secure, and scalable solution for OpenWebUI configuration management.
 
 ### Optimization Process
 

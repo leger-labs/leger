@@ -29,7 +29,6 @@ A single Cloudflare Worker implements the backend with domain-driven design:
 - Domain-driven design organizes code by business function rather than technical layer
 - Middleware pipeline for authentication, validation, and error handling
 - Cloudflare Access for authentication and identity management
-- fly.io as a bridge to Beam.cloud for OpenWebUI deployments
 - Type-safe API with shared types between frontend and backend
 
 ### 4) Persistent Storage:

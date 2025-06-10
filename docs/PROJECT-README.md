@@ -66,10 +66,10 @@ Besides from the admin, users just want to access a company-approved ChatGPT-esq
 
 ## Architecture Overview
 
-Leger employs a single Cloudflare Worker architecture that handles both frontend and backend responsibilities, with fly.io providing a bridge to Beam.cloud for OpenWebUI deployments:
+Leger employs a single Cloudflare Worker architecture that handles both frontend and backend responsibilities, with Cloudflare Workers Python providing direct integration to Beam.cloud for OpenWebUI deployments:
 
 ```
-Frontend/Backend (Cloudflare Worker) → fly.io → Beam.cloud → OpenWebUI Pods
+Frontend/Backend (Cloudflare Worker) → Beam.cloud → OpenWebUI Pods
 ```
 
 ## Technical Details & Implementation Considerations
@@ -97,7 +97,7 @@ Leger is built with the following architecture:
    - Cloudflare KV for secrets management (synchronized with Beam.cloud)
 
 5. **Deployment Bridge**:
-   - fly.io serverless functions connect to Beam.cloud
+   - Cloudflare Workers Python runtime connects directly to Beam.cloud
    - Python-based deployment orchestration
    - Environment variable transformation for OpenWebUI pods
 

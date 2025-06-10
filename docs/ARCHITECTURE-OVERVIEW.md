@@ -20,7 +20,7 @@ This approach ensures deployments follow a "configuration as code" model that is
 
 ### Beam Cloud Connector:
 
-The backend leverages fly.io to host serverless functions that bridge between Cloudflare Workers and Beam.cloud. These functions act as a wrapper on top of the beam.cloud CLI used to spin up the actual OWUI instances.
+The backend leverages Cloudflare Workers Python to directly integrate with Beam.cloud. The Workers Python runtime provides native support for the beam.cloud Python SDK used to spin up the actual OWUI instances.
 
 #### System Architecture
 

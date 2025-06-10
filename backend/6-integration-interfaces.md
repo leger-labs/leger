@@ -392,13 +392,12 @@ The request flow between components follows this pattern:
 1. **Client Request**: Worker receives deployment request with configuration ID
 2. **Configuration Retrieval**: Worker fetches configuration data from D1
 3. **Parameter Transformation**: Worker transforms configuration to deployment parameters
-4. **Bridge Request**: Worker sends request to fly.io bridge service
-5. **SDK Invocation**: Bridge service invokes Beam.cloud SDK
-6. **Deployment Creation**: Beam.cloud creates pod with specified parameters
-7. **Status Tracking**: Worker initiates background status monitoring
-8. **Result Communication**: Deployment status updates communicated to client
+4. **Direct SDK Invocation**: Worker uses Cloudflare Workers Python to invoke Beam.cloud SDK directly
+5. **Deployment Creation**: Beam.cloud creates pod with specified parameters
+6. **Status Tracking**: Worker initiates background status monitoring
+7. **Result Communication**: Deployment status updates communicated to client
 
-This multi-stage flow ensures reliable deployment while providing appropriate status visibility.
+This streamlined flow ensures reliable deployment while providing appropriate status visibility.
 
 ### Configuration Transformation Strategy
 

@@ -89,16 +89,16 @@ After extensive analysis of requirements and implementation options, we've made 
 3. **Domain-Driven Design**: Organizing code by business domain rather than technical layer better aligns with Leger's configuration-centric model.
 4. **Streamlined Development**: Using TypeScript throughout the entire stack with shared validation schemas reduces duplication and ensures consistency.
 
-## Fly.io Bridge for Beam.cloud Integration
+## Cloudflare Workers Python for Beam.cloud Integration
 
-For OpenWebUI deployments, we've implemented a critical bridge using fly.io. This architectural decision addresses a key limitation: Cloudflare Workers cannot directly create Beam.cloud pods (which require Python). The fly.io service provides:
+For OpenWebUI deployments, we leverage Cloudflare Workers Python runtime for direct integration with Beam.cloud. This approach utilizes the native Python support in Cloudflare Workers to run the Beam.cloud Python SDK directly. The Workers Python runtime provides:
 
-1. **Lightweight API Layer**: Exposes REST endpoints that the Cloudflare Worker can call
-2. **Python Execution Environment**: Runs the Beam.cloud Python SDK commands
-3. **Deployment Orchestration**: Handles the complete lifecycle of OpenWebUI pod deployments
-4. **Secret Synchronization**: Ensures credentials are properly synchronized between systems
+1. **Native Python Environment**: Runs the Beam.cloud Python SDK natively within the Worker
+2. **Direct API Integration**: Eliminates intermediate services by connecting directly to Beam.cloud
+3. **Deployment Orchestration**: Handles the complete lifecycle of OpenWebUI pod deployments within the Worker
+4. **Integrated Secret Management**: Manages credentials directly within the Cloudflare ecosystem
 
-This hybrid approach combines the strengths of Cloudflare's edge computing platform with Beam.cloud's specialized container deployment capabilities.
+This streamlined approach combines the strengths of Cloudflare's edge computing platform with direct access to Beam.cloud's specialized container deployment capabilities.
 
 ## Future Exploration Areas
 [Areas that warrant further investigation]
