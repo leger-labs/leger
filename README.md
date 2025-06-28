@@ -49,3 +49,6 @@ https://github.com/wsargent/groundedllm/blob/main/litellm/config.yaml
 https://github.com/wsargent/groundedllm/tree/main
 
 make sure to feature on https://workers.cloudflare.com/built-with
+
+New todo
+See figma loading screen and reproduce for owui loading screen
