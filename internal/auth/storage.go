@@ -96,3 +96,15 @@ func IsAuthenticated() bool {
 	auth, err := Load()
 	return err == nil && auth != nil
 }
+
+// DeriveUUID derives a user UUID from the Tailscale user
+// For now, this returns the Tailscale user directly
+// In the future, this should query leger.run API for the mapped UUID
+func (a *Auth) DeriveUUID() string {
+	if a == nil {
+		return ""
+	}
+	// TODO: Query leger.run API to get the proper UUID mapping
+	// For now, use tailscale user as identifier
+	return a.TailscaleUser
+}

@@ -17,6 +17,7 @@ require (
 	github.com/tink-crypto/tink-go-awskms v0.0.0-20230616072154-ba4f9f22c3e9
 	github.com/tink-crypto/tink-go/v2 v2.1.0
 	golang.org/x/term v0.30.0
+	gopkg.in/yaml.v3 v3.0.1
 	honnef.co/go/tools v0.6.1
 	tailscale.com v1.81.0-pre.0.20250303195457-5449aba94c51
 )

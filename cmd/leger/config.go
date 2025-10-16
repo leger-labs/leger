@@ -1,9 +1,17 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/tailscale/setec/internal/auth"
+	"github.com/tailscale/setec/internal/git"
+	"github.com/tailscale/setec/internal/legerrun"
+	"github.com/tailscale/setec/pkg/types"
 )
 
 // configCmd returns the config command group
@@ -22,7 +30,9 @@ func configCmd() *cobra.Command {
 
 // configPullCmd returns the config pull command
 func configPullCmd() *cobra.Command {
-	return &cobra.Command{
+	var version string
+
+	cmd := &cobra.Command{
 		Use:   "pull",
 		Short: "Pull configuration from backend",
 		Long: `Fetch configuration from Leger backend.
@@ -30,9 +40,70 @@ func configPullCmd() *cobra.Command {
 Downloads the latest configuration from the Leger Labs backend
 and updates the local configuration file.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("not yet implemented")
+			ctx := context.Background()
+
+			// Load authentication
+			authData, err := auth.Load()
+			if err != nil || authData == nil {
+				return fmt.Errorf(`not authenticated
+
+Authenticate first:
+  leger auth login`)
+			}
+
+			userUUID := authData.DeriveUUID()
+			if userUUID == "" {
+				return fmt.Errorf("unable to derive user UUID from authentication")
+			}
+
+			// Create leger.run client
+			client := legerrun.NewClient()
+
+			// Fetch manifest
+			if version == "" {
+				version = "latest"
+			}
+
+			fmt.Printf("Fetching manifest from leger.run (version: %s)...\n", version)
+			manifestData, err := client.FetchManifest(ctx, userUUID, version)
+			if err != nil {
+				return err
+			}
+
+			// Parse manifest
+			manifest, err := legerrun.ParseManifest(manifestData)
+			if err != nil {
+				return fmt.Errorf("parsing manifest: %w", err)
+			}
+
+			// Save to local config directory
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return fmt.Errorf("getting home directory: %w", err)
+			}
+
+			configDir := filepath.Join(home, ".local", "share", "leger")
+			if err := os.MkdirAll(configDir, 0755); err != nil {
+				return fmt.Errorf("creating config directory: %w", err)
+			}
+
+			manifestPath := filepath.Join(configDir, "manifest.json")
+			if err := os.WriteFile(manifestPath, manifestData, 0644); err != nil {
+				return fmt.Errorf("saving manifest: %w", err)
+			}
+
+			fmt.Printf("✓ Configuration pulled successfully\n")
+			fmt.Printf("  Version: %d\n", manifest.Version)
+			fmt.Printf("  Services: %d\n", len(manifest.Services))
+			fmt.Printf("  Saved to: %s\n", manifestPath)
+
+			return nil
 		},
 	}
+
+	cmd.Flags().StringVarP(&version, "version", "v", "latest", "Configuration version to fetch")
+
+	return cmd
 }
 
 // configShowCmd returns the config show command
@@ -45,7 +116,92 @@ func configShowCmd() *cobra.Command {
 Displays the active configuration including deployment settings,
 repository locations, and legerd connection details.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("not yet implemented")
+			// Load deployment state
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return fmt.Errorf("getting home directory: %w", err)
+			}
+
+			stateDir := filepath.Join(home, ".local", "share", "leger")
+			statePath := filepath.Join(stateDir, "deployments.json")
+
+			var deployments []types.DeploymentState
+			if data, err := os.ReadFile(statePath); err == nil {
+				if err := json.Unmarshal(data, &deployments); err != nil {
+					return fmt.Errorf("parsing deployment state: %w", err)
+				}
+			}
+
+			// Load manifest
+			manifestPath := filepath.Join(stateDir, "manifest.json")
+			var manifest *types.Manifest
+			if data, err := os.ReadFile(manifestPath); err == nil {
+				manifest, _ = types.LoadManifestFromJSON(data)
+			}
+
+			// Display configuration
+			fmt.Println("Leger Configuration")
+			fmt.Println("===================")
+			fmt.Println()
+
+			// Auth info
+			authData, err := auth.Load()
+			if err == nil && authData != nil {
+				fmt.Println("Authentication:")
+				fmt.Printf("  User:     %s\n", authData.TailscaleUser)
+				fmt.Printf("  Tailnet:  %s\n", authData.Tailnet)
+				fmt.Printf("  Device:   %s\n", authData.DeviceName)
+				fmt.Printf("  Status:   ✓ Authenticated\n")
+				fmt.Println()
+			} else {
+				fmt.Println("Authentication:")
+				fmt.Printf("  Status:   ✗ Not authenticated\n")
+				fmt.Println()
+			}
+
+			// Deployments
+			if len(deployments) > 0 {
+				fmt.Printf("Deployments: %d\n", len(deployments))
+				for _, dep := range deployments {
+					fmt.Println()
+					fmt.Printf("  Name:     %s\n", dep.Name)
+					fmt.Printf("  Source:   %s\n", dep.Source)
+					fmt.Printf("  Version:  %s\n", dep.Version)
+					fmt.Printf("  Scope:    %s\n", dep.Scope)
+					fmt.Printf("  Services: %d\n", len(dep.Services))
+					if len(dep.Volumes) > 0 {
+						fmt.Printf("  Volumes:  %d\n", len(dep.Volumes))
+					}
+					if len(dep.Secrets) > 0 {
+						fmt.Printf("  Secrets:  %d\n", len(dep.Secrets))
+					}
+
+					// Determine source type
+					sourceType := git.DetectSourceType(dep.Source)
+					fmt.Printf("  Type:     %s\n", sourceType.String())
+				}
+			} else {
+				fmt.Println("Deployments: None")
+			}
+
+			// Manifest info
+			if manifest != nil {
+				fmt.Println()
+				fmt.Println("Current Manifest:")
+				fmt.Printf("  Version:  %d\n", manifest.Version)
+				if manifest.Name != "" {
+					fmt.Printf("  Name:     %s\n", manifest.Name)
+				}
+				fmt.Printf("  Services: %d\n", len(manifest.Services))
+				if len(manifest.Volumes) > 0 {
+					fmt.Printf("  Volumes:  %d\n", len(manifest.Volumes))
+				}
+				if len(manifest.Networks) > 0 {
+					fmt.Printf("  Networks: %d\n", len(manifest.Networks))
+				}
+			}
+
+			return nil
 		},
 	}
 }
