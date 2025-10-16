@@ -3,7 +3,52 @@
 [![CI](https://github.com/leger-labs/leger/actions/workflows/ci.yml/badge.svg)](https://github.com/leger-labs/leger/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Leger manages Podman Quadlets from Git repositories with integrated secrets management via legerd (based on Tailscale's setec).
+**Leger** is a modern CLI tool for managing Podman Quadlets from Git repositories with integrated secrets management. It combines the simplicity of declarative container definitions with secure secret handling powered by Tailscale.
+
+## ✨ Features
+
+- 🚀 **Git-based Deployments** - Install quadlets directly from GitHub or local directories
+- 🔒 **Integrated Secrets** - Automatic secret injection via Tailscale-authenticated daemon
+- 📦 **Native Podman** - Uses `podman quadlet` commands for 70% less code
+- 🔄 **Staged Updates** - Preview changes before applying with automatic rollback
+- 💾 **Backup & Restore** - Full deployment backups including volumes
+- ✅ **Validation** - Pre-deployment checks for conflicts and syntax errors
+- 🎨 **Beautiful CLI** - Color-coded output, progress bars, and formatted tables
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+# From RPM (Fedora 42+)
+sudo dnf install leger
+
+# Start the secrets daemon
+systemctl --user enable --now legerd.service
+```
+
+### First Deployment
+
+```bash
+# Authenticate
+leger auth login
+
+# Install from Git
+leger deploy install myapp --source https://github.com/org/quadlets/tree/main/myapp
+
+# Check status
+leger status
+
+# View logs
+leger service logs myapp --follow
+```
+
+## 📚 Documentation
+
+- **[User Guide](docs/user-guide.md)** - Get started with Leger
+- **[Command Reference](docs/commands.md)** - Complete command documentation
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
+- **[Examples](examples/)** - Example deployments
 
 ## Components
 
@@ -12,11 +57,15 @@ Leger manages Podman Quadlets from Git repositories with integrated secrets mana
 
 ## Status
 
-🚧 **Pre-release** - Active development towards v0.1.0
+🚧 **Active Development** - Progressing towards v1.0.0
 
-## Installation
-
-Coming soon - RPM packages for Fedora 42+
+### Completed Features
+✅ Core deployment infrastructure
+✅ Configuration & multi-source support
+✅ Staged updates workflow
+✅ Backup & restore system
+✅ Secrets & validation
+✅ Polish & integration testing
 
 ## Architecture
 

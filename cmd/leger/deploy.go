@@ -20,6 +20,7 @@ import (
 	"github.com/tailscale/setec/internal/quadlet"
 	"github.com/tailscale/setec/internal/staging"
 	"github.com/tailscale/setec/internal/tailscale"
+	"github.com/tailscale/setec/internal/ui"
 	"github.com/tailscale/setec/internal/validation"
 )
 
@@ -92,12 +93,11 @@ Source can be:
 }
 
 func runDeployInstall(ctx context.Context, name string) error {
-	fmt.Printf("Installing deployment: %s\n", name)
-	fmt.Println()
+	ui.InfoPrintf("Installing deployment: %s\n\n", name)
 
 	// Step 1: Verify prerequisites
-	fmt.Println("Step 1/7: Verifying prerequisites...")
-	
+	fmt.Println(ui.Bold("Step 1/7: Verifying prerequisites..."))
+
 	if !auth.IsAuthenticated() {
 		return fmt.Errorf("not authenticated\n\nRun: leger auth login")
 	}
@@ -114,8 +114,7 @@ func runDeployInstall(ctx context.Context, name string) error {
 		return fmt.Errorf("legerd not running: %w\n\nStart with: systemctl --user start legerd.service", err)
 	}
 
-	fmt.Println("✓ Prerequisites verified")
-	fmt.Println()
+	ui.SuccessPrintf("✓ Prerequisites verified\n\n")
 
 	// Step 2: Download/locate quadlet files
 	fmt.Println("Step 2/7: Locating quadlet files...")
@@ -507,11 +506,8 @@ Flags allow skipping steps for automation.`,
 
 			// 4. Confirm unless --force
 			if !force {
-				fmt.Print("\nApply these updates? [y/N]: ")
-				var response string
-				fmt.Scanln(&response)
-				if response != "y" && response != "Y" && response != "yes" {
-					fmt.Println("Update cancelled")
+				if !ui.Confirm("\nApply these updates?") {
+					ui.InfoPrintf("Update cancelled\n")
 					return nil
 				}
 			}
@@ -549,15 +545,15 @@ func deployListCmd() *cobra.Command {
 			}
 
 			if len(quadlets) == 0 {
-				fmt.Println("No quadlets installed")
+				ui.InfoPrintf("No quadlets installed\n")
 				return nil
 			}
 
-			// Print header
-			fmt.Printf("%-30s %-15s %-15s %s\n", "NAME", "TYPE", "STATUS", "PORTS")
-			fmt.Println(strings.Repeat("-", 80))
+			// Prepare table data
+			headers := []string{"NAME", "TYPE", "STATUS", "PORTS"}
+			rows := make([][]string, 0, len(quadlets))
 
-			// Print each quadlet
+			// Build rows
 			for _, q := range quadlets {
 				status := "unknown"
 				if q.ServiceName != "" {
@@ -577,8 +573,11 @@ func deployListCmd() *cobra.Command {
 					ports = "-"
 				}
 
-				fmt.Printf("%-30s %-15s %-15s %s\n", q.Name, q.Type, status, ports)
+				rows = append(rows, []string{q.Name, string(q.Type), status, ports})
 			}
+
+			// Print table
+			ui.PrintTable(headers, rows)
 
 			return nil
 		},
@@ -605,11 +604,8 @@ func deployRemoveCmd() *cobra.Command {
 
 			// Confirm unless --force
 			if !removeFlags.force {
-				fmt.Printf("Are you sure you want to remove %s? [y/N]: ", quadletName)
-				var response string
-				fmt.Scanln(&response)
-				if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
-					fmt.Println("Aborted")
+				if !ui.Confirm(fmt.Sprintf("Are you sure you want to remove %s?", quadletName)) {
+					ui.InfoPrintf("Aborted\n")
 					return nil
 				}
 			}
