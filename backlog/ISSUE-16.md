@@ -1,5 +1,7 @@
 # Issue #16: Staged Updates Workflow
 
+**⚠️ v0.1.0 Note**: This issue is largely independent of the setec integration but will integrate with the existing `internal/daemon/client.go` for service management operations.
+
 ## Overview
 
 Implement the complete staged updates workflow: download updates to staging area, preview changes with diff, apply or discard. This provides safe, reviewable updates before applying them to production.
@@ -67,7 +69,7 @@ Implement the complete staged updates workflow: download updates to staging area
 
 ## Implementation Checklist
 
-### Phase 1: Staging Infrastructure (3-4 hours)
+### Phase 1: Staging Infrastructure
 
 - [ ] Create `internal/staging/` package
 
@@ -115,7 +117,7 @@ Implement the complete staged updates workflow: download updates to staging area
   func (m *Manager) LoadMetadata() (*StagingMetadata, error)
   ```
 
-### Phase 2: Stage Command (3-4 hours)
+### Phase 2: Stage Command
 
 - [ ] Implement staging logic in `internal/staging/manager.go`
   ```go
@@ -157,7 +159,7 @@ Implement the complete staged updates workflow: download updates to staging area
   }
   ```
 
-### Phase 3: Diff Generation (3-4 hours)
+### Phase 3: Diff Generation
 
 - [ ] Implement `internal/staging/diff.go`
   ```go
@@ -228,7 +230,7 @@ Shows:
   }
   ```
 
-### Phase 4: Apply Command (3-4 hours)
+### Phase 4: Apply Command
 
 - [ ] Implement apply logic in `internal/staging/manager.go`
   ```go
@@ -283,7 +285,7 @@ Flags:
   }
   ```
 
-### Phase 5: Discard Command (1-2 hours)
+### Phase 5: Discard Command
 
 - [ ] Implement `internal/staging/manager.go:DiscardStaged()`
   ```go
@@ -314,7 +316,7 @@ Current deployment remains unchanged.`,
   }
   ```
 
-### Phase 6: Integration (2-3 hours)
+### Phase 6: Integration
 
 - [ ] Update `leger deploy update` to use staging
   ```go
@@ -563,20 +565,6 @@ if len(conflicts) > 0 {
 
 - **Issue #14** - Requires deploy install/remove infrastructure
 - **Issue #15** - Requires manifest parsing and multi-source support
-
----
-
-## Estimated Effort
-
-**Total**: 12-15 hours
-
-- Staging infrastructure: 3-4 hours
-- Stage command: 3-4 hours
-- Diff generation: 3-4 hours
-- Apply command: 3-4 hours
-- Discard command: 1-2 hours
-- Integration: 2-3 hours
-- Testing: Integrated throughout
 
 ---
 

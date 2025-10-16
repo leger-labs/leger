@@ -1,5 +1,7 @@
 # Issue #17: Backup & Restore System
 
+**⚠️ v0.1.0 Note**: This issue will integrate with existing Podman secret functionality from the setec integration. The backup system needs to coordinate with `internal/daemon/client.go` for secret-aware backups.
+
 ## Overview
 
 Implement comprehensive backup and restore functionality with full volume support. This provides disaster recovery capabilities and enables safe experimentation with deployments.
@@ -66,7 +68,7 @@ Implement comprehensive backup and restore functionality with full volume suppor
 
 ## Implementation Checklist
 
-### Phase 1: Backup Infrastructure (3-4 hours)
+### Phase 1: Backup Infrastructure
 
 - [ ] Create `internal/backup/` package
 
@@ -113,7 +115,7 @@ Implement comprehensive backup and restore functionality with full volume suppor
   ```
   Metadata file: `{backup-dir}/{id}/.backup-metadata.json`
 
-### Phase 2: Volume Backup (3-4 hours)
+### Phase 2: Volume Backup
 
 - [ ] Implement `internal/backup/volumes.go`
   ```go
@@ -145,7 +147,7 @@ Implement comprehensive backup and restore functionality with full volume suppor
   func DecompressArchive(src, dest string) error
   ```
 
-### Phase 3: Backup Create (3-4 hours)
+### Phase 3: Backup Create
 
 - [ ] Implement `internal/backup/manager.go:CreateBackup()`
   ```go
@@ -206,7 +208,7 @@ Flags:
   }
   ```
 
-### Phase 4: Backup List and Info (2-3 hours)
+### Phase 4: Backup List and Info
 
 - [ ] Implement `cmd/leger/backup.go:backupListCmd()`
   ```go
@@ -261,7 +263,7 @@ Flags:
   }
   ```
 
-### Phase 5: Restore Functionality (3-4 hours)
+### Phase 5: Restore Functionality
 
 - [ ] Implement `internal/backup/restore.go`
   ```go
@@ -347,7 +349,7 @@ Flags:
   }
   ```
 
-### Phase 6: Integration with Deploy Commands (2-3 hours)
+### Phase 6: Integration with Deploy Commands
 
 - [ ] Update `leger deploy remove` to create automatic backup
   ```go
@@ -640,21 +642,6 @@ Try stopping services first:
 - **Issue #14** - Requires deploy install/remove infrastructure
 - **Issue #16** - Integration with staged updates (apply creates backup)
 
----
-
-## Estimated Effort
-
-**Total**: 10-12 hours
-
-- Backup infrastructure: 3-4 hours
-- Volume backup: 3-4 hours
-- Backup create: 3-4 hours
-- Backup list/info: 2-3 hours
-- Restore functionality: 3-4 hours
-- Integration: 2-3 hours
-- Testing: Integrated throughout
-
----
 
 ## Notes
 

@@ -63,11 +63,31 @@ This is the foundation issue that enables all subsequent features.
 
 ## Implementation Checklist
 
-### Phase 1: Package Scaffolding (2-3 hours)
+**⚠️ v0.1.0 Baseline**: Some components already exist:
+- `internal/quadlet/parser.go` handles Secret= directives
+- `internal/legerrun/client.go` is complete
+- `internal/daemon/client.go` wraps setec.Client
+- `cmd/leger/deploy.go` has partial deploy logic for secrets
+
+Focus on expanding these and adding missing pieces (Git, Podman native commands, full deploy workflow).
+
+### Phase 1: Package Scaffolding
+
+**NOTE**: Some packages already exist from v0.1.0 setec integration:
+- ✅ `internal/quadlet/parser.go` - For Secret= directives (EXISTS)
+- ✅ `internal/daemon/client.go` - setec.Client wrapper (EXISTS)
+- ✅ `internal/legerrun/client.go` - leger.run API client (EXISTS)
+
+**NEW packages to create:**
+
+- [ ] Expand `internal/quadlet/` package
+  - ✅ `parser.go` - Already has Secret= parsing
+  - [ ] `general.go` - General quadlet file parsing (NEW)
+  - [ ] `discovery.go` - Quadlet file discovery (NEW)
 
 - [ ] Create `internal/podman/` package
   - [ ] `quadlet.go` - QuadletManager interface
-  - [ ] `secrets.go` - SecretsManager interface  
+  - [ ] `secrets.go` - SecretsManager interface (integrate with existing setec work)
   - [ ] `volumes.go` - VolumeManager interface
   - [ ] `systemd.go` - Service management
 
@@ -85,7 +105,7 @@ This is the foundation issue that enables all subsequent features.
   - [ ] `manifest.go` - Manifest formats
   - [ ] `deployment.go` - Deployment state
 
-### Phase 2: Git Operations (3-4 hours)
+### Phase 2: Git Operations
 
 - [ ] Implement `internal/git/clone.go`
   ```go
@@ -107,7 +127,7 @@ This is the foundation issue that enables all subsequent features.
   ```
   Pattern: Port from `docs/quadlets/git-source-parser.nu` (lines 15-40)
 
-### Phase 3: Native Podman Integration (3-4 hours)
+### Phase 3: Native Podman Integration
 
 - [ ] Implement `internal/podman/quadlet.go`
   ```go
@@ -155,7 +175,7 @@ This is the foundation issue that enables all subsequent features.
   func Remove(volumeName string) error
   ```
 
-### Phase 4: Validation (2-3 hours)
+### Phase 4: Validation
 
 - [ ] Implement `internal/validation/syntax.go`
   ```go
@@ -174,7 +194,7 @@ This is the foundation issue that enables all subsequent features.
   ```
   Pattern: Port from `docs/quadlets/quadlet-validator.nu:checkPortConflicts()` (lines 120-150)
 
-### Phase 5: Deploy Commands (4-5 hours)
+### Phase 5: Deploy Commands
 
 - [ ] Implement `leger deploy install`
   ```go
@@ -401,25 +421,6 @@ if err != nil {
 - [ ] Integration tests pass with real Git repositories
 - [ ] Manual verification steps completed
 - [ ] No lint errors
-
----
-
-## Dependencies
-
-None (foundation issue)
-
----
-
-## Estimated Effort
-
-**Total**: 12-15 hours
-
-- Package scaffolding: 2-3 hours
-- Git operations: 3-4 hours
-- Native Podman integration: 3-4 hours
-- Validation: 2-3 hours
-- Deploy commands: 4-5 hours
-- Testing: Integrated throughout
 
 ---
 

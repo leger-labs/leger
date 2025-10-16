@@ -54,16 +54,22 @@ Implement advanced features that enhance Leger's production readiness: secret ro
 
 ## Implementation Checklist
 
-### Phase 1: Secrets Rotation (4-5 hours)
+### Phase 1: Secrets Rotation
 
-- [ ] Extend `internal/daemon/client.go` with secrets methods
-  ```go
+**⚠️ v0.1.0 Note**: `cmd/leger/secrets.go` already exists with:
+- ✅ `leger secrets sync` - Syncs from leger.run to legerd
+- ✅ Basic secrets listing
+
+**What's needed (extend existing):**
+
+- [ ] Extend `internal/daemon/client.go` with rotation method
+```go
   func (c *Client) RotateSecret(secretName string) error
-  func (c *Client) ListSecrets() ([]SecretInfo, error)
-  ```
+```
+  Pattern: Use existing setec.Client patterns
 
-- [ ] Implement `cmd/leger/secrets.go`
-  ```go
+- [ ] Extend `cmd/leger/secrets.go` with rotation command
+```go
   func secretsRotateCmd() *cobra.Command {
       // 1. Verify legerd is running
       // 2. Call legerd API to rotate secret
@@ -71,13 +77,15 @@ Implement advanced features that enhance Leger's production readiness: secret ro
       // 4. Restart affected services
       // 5. Confirm rotation success
   }
-  
-  func secretsListCmd() *cobra.Command {
-      // List available secrets from legerd
-  }
-  ```
+```
+  Pattern: Similar to existing sync command
 
-### Phase 2: Health Checks (4-5 hours)
+- [ ] Keep and enhance existing commands
+  - ✅ `leger secrets sync` - Already works
+  - [ ] `leger secrets list` - Enhance to show more detail
+  - [ ] `leger secrets rotate <name>` - NEW
+
+### Phase 2: Health Checks
 
 - [ ] Create `internal/health/` package
   ```go
@@ -108,7 +116,7 @@ Implement advanced features that enhance Leger's production readiness: secret ro
   }
   ```
 
-### Phase 3: Enhanced Validation (6-7 hours)
+### Phase 3: Enhanced Validation
 
 - [ ] Create `internal/validation/` package (extend from Issue #14)
 
@@ -159,7 +167,7 @@ Implement advanced features that enhance Leger's production readiness: secret ro
   }
   ```
 
-### Phase 4: Integration (2-3 hours)
+### Phase 4: Integration
 
 - [ ] Add validation to `leger deploy install`
   ```go
@@ -278,18 +286,6 @@ if len(conflicts) > 0 {
 - **Issue #14** - Core deployment infrastructure
 - **Issue #7** (Phase 1) - legerd HTTP client
 - **Issue #8** (Phase 1) - Auth commands
-
----
-
-## Estimated Effort
-
-**Total**: 12-14 hours
-
-- Secrets rotation: 4-5 hours
-- Health checks: 4-5 hours
-- Enhanced validation: 6-7 hours
-- Integration: 2-3 hours
-- Testing: Integrated throughout
 
 ---
 

@@ -8,6 +8,18 @@ This document provides context for Claude Code when working on Leger CLI issues 
 
 ---
 
+### v0.1.0 Baseline (setec Integration - COMPLETE)
+✅ setec pattern implementation  
+✅ Quadlet parser for Secret= directives (`internal/quadlet/parser.go`)  
+✅ leger.run API client (`internal/legerrun/client.go`)  
+✅ setec.Client wrapper (`internal/daemon/client.go`)  
+✅ Auth commands (`cmd/leger/auth.go`)  
+✅ Secrets sync (`cmd/leger/secrets.go`)  
+✅ Partial deploy for secrets (`cmd/leger/deploy.go`)
+
+**Note**: Issues #14-19 build upon this foundation. Some packages exist but need expansion.
+---
+
 ## Current Architecture
 
 ### Completed (Issues #3-8)
@@ -20,6 +32,12 @@ This document provides context for Claude Code when working on Leger CLI issues 
 
 ### Implementation Phase (Issues #14-19)
 The remaining work follows the **Leger CLI Technical Specification** (`docs/LEGER-CLI-SPEC-FINAL.md`).
+
+**Important**: v0.1.0 established the setec integration baseline. Several internal packages exist but need expansion:
+- `internal/quadlet/` - Has Secret= parsing, needs general quadlet parsing
+- `internal/legerrun/` - Complete client exists
+- `internal/daemon/` - Has setec wrapper, needs expansion
+- Deploy/secrets commands - Partial implementation exists
 
 ---
 
@@ -189,37 +207,28 @@ test(backup): add volume backup tests
 ## Issue Sequence (6 Comprehensive Issues)
 
 ### Issue #14: Core Deployment Infrastructure
-**Scope**: Package scaffolding + full deployment workflow (install/list/remove/service management)
-**Effort**: 12-15 hours
-**Dependencies**: None
+**Scope**: Expand existing packages + full deployment workflow (install/list/remove/service management)
+**Dependencies**: None (builds on v0.1.0 baseline)
 
 ### Issue #15: Configuration & Multi-Source Support
-**Scope**: Manifest parsing + config commands + leger.run vs Git auto-detection
-**Effort**: 10-12 hours
+**Scope**: Manifest parsing + config commands + expand leger.run client
 **Dependencies**: #14
 
 ### Issue #16: Staged Updates Workflow
 **Scope**: Complete staging system (stage/diff/apply/discard)
-**Effort**: 12-15 hours
 **Dependencies**: #14
 
 ### Issue #17: Backup & Restore System
 **Scope**: Backup with volumes + restore with rollback
-**Effort**: 10-12 hours
 **Dependencies**: #14
 
 ### Issue #18: Secrets & Validation
 **Scope**: Secret rotation + health checks + enhanced validation
-**Effort**: 12-14 hours
 **Dependencies**: #14, #17 (for service management)
 
 ### Issue #19: Polish & Integration Testing
 **Scope**: UX improvements + E2E tests + documentation
-**Effort**: 15-18 hours
 **Dependencies**: All previous
-
-**Total**: ~72-86 hours of focused implementation
-
 ---
 
 ## Common Patterns

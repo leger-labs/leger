@@ -60,55 +60,31 @@ Implement manifest parsing, configuration management, and intelligent multi-sour
 
 ## Implementation Checklist
 
-### Phase 1: Internal Package - leger.run Client (3-4 hours)
+### Phase 1: Internal Package - leger.run Client
 
-- [ ] Create `internal/legerrun/` package
+**⚠️ v0.1.0 Note**: `internal/legerrun/client.go` already exists with:
+- ✅ HTTP client with Tailscale auth
+- ✅ FetchSecrets() method
+- ✅ Basic manifest fetching
 
-- [ ] Implement `client.go`
-  ```go
-  type Client struct {
-      HTTPClient *http.Client
-      BaseURL    string
-      UserUUID   string
-  }
-  
-  func NewClient(userUUID string) (*Client, error) {
-      // Use Tailscale for authentication
-      // Set BaseURL to https://static.leger.run
-  }
-  
-  func (c *Client) FetchManifest(version string) (*types.Manifest, error) {
-      // GET https://static.leger.run/{uuid}/{version}/manifest.json
-      // version can be "latest" or specific version
-  }
-  
-  func (c *Client) ListVersions() ([]string, error) {
-      // List available versions for user
-  }
-  ```
+**What's needed (extend existing):**
 
-- [ ] Implement `manifest.go`
-  ```go
-  func ParseManifest(data []byte) (*types.Manifest, error) {
-      // Parse leger.run manifest.json format
-  }
-  
-  func ValidateManifest(m *types.Manifest) error {
-      // Verify required fields
-      // Check checksums format
-      // Validate service definitions
-  }
-  ```
+- [ ] Review and enhance `internal/legerrun/client.go`
+  - ✅ `NewClient()` - Already exists
+  - ✅ `FetchSecrets()` - Already exists
+  - [ ] `FetchManifest(version string)` - ADD THIS
+  - [ ] `ListVersions()` - ADD THIS (NEW)
 
-- [ ] Implement `secrets.go`
-  ```go
-  func (c *Client) FetchSecretMetadata() ([]SecretInfo, error) {
-      // Get list of available secrets for user
-      // Used by legerd for discovery
-  }
-  ```
+- [ ] Add `manifest.go` to `internal/legerrun/`
+```go
+  func ParseManifest(data []byte) (*types.Manifest, error)
+  func ValidateManifest(m *types.Manifest) error
+```
 
-### Phase 2: Manifest Types (1-2 hours)
+- [ ] Keep existing `secrets.go` functionality
+  - ✅ FetchSecretMetadata - Already works with legerd
+
+### Phase 2: Manifest Types 
 
 - [ ] Enhance `pkg/types/manifest.go`
   ```go
@@ -143,7 +119,7 @@ Implement manifest parsing, configuration management, and intelligent multi-sour
   func GenerateManifestFromQuadlets(quadletDir string) (*Manifest, error)
   ```
 
-### Phase 3: Multi-Source Detection (2-3 hours)
+### Phase 3: Multi-Source Detection
 
 - [ ] Enhance `internal/git/parser.go`
   ```go
@@ -190,7 +166,7 @@ Implement manifest parsing, configuration management, and intelligent multi-sour
   }
   ```
 
-### Phase 4: Manifest Auto-Discovery (2-3 hours)
+### Phase 4: Manifest Auto-Discovery
 
 - [ ] Implement manifest discovery in `internal/git/clone.go`
   ```go
@@ -213,7 +189,7 @@ Implement manifest parsing, configuration management, and intelligent multi-sour
   ```
   Pattern: Use file scanning from `docs/pq/pkg/quadlet/files.go:Find()`
 
-### Phase 5: Configuration Commands (2-3 hours)
+### Phase 5: Configuration Commands
 
 - [ ] Implement `leger config show`
   ```go
@@ -246,7 +222,7 @@ Implement manifest parsing, configuration management, and intelligent multi-sour
   }
   ```
 
-### Phase 6: Integration with Deploy Commands (1-2 hours)
+### Phase 6: Integration with Deploy Commands
 
 - [ ] Update `leger deploy install` to use multi-source
   ```go
@@ -474,20 +450,6 @@ If no manifest exists, one will be auto-generated from quadlet files.`, err)
 ## Dependencies
 
 - **Issue #14** - Requires deploy install infrastructure
-
----
-
-## Estimated Effort
-
-**Total**: 10-12 hours
-
-- leger.run client: 3-4 hours
-- Manifest types: 1-2 hours
-- Multi-source detection: 2-3 hours
-- Auto-discovery: 2-3 hours
-- Config commands: 2-3 hours
-- Integration: 1-2 hours
-- Testing: Integrated throughout
 
 ---
 
