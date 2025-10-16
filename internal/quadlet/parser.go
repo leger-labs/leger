@@ -158,3 +158,43 @@ func (pr *ParseResult) GetSecretNames() []string {
 	}
 	return names
 }
+
+// ParseVolumeDirectives parses a quadlet file and extracts all Volume= directives
+func ParseVolumeDirectives(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var volumes []string
+	scanner := bufio.NewScanner(file)
+	inContainerSection := false
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		// Track sections
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			inContainerSection = line == "[Container]"
+			continue
+		}
+
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+			continue
+		}
+
+		// Parse Volume= directives (only in [Container] section)
+		if inContainerSection && strings.HasPrefix(line, "Volume=") {
+			volumeSpec := strings.TrimPrefix(line, "Volume=")
+			volumes = append(volumes, volumeSpec)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return volumes, nil
+}
