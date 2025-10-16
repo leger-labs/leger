@@ -274,7 +274,7 @@ func runServer(env *command.Env) error {
 		log.Print("Signal received, stopping...")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		hs.Shutdown(ctx)
+		_ = hs.Shutdown(ctx)
 	}()
 
 	if err := hs.Serve(l); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -303,7 +303,7 @@ func runList(env *command.Env) error {
 	}
 
 	tw := newTabWriter(os.Stdout)
-	io.WriteString(tw, "NAME\tACTIVE\tVERSIONS\n")
+	_, _ = io.WriteString(tw, "NAME\tACTIVE\tVERSIONS\n")
 	for _, s := range secrets {
 		vers := make([]string, 0, len(s.Versions))
 		for _, v := range s.Versions {
@@ -400,20 +400,20 @@ func runPut(env *command.Env, name string) error {
 		// Standard input is connected to a terminal; prompt the human to type or
 		// paste the value and require confirmation.
 		var err error
-		io.WriteString(os.Stdout, "Enter secret: ")
+		_, _ = io.WriteString(os.Stdout, "Enter secret: ")
 		os.Stdout.Sync()
 		value, err = term.ReadPassword(int(os.Stdin.Fd()))
-		io.WriteString(os.Stdout, "\n")
+		_, _ = io.WriteString(os.Stdout, "\n")
 		if err != nil {
 			return err
 		}
 		if len(value) == 0 && !putArgs.EmptyOK {
 			return errors.New("no secret provided, aborting")
 		}
-		io.WriteString(os.Stdout, "Confirm secret: ")
+		_, _ = io.WriteString(os.Stdout, "Confirm secret: ")
 		os.Stdout.Sync()
 		s2, err := term.ReadPassword(int(os.Stdin.Fd()))
-		io.WriteString(os.Stdout, "\n")
+		_, _ = io.WriteString(os.Stdout, "\n")
 		if err != nil {
 			return err
 		}

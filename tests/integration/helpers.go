@@ -104,9 +104,9 @@ func (h *TestHelper) WaitForService(serviceName, state string, timeout time.Dura
 
 // CleanupQuadlet removes a deployed quadlet
 func (h *TestHelper) CleanupQuadlet(name string) {
-	// Stop and remove service
-	exec.Command("systemctl", "--user", "stop", name+".service").Run()
-	exec.Command("podman", "quadlet", "rm", "--user", name).Run()
+	// Stop and remove service (errors ignored in cleanup)
+	_ = exec.Command("systemctl", "--user", "stop", name+".service").Run()
+	_ = exec.Command("podman", "quadlet", "rm", "--user", name).Run()
 }
 
 // SkipIfNoPodman skips the test if Podman is not available

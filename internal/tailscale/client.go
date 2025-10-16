@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"os/exec"
 
-	"tailscale.com/client/tailscale"
+	"tailscale.com/client/local"
 )
 
 // Client wraps Tailscale LocalClient
 type Client struct {
-	lc *tailscale.LocalClient
+	lc *local.Client
 }
 
 // NewClient creates a new Tailscale client
 func NewClient() *Client {
 	return &Client{
-		lc: &tailscale.LocalClient{},
+		lc: &local.Client{},
 	}
 }
 
