@@ -19,7 +19,6 @@ import (
 	"github.com/tailscale/setec/internal/podman"
 	"github.com/tailscale/setec/internal/quadlet"
 	"github.com/tailscale/setec/internal/staging"
-	"github.com/tailscale/setec/internal/tailscale"
 	"github.com/tailscale/setec/internal/ui"
 	"github.com/tailscale/setec/internal/validation"
 )
@@ -98,16 +97,11 @@ func runDeployInstall(ctx context.Context, name string) error {
 	// Step 1: Verify prerequisites
 	fmt.Println(ui.Bold("Step 1/7: Verifying prerequisites..."))
 
-	if !auth.IsAuthenticated() {
-		return fmt.Errorf("not authenticated\n\nRun: leger auth login")
-	}
-
-	tsClient := tailscale.NewClient()
-	identity, err := tsClient.VerifyIdentity(ctx)
+	storedAuth, err := auth.RequireAuth()
 	if err != nil {
-		return fmt.Errorf("Tailscale verification failed: %w", err)
+		return err
 	}
-	userUUID := deriveUserUUID(identity)
+	userUUID := storedAuth.UserUUID
 
 	daemonClient := daemon.NewClient("")
 	if err := daemonClient.Health(ctx); err != nil {
