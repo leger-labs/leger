@@ -2,9 +2,14 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/tailscale/setec/internal/health"
 	"github.com/tailscale/setec/internal/podman"
+	"github.com/tailscale/setec/internal/quadlet"
 )
 
 // serviceCmd returns the service command group
@@ -28,9 +33,10 @@ func serviceCmd() *cobra.Command {
 func serviceStatusCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "status <service>",
-		Short: "Show service status",
+		Short: "Show service status with health checks",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			serviceName := args[0]
 
 			sm := podman.NewSystemdManager("user")
@@ -39,7 +45,7 @@ func serviceStatusCmd() *cobra.Command {
 				return err
 			}
 
-			// Display status
+			// Display basic status
 			fmt.Printf("Service: %s\n", status.Name)
 			fmt.Printf("Description: %s\n", status.Description)
 			fmt.Printf("Load State: %s\n", status.LoadState)
@@ -49,9 +55,111 @@ func serviceStatusCmd() *cobra.Command {
 				fmt.Printf("Main PID: %d\n", status.MainPID)
 			}
 
+			// Try to find health check configuration
+			healthCheck := findHealthCheckForService(serviceName)
+			if healthCheck != nil {
+				fmt.Println()
+				fmt.Println("Health Check:")
+				fmt.Printf("  URL: %s\n", healthCheck.URL)
+
+				// Perform health check
+				result := healthCheck.Check(ctx)
+
+				statusIcon := ""
+				switch result.Status {
+				case health.StatusHealthy:
+					statusIcon = "✓"
+				case health.StatusUnhealthy:
+					statusIcon = "✗"
+				case health.StatusUnknown:
+					statusIcon = "?"
+				}
+
+				fmt.Printf("  Status: %s %s\n", statusIcon, result.Status)
+
+				if result.StatusCode > 0 {
+					fmt.Printf("  Status Code: %d\n", result.StatusCode)
+				}
+
+				if result.ResponseTime > 0 {
+					fmt.Printf("  Response Time: %v\n", result.ResponseTime)
+				}
+
+				if result.Error != nil {
+					fmt.Printf("  Error: %v\n", result.Error)
+				}
+
+				// Overall status summary
+				if status.ActiveState == "active" && result.Status == health.StatusHealthy {
+					fmt.Println()
+					fmt.Println("Overall: active (healthy)")
+				} else if status.ActiveState == "active" && result.Status == health.StatusUnhealthy {
+					fmt.Println()
+					fmt.Println("⚠️  Overall: active (unhealthy)")
+					fmt.Println()
+					fmt.Println("Check logs:")
+					fmt.Printf("  leger service logs %s\n", serviceName)
+				}
+			}
+
 			return nil
 		},
 	}
+}
+
+// findHealthCheckForService finds health check configuration for a service
+func findHealthCheckForService(serviceName string) *health.HealthCheck {
+	// Convert service name to quadlet name
+	quadletName := strings.TrimSuffix(serviceName, ".service") + ".container"
+
+	// Look in standard quadlet directories
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+
+	quadletDirs := []string{
+		filepath.Join(homeDir, ".config", "containers", "systemd"),
+		filepath.Join(homeDir, ".local", "share", "bluebuild-quadlets", "active"),
+	}
+
+	for _, baseDir := range quadletDirs {
+		if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+			continue
+		}
+
+		// Search for the quadlet file
+		var foundPath string
+		filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			if filepath.Base(path) == quadletName {
+				foundPath = path
+				return filepath.SkipDir
+			}
+
+			return nil
+		})
+
+		if foundPath != "" {
+			// Parse labels from the quadlet file
+			labels, err := quadlet.ParseLabels(foundPath)
+			if err != nil {
+				continue
+			}
+
+			// Parse health check configuration
+			return health.ParseHealthCheckLabels(labels)
+		}
+	}
+
+	return nil
 }
 
 var logsFlags struct {

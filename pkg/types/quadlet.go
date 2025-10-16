@@ -70,3 +70,14 @@ type VolumeConflict struct {
 	Quadlets      []string `json:"quadlets"`       // Names of quadlets using this path
 	ConflictsWith string   `json:"conflicts_with"` // Name of existing volume using this path
 }
+
+// CircularDependency represents a circular dependency in services
+type CircularDependency struct {
+	Services []string `json:"services"` // Services involved in the circular dependency
+}
+
+// MissingDependency represents a missing dependency
+type MissingDependency struct {
+	Service           string `json:"service"`            // Service that has the missing dependency
+	MissingDependency string `json:"missing_dependency"` // The dependency that is missing
+}
