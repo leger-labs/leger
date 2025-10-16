@@ -117,6 +117,55 @@ Implement the complete staged updates workflow: download updates to staging area
   func (m *Manager) LoadMetadata() (*StagingMetadata, error)
   ```
 
+### Phase 1.5: Staged List Command
+
+- [ ] Implement `cmd/leger/staged.go:stagedListCmd()`
+```go
+  func stagedListCmd() *cobra.Command {
+      return &cobra.Command{
+          Use:   "list",
+          Short: "List staged updates not yet applied",
+          RunE: func(cmd *cobra.Command, args []string) error {
+              m := staging.NewManager()
+              
+              if !m.HasStagedUpdates() {
+                  fmt.Println("No staged updates")
+                  return nil
+              }
+              
+              meta, _ := m.LoadMetadata()
+              
+              fmt.Printf("Deployment: %s\n", meta.DeploymentName)
+              fmt.Printf("Current version: %s\n", meta.CurrentVersion)
+              fmt.Printf("Staged version: %s\n", meta.StagedVersion)
+              fmt.Printf("Source: %s\n", meta.SourceURL)
+              fmt.Printf("Staged at: %s\n", meta.StagedAt.Format(time.RFC3339))
+              fmt.Println()
+              
+              fmt.Println("Next steps:")
+              fmt.Println("  leger diff     - Preview changes")
+              fmt.Println("  leger apply    - Install updates")
+              fmt.Println("  leger discard  - Discard updates")
+              
+              return nil
+          },
+      }
+  }
+```
+
+- [ ] Register `staged` subcommand with `list` command
+```go
+  func init() {
+      stagedCmd := &cobra.Command{
+          Use:   "staged",
+          Short: "Manage staged updates",
+      }
+      
+      stagedCmd.AddCommand(stagedListCmd())
+      rootCmd.AddCommand(stagedCmd)
+  }
+```
+
 ### Phase 2: Stage Command
 
 - [ ] Implement staging logic in `internal/staging/manager.go`
@@ -318,32 +367,76 @@ Current deployment remains unchanged.`,
 
 ### Phase 6: Integration
 
-- [ ] Update `leger deploy update` to use staging
-  ```go
+- [ ] Update `leger deploy update` to use staging **with full flags support**
+```go
   // cmd/leger/deploy.go
   func deployUpdateCmd() *cobra.Command {
-      return &cobra.Command{
+      cmd := &cobra.Command{
           Use:   "update",
           Short: "Update deployed services (uses staging)",
           Long: `Update deployment to latest version.
 
-This command:
+Workflow:
   1. Stages updates (leger stage)
   2. Shows diff (leger diff)
   3. Prompts for confirmation
   4. Applies updates (leger apply)
 
-For manual control, use staged workflow:
-  leger stage
-  leger diff
-  leger apply`,
+Flags allow skipping steps for automation.`,
           RunE: func(cmd *cobra.Command, args []string) error {
-              // Convenience command that combines:
-              // stage → diff → confirm → apply
+              dryRun, _ := cmd.Flags().GetBool("dry-run")
+              noBackup, _ := cmd.Flags().GetBool("no-backup")
+              force, _ := cmd.Flags().GetBool("force")
+              
+              // 1. Stage updates
+              fmt.Println("Staging updates...")
+              if err := stageUpdates(); err != nil {
+                  return err
+              }
+              
+              // 2. Show diff
+              fmt.Println("\nChanges to be applied:")
+              diff, err := generateDiff()
+              if err != nil {
+                  return err
+              }
+              diff.Display()
+              
+              // 3. If --dry-run, stop here
+              if dryRun {
+                  fmt.Println("\n--dry-run: Updates staged but not applied")
+                  fmt.Println("Run 'leger apply' to install")
+                  return nil
+              }
+              
+              // 4. Confirm unless --force
+              if !force {
+                  if !confirmUpdate("Apply these updates?") {
+                      fmt.Println("Update cancelled")
+                      return nil
+                  }
+              }
+              
+              // 5. Apply updates
+              applyOpts := ApplyOptions{
+                  NoBackup: noBackup,
+              }
+              if err := applyStaged(applyOpts); err != nil {
+                  return err
+              }
+              
+              fmt.Println("✓ Update complete")
+              return nil
           },
       }
+      
+      cmd.Flags().Bool("dry-run", false, "Preview changes without applying")
+      cmd.Flags().Bool("no-backup", false, "Skip automatic backup (not recommended)")
+      cmd.Flags().Bool("force", false, "Skip confirmation prompt")
+      
+      return cmd
   }
-  ```
+```
 
 - [ ] Add status indicator to `leger status`
   ```go
@@ -426,6 +519,36 @@ For manual control, use staged workflow:
   leger deploy update
   # Should stage → diff → prompt → apply
   ```
+
+### NEW: Unit Tests (add to existing)
+
+- [ ] `cmd/leger/staged_test.go`
+  - [ ] `stagedListCmd` displays correct information
+  - [ ] `stagedListCmd` shows "No staged updates" when empty
+  - [ ] Subcommand registered correctly
+
+### Integration Tests (add to existing)
+
+- [ ] **Staged list command**
+```bash
+  leger stage https://github.com/org/repo/tree/main/v2
+  leger staged list
+  # Expected: Shows deployment name, versions, source, timestamp
+```
+
+- [ ] **Deploy update with --dry-run**
+```bash
+  leger deploy update --dry-run
+  # Expected: Stages and shows diff, but doesn't apply
+  # Expected: Message "Updates staged but not applied"
+```
+
+- [ ] **Deploy update with --force**
+```bash
+  leger deploy update --force
+  # Expected: No confirmation prompt
+  # Expected: Applies immediately
+```
 
 ### Manual Verification
 
