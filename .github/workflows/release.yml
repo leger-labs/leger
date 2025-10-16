@@ -1,0 +1,165 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v0.1.0-test)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build RPM (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            goarch: amd64
+            rpm_arch: x86_64
+          - arch: arm64
+            goarch: arm64
+            rpm_arch: aarch64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          VERSION_SHORT="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_short=${VERSION_SHORT}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+      - name: Build binaries
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          COMMIT="${{ github.sha }}"
+          BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          go build -trimpath \
+            -ldflags="-X github.com/leger-labs/leger/internal/version.Version=${VERSION} \
+                      -X github.com/leger-labs/leger/internal/version.Commit=${COMMIT} \
+                      -X github.com/leger-labs/leger/internal/version.BuildDate=${BUILD_DATE} \
+                      -w -s" \
+            -o leger-${{ matrix.arch }} \
+            ./cmd/leger
+
+          go build -trimpath \
+            -ldflags="-X github.com/leger-labs/leger/internal/version.Version=${VERSION} \
+                      -X github.com/leger-labs/leger/internal/version.Commit=${COMMIT} \
+                      -X github.com/leger-labs/leger/internal/version.BuildDate=${BUILD_DATE} \
+                      -w -s" \
+            -o legerd-${{ matrix.arch }} \
+            ./cmd/legerd
+
+      - name: Create RPM
+        env:
+          VERSION: ${{ steps.version.outputs.version_short }}
+          RPM_ARCH: ${{ matrix.rpm_arch }}
+          CLI_BINARY: leger-${{ matrix.arch }}
+          DAEMON_BINARY: legerd-${{ matrix.arch }}
+        run: |
+          nfpm pkg --packager rpm -f nfpm.yaml
+
+      - name: Upload RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-${{ matrix.arch }}
+          path: "*.rpm"
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Organize RPMs
+        run: |
+          mkdir -p rpms
+          find artifacts -type f -name "*.rpm" -exec cp {} rpms/ \;
+
+      - name: Generate release notes
+        run: |
+          cat > release-notes.md <<'NOTES'
+          ## Installation
+
+          Download the appropriate RPM:
+          - **x86_64**: `leger-*-x86_64.rpm`
+          - **aarch64**: `leger-*-aarch64.rpm`
+```bash
+          sudo dnf install ./leger-*.rpm
+```
+
+          ## Configuration
+
+          Edit `/etc/leger/config.yaml`, then start:
+```bash
+          systemctl --user enable --now legerd.service
+```
+
+          ## Verification
+```bash
+          leger --version
+          systemctl --user status legerd.service
+```
+          NOTES
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+          files: rpms/*.rpm
+          body_path: release-notes.md
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
