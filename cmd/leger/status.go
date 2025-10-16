@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tailscale/setec/internal/daemon"
+	"github.com/tailscale/setec/internal/staging"
 	"github.com/spf13/cobra"
 )
 
@@ -40,6 +41,21 @@ Shows the status of:
 				fmt.Println("Status: RUNNING")
 				fmt.Println("  URL: http://localhost:8080")
 				fmt.Println()
+			}
+
+			// Check for staged updates
+			m, err := staging.NewManager()
+			if err == nil {
+				hasUpdates, err := m.HasStagedUpdates()
+				if err == nil && hasUpdates {
+					fmt.Println("=== Staged Updates ===")
+					fmt.Println()
+					fmt.Println("⚠️  Staged updates available")
+					fmt.Println("   Run 'leger staged list' to review")
+					fmt.Println("   Run 'leger diff' to preview changes")
+					fmt.Println("   Run 'leger apply' to install")
+					fmt.Println()
+				}
 			}
 
 			// TODO: Add Tailscale status (Issue #6)

@@ -29,6 +29,7 @@ func init() {
 	rootCmd.AddCommand(deployCmd())
 	rootCmd.AddCommand(secretsCmd())
 	rootCmd.AddCommand(serviceCmd())
+	rootCmd.AddCommand(stagedCmd())
 	rootCmd.AddCommand(statusCmd())
 }
 
