@@ -42,19 +42,13 @@ and updates the local configuration file.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
-			// Load authentication
-			authData, err := auth.Load()
-			if err != nil || authData == nil {
-				return fmt.Errorf(`not authenticated
-
-Authenticate first:
-  leger auth login`)
+			// Get authentication
+			storedAuth, err := auth.RequireAuth()
+			if err != nil {
+				return err
 			}
 
-			userUUID := authData.DeriveUUID()
-			if userUUID == "" {
-				return fmt.Errorf("unable to derive user UUID from authentication")
-			}
+			userUUID := storedAuth.UserUUID
 
 			// Create leger.run client
 			client := legerrun.NewClient()
@@ -145,12 +139,13 @@ repository locations, and legerd connection details.`,
 			fmt.Println()
 
 			// Auth info
-			authData, err := auth.Load()
-			if err == nil && authData != nil {
+			tokenStore := auth.NewTokenStore()
+			storedAuth, err := tokenStore.Load()
+			if err == nil && storedAuth != nil && storedAuth.IsValid() {
 				fmt.Println("Authentication:")
-				fmt.Printf("  User:     %s\n", authData.TailscaleUser)
-				fmt.Printf("  Tailnet:  %s\n", authData.Tailnet)
-				fmt.Printf("  Device:   %s\n", authData.DeviceName)
+				fmt.Printf("  User:     %s\n", storedAuth.UserEmail)
+				fmt.Printf("  UUID:     %s\n", storedAuth.UserUUID)
+				fmt.Printf("  Expires:  %s\n", storedAuth.ExpiresAt.Format("2006-01-02 15:04:05"))
 				fmt.Printf("  Status:   ✓ Authenticated\n")
 				fmt.Println()
 			} else {
