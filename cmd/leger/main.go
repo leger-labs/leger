@@ -25,6 +25,7 @@ func init() {
 
 	// Command groups
 	rootCmd.AddCommand(authCmd())
+	rootCmd.AddCommand(backupCmd())
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(deployCmd())
 	rootCmd.AddCommand(secretsCmd())

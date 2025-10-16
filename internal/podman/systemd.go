@@ -199,6 +199,51 @@ func (sm *SystemdManager) DaemonReload() error {
 	return nil
 }
 
+// ListServices lists all systemd services
+func (sm *SystemdManager) ListServices() ([]string, error) {
+	args := []string{"list-units", "--type=service", "--all", "--no-pager", "--plain", "--no-legend"}
+
+	if sm.scope == "user" {
+		args = append([]string{"--user"}, args...)
+	}
+
+	cmd := exec.Command("systemctl", args...)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("systemctl list-units failed: %w\nStderr: %s", err, stderr.String())
+	}
+
+	var services []string
+	for _, line := range strings.Split(stdout.String(), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Parse first field (service name)
+		fields := strings.Fields(line)
+		if len(fields) > 0 {
+			services = append(services, fields[0])
+		}
+	}
+
+	return services, nil
+}
+
+// Start is an alias for StartService for consistency with other methods
+func (sm *SystemdManager) Start(serviceName string) error {
+	return sm.StartService(serviceName)
+}
+
+// Stop is an alias for StopService for consistency with other methods
+func (sm *SystemdManager) Stop(serviceName string) error {
+	return sm.StopService(serviceName)
+}
+
 // QuadletNameToServiceName converts a quadlet name to systemd service name
 func QuadletNameToServiceName(quadletName string) string {
 	// Remove extension if present
