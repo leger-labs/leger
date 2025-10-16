@@ -14,12 +14,14 @@ func ShowProgress(message string, task func() error) error {
 		progressbar.OptionSpinnerType(14),
 		progressbar.OptionFullWidth(),
 	)
-	defer bar.Finish()
+	defer func() {
+		_ = bar.Finish()
+	}()
 
 	// Start the progress bar spinning
 	go func() {
 		for {
-			bar.Add(1)
+			_ = bar.Add(1)
 		}
 	}()
 

@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/tailscale/setec/client/setec"
 	"github.com/tailscale/setec/setectest"
 )
 
@@ -52,8 +51,8 @@ func TestClientSetecIntegration(t *testing.T) {
 
 	t.Run("ListSecrets", func(t *testing.T) {
 		// Put a few test secrets
-		client.PutSecret(ctx, "secret1", []byte("value1"))
-		client.PutSecret(ctx, "secret2", []byte("value2"))
+		_, _ = client.PutSecret(ctx, "secret1", []byte("value1"))
+		_, _ = client.PutSecret(ctx, "secret2", []byte("value2"))
 
 		secrets, err := client.ListSecrets(ctx)
 		if err != nil {
@@ -67,7 +66,7 @@ func TestClientSetecIntegration(t *testing.T) {
 
 	t.Run("InfoSecret", func(t *testing.T) {
 		secretName := "info-test"
-		client.PutSecret(ctx, secretName, []byte("test"))
+		_, _ = client.PutSecret(ctx, secretName, []byte("test"))
 
 		info, err := client.InfoSecret(ctx, secretName)
 		if err != nil {
@@ -84,8 +83,8 @@ func TestClientSetecIntegration(t *testing.T) {
 
 	t.Run("NewStore", func(t *testing.T) {
 		// Put some test secrets
-		client.PutSecret(ctx, "store-secret1", []byte("value1"))
-		client.PutSecret(ctx, "store-secret2", []byte("value2"))
+		_, _ = client.PutSecret(ctx, "store-secret1", []byte("value1"))
+		_, _ = client.PutSecret(ctx, "store-secret2", []byte("value2"))
 
 		// Create store
 		store, err := client.NewStore(ctx, []string{"store-secret1", "store-secret2"})
@@ -104,7 +103,7 @@ func TestClientSetecIntegration(t *testing.T) {
 		}
 
 		// Test AllowLookup (dynamic discovery)
-		client.PutSecret(ctx, "dynamic-secret", []byte("dynamic-value"))
+		_, _ = client.PutSecret(ctx, "dynamic-secret", []byte("dynamic-value"))
 		dynamicSecret, err := store.LookupSecret(ctx, "dynamic-secret")
 		if err != nil {
 			t.Errorf("Store.LookupSecret() failed: %v", err)

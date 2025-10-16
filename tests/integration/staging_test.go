@@ -41,13 +41,13 @@ func TestStagingWorkflow(t *testing.T) {
 
 	// 4. Show diff
 	t.Log("Step 4: Showing diff")
-	output, err = h.RunCommand("diff", deploymentName)
+	output, _ = h.RunCommand("diff", deploymentName)
 	// Diff might fail if nothing staged
 	t.Logf("Diff result: %s", output)
 
 	// 5. Discard staged updates
 	t.Log("Step 5: Discarding staged updates")
-	output, err = h.RunCommand("discard", deploymentName)
+	output, _ = h.RunCommand("discard", deploymentName)
 	// This might also fail if nothing was staged
 	t.Logf("Discard result: %s", output)
 }
@@ -74,7 +74,7 @@ func TestApplyStaged(t *testing.T) {
 	// Note: This test would need actual staged updates to be meaningful
 	// For now, we just verify the apply command doesn't crash
 	t.Log("Testing apply command")
-	output, err = h.RunCommand("apply", deploymentName, "--force")
+	output, _ = h.RunCommand("apply", deploymentName, "--force")
 	// Expected to fail if nothing staged
 	t.Logf("Apply result: %s", output)
 }

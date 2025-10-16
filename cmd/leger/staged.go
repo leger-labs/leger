@@ -253,7 +253,7 @@ Stage updates first:
 			if !force {
 				fmt.Print("Apply these updates? [y/N]: ")
 				var response string
-				fmt.Scanln(&response)
+				_, _ = fmt.Scanln(&response)
 				if response != "y" && response != "Y" && response != "yes" {
 					fmt.Println("Update cancelled")
 					return nil
@@ -313,7 +313,7 @@ Current deployment remains unchanged.`,
 			// Prompt for confirmation
 			fmt.Printf("Discard staged updates for %s? [y/N]: ", deploymentName)
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "y" && response != "Y" && response != "yes" {
 				fmt.Println("Cancelled")
 				return nil

@@ -130,7 +130,7 @@ func findHealthCheckForService(serviceName string) *health.HealthCheck {
 
 		// Search for the quadlet file
 		var foundPath string
-		filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
+		_ = filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return nil
 			}

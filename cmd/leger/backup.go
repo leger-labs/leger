@@ -271,7 +271,7 @@ func confirmRestore() bool {
 	fmt.Print("This will stop all services and replace the current deployment. Continue? (y/N): ")
 
 	var response string
-	fmt.Scanln(&response)
+	_, _ = fmt.Scanln(&response)
 
 	response = strings.ToLower(strings.TrimSpace(response))
 	return response == "y" || response == "yes"
