@@ -2,13 +2,19 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/tailscale/setec/internal/auth"
 	"github.com/tailscale/setec/internal/daemon"
 	"github.com/tailscale/setec/internal/legerrun"
+	"github.com/tailscale/setec/internal/podman"
+	"github.com/tailscale/setec/internal/quadlet"
 	"github.com/tailscale/setec/internal/tailscale"
 )
 
@@ -23,6 +29,7 @@ func secretsCmd() *cobra.Command {
 	cmd.AddCommand(secretsSyncCmd())
 	cmd.AddCommand(secretsListCmd())
 	cmd.AddCommand(secretsInfoCmd())
+	cmd.AddCommand(secretsRotateCmd())
 
 	return cmd
 }
@@ -308,4 +315,223 @@ func secretsInfoCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+var rotateFlags struct {
+	noRestart bool
+}
+
+// secretsRotateCmd returns the secrets rotate command
+func secretsRotateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "rotate <secret-name>",
+		Short: "Rotate a secret (generates new value)",
+		Long: `Rotate a secret by generating a new value.
+
+This command:
+1. Verifies legerd is running
+2. Generates a new random value
+3. Creates a new version of the secret in legerd
+4. Identifies services using the secret
+5. Restarts affected services (unless --no-restart)
+
+The new value is a cryptographically secure random string.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			secretName := args[0]
+
+			return runSecretsRotate(ctx, secretName)
+		},
+	}
+
+	cmd.Flags().BoolVar(&rotateFlags.noRestart, "no-restart", false, "Don't restart services after rotation")
+
+	return cmd
+}
+
+func runSecretsRotate(ctx context.Context, secretName string) error {
+	fmt.Printf("Rotating secret %q...\n", secretName)
+	fmt.Println()
+
+	// Step 1: Verify legerd is running
+	fmt.Println("Step 1/5: Checking legerd daemon...")
+	daemonClient := daemon.NewClient("")
+	if err := daemonClient.Health(ctx); err != nil {
+		return fmt.Errorf(`legerd not running
+
+Start daemon:
+  systemctl --user start legerd.service`)
+	}
+	fmt.Println("✓ legerd is running")
+	fmt.Println()
+
+	// Step 2: Verify secret exists
+	fmt.Println("Step 2/5: Verifying secret exists...")
+	infoCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	info, err := daemonClient.InfoSecret(infoCtx, secretName)
+	cancel()
+	if err != nil {
+		return fmt.Errorf("secret not found: %w\n\nList available secrets:\n  leger secrets list", err)
+	}
+	fmt.Printf("✓ Found secret (current version: %d)\n", info.ActiveVersion)
+	fmt.Println()
+
+	// Step 3: Generate new value and rotate
+	fmt.Println("Step 3/5: Generating new value and rotating...")
+
+	// Generate a cryptographically secure random value (32 bytes = 256 bits)
+	newValue := make([]byte, 32)
+	if _, err := rand.Read(newValue); err != nil {
+		return fmt.Errorf("failed to generate random value: %w", err)
+	}
+
+	// Encode as base64 for better usability
+	newValueEncoded := base64.StdEncoding.EncodeToString(newValue)
+
+	rotateCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	newVersion, err := daemonClient.RotateSecret(rotateCtx, secretName, []byte(newValueEncoded))
+	cancel()
+	if err != nil {
+		return fmt.Errorf("failed to rotate secret: %w", err)
+	}
+
+	fmt.Printf("✓ Created new version: %d\n", newVersion)
+	fmt.Println()
+
+	// Step 4: Identify services using this secret
+	fmt.Println("Step 4/5: Identifying affected services...")
+
+	affectedServices, err := findServicesUsingSecret(secretName)
+	if err != nil {
+		fmt.Printf("Warning: Could not identify affected services: %v\n", err)
+		affectedServices = []string{}
+	}
+
+	if len(affectedServices) == 0 {
+		fmt.Println("ℹ No services found using this secret")
+		fmt.Println()
+		fmt.Println("✓ Secret rotation complete")
+		return nil
+	}
+
+	fmt.Printf("Found %d service(s) using this secret:\n", len(affectedServices))
+	for _, svc := range affectedServices {
+		fmt.Printf("  - %s\n", svc)
+	}
+	fmt.Println()
+
+	// Step 5: Restart affected services
+	if rotateFlags.noRestart {
+		fmt.Println("Step 5/5: Skipping service restart (--no-restart)")
+		fmt.Println()
+		fmt.Println("✓ Secret rotation complete")
+		fmt.Println()
+		fmt.Println("Note: Services must be restarted manually to use the new secret:")
+		for _, svc := range affectedServices {
+			fmt.Printf("  leger service restart %s\n", svc)
+		}
+		return nil
+	}
+
+	fmt.Println("Step 5/5: Restarting affected services...")
+
+	sm := podman.NewSystemdManager("user")
+	failed := []string{}
+
+	for _, svc := range affectedServices {
+		fmt.Printf("  Restarting %s...", svc)
+		if err := sm.RestartService(svc); err != nil {
+			fmt.Printf(" ✗ Failed: %v\n", err)
+			failed = append(failed, svc)
+		} else {
+			fmt.Println(" ✓")
+		}
+	}
+
+	fmt.Println()
+
+	if len(failed) > 0 {
+		fmt.Printf("⚠️  %d service(s) failed to restart:\n", len(failed))
+		for _, svc := range failed {
+			fmt.Printf("  - %s\n", svc)
+		}
+		fmt.Println()
+		fmt.Println("Check logs:")
+		for _, svc := range failed {
+			fmt.Printf("  leger service logs %s\n", svc)
+		}
+		return fmt.Errorf("%d service(s) failed to restart", len(failed))
+	}
+
+	fmt.Println("✓ Secret rotation complete")
+	fmt.Println()
+	fmt.Println("All services have been restarted and are now using the new secret.")
+
+	return nil
+}
+
+// findServicesUsingSecret finds all services that use a given secret
+func findServicesUsingSecret(secretName string) ([]string, error) {
+	// Look in the standard quadlet directories
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	quadletDirs := []string{
+		filepath.Join(homeDir, ".config", "containers", "systemd"),
+		filepath.Join(homeDir, ".local", "share", "bluebuild-quadlets", "active"),
+	}
+
+	services := []string{}
+	seen := make(map[string]bool)
+
+	for _, baseDir := range quadletDirs {
+		if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+			continue
+		}
+
+		// Parse all quadlets in this directory tree
+		err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return nil // Skip errors
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			// Only check .container files for secrets
+			if filepath.Ext(path) != ".container" {
+				return nil
+			}
+
+			// Parse the file for Secret= directives
+			secrets, err := quadlet.ParseFile(path)
+			if err != nil {
+				return nil // Skip files we can't parse
+			}
+
+			// Check if this file uses the secret we're rotating
+			if _, found := secrets[secretName]; found {
+				// Convert quadlet name to service name
+				baseName := filepath.Base(path)
+				serviceName := podman.QuadletNameToServiceName(baseName)
+
+				if !seen[serviceName] {
+					services = append(services, serviceName)
+					seen[serviceName] = true
+				}
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return services, nil
 }

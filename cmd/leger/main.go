@@ -32,6 +32,8 @@ func init() {
 	rootCmd.AddCommand(serviceCmd())
 	rootCmd.AddCommand(stagedCmd())
 	rootCmd.AddCommand(statusCmd())
+	rootCmd.AddCommand(validateCmd())
+	rootCmd.AddCommand(checkConflictsCmd())
 }
 
 func main() {

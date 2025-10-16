@@ -198,3 +198,50 @@ func ParseVolumeDirectives(path string) ([]string, error) {
 
 	return volumes, nil
 }
+
+// ParseLabels parses a quadlet file and extracts all Label= directives
+func ParseLabels(path string) (map[string]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	labels := make(map[string]string)
+	scanner := bufio.NewScanner(file)
+	inContainerSection := false
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		// Track sections
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			inContainerSection = line == "[Container]"
+			continue
+		}
+
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+			continue
+		}
+
+		// Parse Label= directives (only in [Container] section)
+		if inContainerSection && strings.HasPrefix(line, "Label=") {
+			labelStr := strings.TrimPrefix(line, "Label=")
+
+			// Label format: key=value
+			parts := strings.SplitN(labelStr, "=", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+				labels[key] = value
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return labels, nil
+}

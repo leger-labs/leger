@@ -124,6 +124,34 @@ func (c *Client) NewStore(ctx context.Context, secretNames []string) (*setec.Sto
 	return store, nil
 }
 
+// RotateSecret rotates a secret by creating a new version with a new value
+// This does NOT restart services - the caller is responsible for that
+func (c *Client) RotateSecret(ctx context.Context, name string, newValue []byte) (api.SecretVersion, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// Put creates a new version of the secret
+	version, err := c.setecClient.Put(ctx, name, newValue)
+	if err != nil {
+		return 0, fmt.Errorf("failed to rotate secret: %w", err)
+	}
+
+	return version, nil
+}
+
+// ActivateSecretVersion makes a specific version of a secret active
+func (c *Client) ActivateSecretVersion(ctx context.Context, name string, version api.SecretVersion) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	err := c.setecClient.Activate(ctx, name, version)
+	if err != nil {
+		return fmt.Errorf("failed to activate secret version: %w", err)
+	}
+
+	return nil
+}
+
 // HealthHTTP performs a simple HTTP health check (for legacy compatibility)
 func (c *Client) HealthHTTP(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
