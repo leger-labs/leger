@@ -4,16 +4,19 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/tailscale/setec/internal/auth"
 	"github.com/tailscale/setec/internal/daemon"
+	"github.com/tailscale/setec/internal/git"
+	"github.com/tailscale/setec/internal/podman"
 	"github.com/tailscale/setec/internal/quadlet"
 	"github.com/tailscale/setec/internal/tailscale"
+	"github.com/tailscale/setec/internal/validation"
 )
 
 // deployCmd returns the deploy command group
@@ -297,35 +300,36 @@ func createPodmanSecret(ctx context.Context, name string, value []byte) error {
 
 // installQuadlets installs quadlet files using podman quadlet install
 func installQuadlets(ctx context.Context, quadletDir string) error {
-	cmd := exec.CommandContext(ctx, "podman", "quadlet", "install", "--user", quadletDir)
-	
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	qm := podman.NewQuadletManager("user")
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("podman quadlet install failed: %w\nStdout: %s\nStderr: %s", err, stdout.String(), stderr.String())
+	if err := qm.Install(quadletDir); err != nil {
+		return err
 	}
 
-	fmt.Println(stdout.String())
+	fmt.Println("✓ Quadlets installed successfully")
 	return nil
 }
 
 // validateQuadlets validates quadlet syntax
 func validateQuadlets(quadletDir string) error {
-	// Basic validation - check files are readable
-	files, err := filepath.Glob(filepath.Join(quadletDir, "*.container"))
-	if err != nil {
+	// Validate syntax
+	if err := validation.ValidateQuadletDirectory(quadletDir); err != nil {
 		return err
 	}
 
-	if len(files) == 0 {
-		return fmt.Errorf("no .container files found in %s", quadletDir)
-	}
+	// Check for conflicts if not forced
+	if !installFlags.force {
+		conflicts, err := validation.CheckPortConflicts(quadletDir)
+		if err != nil {
+			return fmt.Errorf("failed to check port conflicts: %w", err)
+		}
 
-	for _, file := range files {
-		if _, err := os.Stat(file); err != nil {
-			return fmt.Errorf("cannot read file %s: %w", file, err)
+		if len(conflicts) > 0 {
+			fmt.Println("\n⚠ Port conflicts detected:")
+			for _, conflict := range conflicts {
+				fmt.Printf("  Port %s/%s used by: %s\n", conflict.Port, conflict.Protocol, strings.Join(conflict.Quadlets, ", "))
+			}
+			return fmt.Errorf("port conflicts found - use --force to skip this check")
 		}
 	}
 
@@ -364,9 +368,19 @@ func downloadFromLegerRun(ctx context.Context, userUUID, name string) (string, e
 }
 
 func cloneGitRepo(ctx context.Context, url, name string) (string, error) {
-	// TODO: Implement Git cloning
-	// For now, return error indicating not implemented
-	return "", fmt.Errorf("Git cloning not yet implemented - use --source flag with local path")
+	// Parse Git URL
+	repo, err := git.ParseURL(url, "")
+	if err != nil {
+		return "", fmt.Errorf("invalid Git URL: %w", err)
+	}
+
+	// Clone repository
+	path, err := git.Clone(repo)
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
 }
 
 // Stub commands for other deploy subcommands
@@ -386,25 +400,116 @@ func deployListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List deployed services",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			
-			// Use podman quadlet list
-			cmd := exec.CommandContext(ctx, "podman", "quadlet", "list", "--user")
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			
-			return cmd.Run()
+			qm := podman.NewQuadletManager("user")
+			sm := podman.NewSystemdManager("user")
+
+			// Get list of installed quadlets
+			quadlets, err := qm.List()
+			if err != nil {
+				return err
+			}
+
+			if len(quadlets) == 0 {
+				fmt.Println("No quadlets installed")
+				return nil
+			}
+
+			// Print header
+			fmt.Printf("%-30s %-15s %-15s %s\n", "NAME", "TYPE", "STATUS", "PORTS")
+			fmt.Println(strings.Repeat("-", 80))
+
+			// Print each quadlet
+			for _, q := range quadlets {
+				status := "unknown"
+				if q.ServiceName != "" {
+					svcStatus, err := sm.GetServiceStatus(q.ServiceName)
+					if err == nil {
+						status = svcStatus.ActiveState
+					}
+				}
+
+				// Convert PortInfo to strings
+				portStrs := make([]string, len(q.Ports))
+				for i, p := range q.Ports {
+					portStrs[i] = p.Host + ":" + p.Container
+				}
+				ports := strings.Join(portStrs, ", ")
+				if ports == "" {
+					ports = "-"
+				}
+
+				fmt.Printf("%-30s %-15s %-15s %s\n", q.Name, q.Type, status, ports)
+			}
+
+			return nil
 		},
 	}
 }
 
+var removeFlags struct {
+	force         bool
+	keepVolumes   bool
+	removeVolumes bool
+	backupVolumes bool
+}
+
 func deployRemoveCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "remove <name>",
 		Short: "Remove deployed quadlets",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("not yet implemented - coming in v0.2.0")
+			quadletName := args[0]
+
+			qm := podman.NewQuadletManager("user")
+			sm := podman.NewSystemdManager("user")
+
+			// Confirm unless --force
+			if !removeFlags.force {
+				fmt.Printf("Are you sure you want to remove %s? [y/N]: ", quadletName)
+				var response string
+				fmt.Scanln(&response)
+				if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
+					fmt.Println("Aborted")
+					return nil
+				}
+			}
+
+			// Stop service
+			fmt.Printf("Stopping services for %s...\n", quadletName)
+			serviceName := podman.QuadletNameToServiceName(quadletName)
+			if err := sm.StopService(serviceName); err != nil {
+				fmt.Printf("⚠ Warning: failed to stop service: %v\n", err)
+			}
+
+			// Handle volumes if requested
+			if removeFlags.removeVolumes {
+				fmt.Println("Removing volumes...")
+				vm := podman.NewVolumeManager()
+				// Note: Volume handling will be more sophisticated in Issue #17
+				// For now, we just try to remove volumes with the quadlet name
+				if err := vm.Remove(quadletName); err != nil {
+					fmt.Printf("⚠ Warning: failed to remove volume: %v\n", err)
+				}
+			} else if removeFlags.backupVolumes {
+				fmt.Println("⚠ Backup volumes not yet implemented (coming in Issue #17)")
+			}
+
+			// Remove quadlet
+			fmt.Printf("Removing quadlet %s...\n", quadletName)
+			if err := qm.Remove(quadletName); err != nil {
+				return err
+			}
+
+			fmt.Printf("✓ Successfully removed %s\n", quadletName)
+			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&removeFlags.force, "force", false, "Skip confirmation prompt")
+	cmd.Flags().BoolVar(&removeFlags.keepVolumes, "keep-volumes", true, "Preserve all volumes (default)")
+	cmd.Flags().BoolVar(&removeFlags.removeVolumes, "remove-volumes", false, "Remove volumes without backup")
+	cmd.Flags().BoolVar(&removeFlags.backupVolumes, "backup-volumes", false, "Create backup before removal")
+
+	return cmd
 }
