@@ -1,0 +1,16 @@
+[Unit]
+Description=Nginx Web Server Example
+After=network-online.target
+
+[Container]
+Image=docker.io/library/nginx:alpine
+ContainerName=nginx-example
+PublishPort=8080:80
+Volume=nginx-data.volume:/usr/share/nginx/html:Z
+
+[Service]
+Restart=always
+TimeoutStartSec=60
+
+[Install]
+WantedBy=default.target

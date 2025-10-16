@@ -1,0 +1,7 @@
+[Unit]
+Description=Nginx Data Volume
+
+[Volume]
+
+[Install]
+WantedBy=default.target
