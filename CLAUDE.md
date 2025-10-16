@@ -1,434 +1,357 @@
-# Guide for Claude Code
+# Guide for Claude Code - Leger CLI Implementation
 
-This document provides essential context for Claude Code when working on Leger issues.
+This document provides context for Claude Code when working on Leger CLI issues (Phase 2).
 
 ## Project Overview
 
-**Leger** is a Podman Quadlet manager with integrated secrets management. It combines:
-- CLI tool (`leger`) for managing quadlets
-- Daemon (`legerd`) - a fork of Tailscale's setec for secrets
-- Tailscale identity for authentication
-- RPM packaging for Fedora distribution
+**Leger** is a Podman Quadlet manager with integrated secrets management. Phase 1 (Issues #3-8) established the foundation. Phase 2 implements the full CLI specification.
+
+---
+
+## Current Architecture
+
+### Completed (Issues #3-8)
+✅ RPM packaging with nfpm  
+✅ CI workflow for releases  
+✅ Cobra CLI structure  
+✅ Tailscale integration (internal/tailscale/)  
+✅ legerd HTTP client (internal/daemon/)  
+✅ Auth commands (cmd/leger/auth.go)
+
+### Implementation Phase (Issues #14-19)
+The remaining work follows the **Leger CLI Technical Specification** (`docs/LEGER-CLI-SPEC-FINAL.md`).
 
 ---
 
 ## Issue Tracking
 
-All issues are specified in detail in the `/backlog/` directory:
+All issues #14+ are specified in detail in `/backlog/` directory:
+- **Issue #14**: Core Deployment Infrastructure
+- **Issue #15**: Configuration & Multi-Source Support
+- **Issue #16**: Staged Updates Workflow
+- **Issue #17**: Backup & Restore System
+- **Issue #18**: Secrets & Validation
+- **Issue #19**: Polish & Integration Testing
 
-- **Issue #3**: `/backlog/ISSUE-3.md` - RPM packaging with nfpm
-- **Issue #4**: `/backlog/ISSUE-4.md` - CI workflow for releases
-- **Issue #5**: `/backlog/ISSUE-5.md` - Cobra CLI structure
-- **Issue #6**: `/backlog/ISSUE-6.md` - Tailscale integration
-- **Issue #7**: `/backlog/ISSUE-7.md` - legerd HTTP client (v0.2.0)
-- **Issue #8**: `/backlog/ISSUE-8.md` - Auth commands implementation
+**Always read the issue file first** (`/backlog/ISSUE-XX.md`) before implementation.
 
-**Always read the issue file first** before starting implementation.
-
----
-
-## Documentation
-
-Comprehensive documentation is available in `/docs/`:
-
-### Architecture & Design
-- `/docs/leger-architecture.md` - Complete system architecture
-- `/docs/leger-executive-summary.md` - Vision and design decisions
-- `/docs/leger-cli-legerd-architecture.md` - Detailed component breakdown
-- `/docs/leger-usage-guide.md` - User workflows and examples
-
-### RPM Packaging
-- `/docs/rpm-packaging/README-QUICKSTART.md` - 15-minute setup guide
-- `/docs/rpm-packaging/RPM-PACKAGING.md` - Complete implementation guide
-- `/docs/rpm-packaging/CLOUDFLARE-SETUP.md` - R2 repository setup
-- `/docs/rpm-packaging/SIGNING.md` - Package signing guide
-- `/docs/rpm-packaging/RPM-PACKAGING-ANALYSIS.md` - Tailscale analysis
-
-### Integration
-- `/docs/tailscale-integration-analysis.md` - Tailscale dependencies and scenarios
-
-### Reference Implementations
-- `/docs/rpm-packaging/Makefile` - Build system reference
-- `/docs/rpm-packaging/nfpm-dual.yaml` - Package configuration
-- `/docs/rpm-packaging/release/rpm/*.sh` - RPM scriptlets
-- `/docs/rpm-packaging/.github/workflows/*.yml` - CI workflow examples
-
-**Always reference these docs** when implementing features.
+Each issue file specifies:
+- Complete scope and requirements
+- Reference material to study (docs/pq/, docs/leger-cli-better-pq/, docs/quadlets/)
+- Implementation checklist
+- Testing requirements
+- Dependencies
 
 ---
 
-## Contributing Guidelines
+## Key Documentation
 
-All contribution guidelines and standards are in `.github/`:
+### Primary Specifications
+- **`docs/LEGER-CLI-SPEC-FINAL.md`** - Complete CLI specification (ALWAYS reference)
+- **`docs/NEWEST-LEGER-CLI-IMPLEMENTATION-MAPPING.md`** - Package structure and patterns
 
-### Required Reading
-- `.github/CONTRIBUTING.md` - Complete contribution guide
-- `.github/ISSUE_TEMPLATE/` - Issue templates
-- `.github/PULL_REQUEST_TEMPLATE.md` - PR template
-- `.github/labels.yml` - Label definitions
+### Reference Implementations (Per-Issue Basis)
 
-### Commit Standards
-**CRITICAL**: All commits must follow Conventional Commits format:
+Each issue specifies which reference files to study. The main sources are:
 
-```
-type(scope): description
+**1. pq (Simple CLI patterns)**
+- Location: `docs/pq/`
+- Use for: Git cloning, basic CLI structure, systemd integration
+- Key patterns:
+  - Git operations
+  - Repository listing
+  - Removal workflows
+  - Systemd service management
 
-[optional body]
+**2. Leger Better PQ (Native Podman strategy)**
+- Location: `docs/leger-cli-better-pq/`
+- Use for: Native Podman command integration, architecture patterns
+- Key patterns:
+  - Why native commands (70% less code)
+  - Implementation examples
+  - Usage patterns
 
-[optional footer]
-```
+**3. BlueBuild Quadlets (Advanced features)**
+- Location: `docs/quadlets/`
+- Use for: Staged updates, backup/restore, validation
+- Key patterns (port from Nushell to Go):
+  - Staging workflow
+  - Validation logic
+  - Git URL parsing
+  - Conflict detection
 
-**Valid types**: `feat`, `fix`, `docs`, `chore`, `ci`, `test`, `refactor`, `perf`
-
-**Common scopes**: `cli`, `daemon`, `rpm`, `infra`, `ci`, `docs`
-
-**Examples**:
-```
-feat(cli): implement Cobra CLI structure
-fix(daemon): correct health check endpoint
-docs: update installation guide
-chore(rpm): add nfpm configuration
-ci: add RPM build workflow
-```
-
-This is enforced by the Semantic PR workflow and required for release-please.
-
----
-
-## Known Limitations
-
-### GitHub Workflows
-
-⚠️ **IMPORTANT**: Claude Code CANNOT write to `.github/workflows/` directory due to security restrictions.
-
-**When implementing Issue #4 or any CI workflow**:
-
-1. Create workflow files in a temporary location (e.g., `/tmp/workflows/`)
-2. **Clearly list in the PR description** which files could not be created
-3. Provide the complete file contents in the PR body
-4. I will manually copy them to `.github/workflows/`
-
-**Example PR description**:
-```markdown
-## Files Not Created (Manual Step Required)
-
-⚠️ Due to GitHub security restrictions, the following files need manual creation:
-
-### `.github/workflows/release.yml`
-```yaml
-[paste complete file contents here]
-```
-
-Please copy this file to `.github/workflows/release.yml` after PR approval.
-```
+**Note**: Issues specify exactly which files to study. Don't read everything at once - focus on what each issue requires.
 
 ---
 
-## Project Structure
+## Implementation Principles
 
-```
-leger/
-├── cmd/
-│   ├── leger/          # CLI binary
-│   │   ├── main.go
-│   │   ├── auth.go
-│   │   ├── config.go
-│   │   ├── deploy.go
-│   │   ├── secrets.go
-│   │   └── status.go
-│   └── legerd/         # Daemon (setec fork)
-│       └── main.go
-├── internal/           # Leger-specific internal packages
-│   ├── auth/          # Authentication storage
-│   ├── cli/           # CLI helpers
-│   ├── config/        # Configuration management
-│   ├── daemon/        # legerd HTTP client
-│   ├── tailscale/     # Tailscale integration
-│   └── version/       # Version information
-├── version/
-│   └── version.go     # Version stamping (ldflags)
-├── config/
-│   └── leger.yaml     # Default configuration
-├── systemd/           # Systemd units
-│   ├── legerd.service         # User scope
-│   └── legerd@.service        # System scope
-├── release/
-│   └── rpm/           # RPM scriptlets
-│       ├── postinst.sh
-│       ├── prerm.sh
-│       └── postrm.sh
-├── docs/              # Documentation (see above)
-├── backlog/           # Issue specifications
-│   └── ISSUE-*.md
-├── .github/           # GitHub configuration
-│   ├── workflows/     # CI/CD (⚠️ cannot write here)
-│   └── labels.yml     # Label definitions
-├── Makefile           # Build orchestration
-├── nfpm.yaml          # Package configuration
-└── go.mod
-```
+### 1. Native Podman Commands (CRITICAL)
 
----
-
-## Version Stamping
-
-Version information is embedded at build time via ldflags:
+**DO NOT manually copy files**. Use native Podman quadlet commands:
 
 ```go
-// version/version.go
-var (
-    Version   = "development"  // Set via ldflags
-    Commit    = "unknown"      // Set via ldflags
-    BuildDate = "unknown"      // Set via ldflags
-)
-```
+// ✅ CORRECT
+func Install(quadletPath string, scope string) error {
+    args := []string{"quadlet", "install"}
+    if scope == "user" {
+        args = append(args, "--user")
+    }
+    args = append(args, quadletPath)
+    return exec.Command("podman", args...).Run()
+}
 
-Used in Makefile:
-```makefile
-LDFLAGS := -ldflags "\
-    -X github.com/leger-labs/leger/version.Version=$(VERSION) \
-    -X github.com/leger-labs/leger/version.Commit=$(COMMIT) \
-    -X github.com/leger-labs/leger/version.BuildDate=$(BUILD_DATE)"
-```
-
-**Always use this pattern** when displaying version information.
-
----
-
-## Testing Requirements
-
-### Unit Tests
-- Place tests next to the code: `foo.go` → `foo_test.go`
-- Test files in `internal/` packages
-- Use table-driven tests where appropriate
-- Mock external dependencies (Tailscale, HTTP clients)
-
-### Integration Tests
-- RPM installation: `make rpm && sudo dnf install ./leger-*.rpm`
-- Binary functionality: `leger --version`, `leger auth login`
-- Systemd integration: `systemctl --user status legerd.service`
-
-### Manual Testing Checklist
-Always include in PR description:
-```markdown
-## Testing
-
-- [ ] Unit tests pass: `go test ./...`
-- [ ] Build succeeds: `make build`
-- [ ] RPM creates: `make rpm`
-- [ ] Version correct: `./leger --version`
-- [ ] Help works: `./leger --help`
-- [ ] [Specific feature tests]
-```
-
----
-
-## Dependencies
-
-### Core Dependencies
-```go
-// Cobra for CLI
-github.com/spf13/cobra
-
-// Tailscale for identity
-tailscale.com/client/tailscale
-
-// Setec for secrets (already in legerd)
-github.com/tailscale/setec
-```
-
-### Build Tools
-- **nfpm** - Package builder: `go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest`
-- **golangci-lint** - Linter (optional but recommended)
-
-### Runtime Requirements (User)
-- **Tailscale** - Identity provider (must be installed and running)
-- **Podman** - Container runtime (for future features)
-
----
-
-## Code Quality Standards
-
-### Go Best Practices
-- Follow effective Go guidelines
-- Use `gofmt` for formatting
-- Add docstrings to exported functions
-- Handle errors explicitly (no ignored errors)
-- Avoid global state
-
-### Error Messages
-Must be user-friendly and actionable:
-
-❌ **Bad**:
-```
-Error: failed to connect
-```
-
-✅ **Good**:
-```
-Error: Could not connect to legerd daemon
-
-legerd is not running. Start it with:
-  systemctl --user start legerd.service
-
-Or check logs:
-  journalctl --user -u legerd.service -f
-```
-
-### Help Text
-All commands must have:
-- Clear one-line `Short` description
-- Detailed `Long` description with examples
-- Usage examples where appropriate
-
-```go
-&cobra.Command{
-    Use:   "login",
-    Short: "Authenticate with Leger Labs",
-    Long: `Verify Tailscale identity and authenticate with Leger.
-
-This command checks your existing Tailscale authentication and uses it
-to authenticate with Leger Labs. No separate login is required.
-
-Requirements:
-- Tailscale must be installed
-- Tailscale must be running (tailscale up)
-- Device must be authenticated to a Tailnet
-`,
-    RunE: func(cmd *cobra.Command, args []string) error {
-        // Implementation
-    },
+// ❌ WRONG - Don't do this
+func install(quadletPath string) error {
+    copyDir(quadletPath, installDir)
+    systemdDaemonReload()
+    // ...
 }
 ```
 
----
+**Benefits**: 70% less code, better error handling, automatic systemd integration.
 
-## Security Considerations
+### 2. Package Structure
 
-### Authentication
-- Never store credentials in code
-- Never log sensitive information
-- Use Tailscale identity as source of truth
-- Store auth state with restrictive permissions (0600)
+Follow `docs/NEWEST-LEGER-CLI-IMPLEMENTATION-MAPPING.md`:
 
-### File Permissions
+```
+leger/
+├── cmd/leger/           # CLI commands (partially complete)
+├── internal/
+│   ├── podman/         # ⚠️ NEW - Native Podman integration
+│   ├── git/            # ⚠️ NEW - Git operations
+│   ├── staging/        # ⚠️ NEW - Staged updates
+│   ├── backup/         # ⚠️ NEW - Backup/restore
+│   ├── validation/     # ⚠️ NEW - Validation
+│   ├── legerrun/       # ⚠️ NEW - leger.run backend
+│   ├── auth/           # ✅ EXISTS
+│   └── daemon/         # ✅ EXISTS
+└── pkg/types/          # ⚠️ NEW - Shared types
+```
+
+### 3. Reference Material Per Issue
+
+Each issue specifies which files to study. Example format:
+
+```markdown
+## Reference Material for This Issue
+
+**Primary Specification**: 
+- docs/LEGER-CLI-SPEC-FINAL.md § 4.2 (Deploy Commands)
+
+**Implementation Patterns**:
+- docs/pq/cmd/install.go (Git cloning workflow)
+- docs/leger-cli-better-pq/pq_native_podman_implementation.go.example (Native commands)
+
+**Port from Nushell**:
+- docs/quadlets/git-source-parser.nu (URL parsing logic)
+
+**Usage Examples**:
+- docs/leger-cli-better-pq/leger-usage-guide.md (User workflows)
+```
+
+**Workflow**:
+1. Read issue file (`/backlog/ISSUE-XX.md`)
+2. Study ONLY the reference files listed in that issue
+3. Implement following the patterns
+4. Test per checklist
+
+### 4. Error Messages (User-Friendly)
+
+All errors must guide users to solutions:
+
 ```go
-// Auth file
-os.WriteFile(path, data, 0600)  // User only
+// ✅ GOOD
+return fmt.Errorf(`legerd not running
 
-// Config directories
-os.MkdirAll(dir, 0700)  // User only
+Start the daemon:
+  systemctl --user start legerd.service
 
-// Public files
-os.WriteFile(path, data, 0644)  // World readable
+Check logs:
+  journalctl --user -u legerd.service -f`)
+
+// ❌ BAD
+return fmt.Errorf("daemon error")
+```
+
+### 5. Conventional Commits (REQUIRED)
+
+```
+feat(deploy): implement quadlet installation from Git
+fix(secrets): correct secret sync race condition
+docs: update deployment workflow guide
+test(backup): add volume backup tests
 ```
 
 ---
 
-## Release Process
+## Issue Sequence (6 Comprehensive Issues)
 
-### Versioning
-- Uses Semantic Versioning (MAJOR.MINOR.PATCH)
-- Managed by release-please based on conventional commits
-- Git tags trigger releases
+### Issue #14: Core Deployment Infrastructure
+**Scope**: Package scaffolding + full deployment workflow (install/list/remove/service management)
+**Effort**: 12-15 hours
+**Dependencies**: None
 
-### Release Workflow
-1. Merge PR to `main` (with conventional commit)
-2. release-please creates/updates Release PR
-3. Merge Release PR → triggers GitHub Actions
-4. Actions build RPMs (amd64 + arm64)
-5. GitHub Release created with RPM attachments
+### Issue #15: Configuration & Multi-Source Support
+**Scope**: Manifest parsing + config commands + leger.run vs Git auto-detection
+**Effort**: 10-12 hours
+**Dependencies**: #14
+
+### Issue #16: Staged Updates Workflow
+**Scope**: Complete staging system (stage/diff/apply/discard)
+**Effort**: 12-15 hours
+**Dependencies**: #14
+
+### Issue #17: Backup & Restore System
+**Scope**: Backup with volumes + restore with rollback
+**Effort**: 10-12 hours
+**Dependencies**: #14
+
+### Issue #18: Secrets & Validation
+**Scope**: Secret rotation + health checks + enhanced validation
+**Effort**: 12-14 hours
+**Dependencies**: #14, #17 (for service management)
+
+### Issue #19: Polish & Integration Testing
+**Scope**: UX improvements + E2E tests + documentation
+**Effort**: 15-18 hours
+**Dependencies**: All previous
+
+**Total**: ~72-86 hours of focused implementation
 
 ---
 
 ## Common Patterns
 
-### Check Tailscale Status
+### Git Repository Cloning
+
+Reference: `docs/pq/cmd/install.go:downloadDirectory()`
+
 ```go
-client := tailscale.NewClient()
-identity, err := client.VerifyIdentity(ctx)
-if err != nil {
-    return fmt.Errorf("Tailscale not available: %w", err)
+func CloneQuadlet(gitURL, branch, quadletName string) (string, error) {
+    // Parse URL (can include tree path)
+    // Clone to temp directory
+    // Extract specific directory
+    // Return path to quadlet files
 }
 ```
 
-### Load Configuration
+### Native Podman Integration
+
+Reference: `docs/leger-cli-better-pq/pq_native_podman_implementation.go.example`
+
 ```go
-cfg, err := config.Load()
-if err != nil {
-    return fmt.Errorf("failed to load config: %w", err)
-}
+// Use podman quadlet install/list/rm
+// NOT manual file operations
 ```
 
-### Check Authentication
+### Manifest Handling
+
+Reference: `docs/LEGER-CLI-SPEC-FINAL.md § 6`
+
 ```go
-if !auth.IsAuthenticated() {
-    return fmt.Errorf("not authenticated. Run: leger auth login")
+type Manifest struct {
+    Version    int                 `json:"version"`
+    CreatedAt  time.Time          `json:"created_at"`
+    Services   []ServiceDefinition `json:"services"`
+    Volumes    []VolumeDefinition  `json:"volumes"`
 }
 ```
 
 ---
 
-## Issue-Specific Notes
+## Per-Issue Workflow
 
-### Issue #3 (RPM Packaging)
-- Reference `/docs/rpm-packaging/RPM-PACKAGING.md` extensively
-- Use nfpm (not rpmbuild)
-- Test on Fedora system
-- Scriptlets must handle user + system scope
+When assigned an issue:
 
-### Issue #4 (CI Workflow)
-- ⚠️ **Cannot write to `.github/workflows/`**
-- Provide complete workflow content in PR
-- Test with `workflow_dispatch` first
-- Include both amd64 and arm64 builds
+1. **Read Issue File**: `/backlog/ISSUE-XX.md` completely
+2. **Study References**: ONLY the files listed in "Reference Material" section
+3. **Review Spec**: Relevant sections of `LEGER-CLI-SPEC-FINAL.md`
+4. **Implement**: Following patterns from reference files
+5. **Test**: Using checklist in issue
+6. **Commit**: With conventional commit message
 
-### Issue #5 (Cobra CLI)
-- Focus on structure, not implementation
-- All commands return "not implemented"
-- Wire up version from `version/version.go`
-- Comprehensive help text
+**Don't read all reference material upfront** - each issue tells you what's needed.
 
-### Issue #6 (Tailscale)
-- Use official Tailscale Go library
-- Clear error messages when not installed
-- Don't assume Tailscale is available
-- Test without Tailscale first
+---
 
-### Issue #8 (Auth Commands)
-- Store auth in `~/.config/leger/auth.json`
-- File permissions: 0600
-- Complete login/status/logout flow
-- Validate against current Tailscale identity
+## GitHub Actions Integration
+
+### Issue Creation
+
+Issues are created manually with format:
+
+```markdown
+Title: feat(scope): Brief description
+
+Body:
+See /backlog/ISSUE-XX.md for complete specification.
+
+@claude please implement this following the reference material listed in the issue file.
+
+Dependencies: #YY
+```
+
+### Claude Code Response
+
+Claude Code should:
+1. Read `/backlog/ISSUE-XX.md`
+2. Study ONLY specified reference files
+3. Implement feature
+4. Create PR with conventional commits
+5. Include testing evidence in PR
+
+---
+
+## Critical Success Factors
+
+### ✅ DO
+- Read issue file completely first
+- Study ONLY specified reference files (don't read everything)
+- Use native Podman commands
+- Write user-friendly error messages
+- Include complete testing checklist
+- Use conventional commits
+
+### ❌ DON'T
+- Skip reference material
+- Manually copy quadlet files (use Podman)
+- Implement without reading spec section
+- Create cryptic error messages
+- Skip testing checklist
+- Use non-conventional commits
+- Read all docs upfront (focus per-issue)
+
+---
+
+### Phase 2 (Current)
+- **Full feature implementation**
+- **Integration between components**
+- **User-facing workflows end-to-end**
+- **Complex testing requirements**
 
 ---
 
 ## Getting Help
 
-If you encounter issues or need clarification:
-
-1. **Check documentation first**: `/docs/` has extensive guides
-2. **Read issue file**: `/backlog/ISSUE-#.md` for detailed requirements
-3. **Check examples**: Reference implementation files in `/docs/rpm-packaging/`
-4. **Ask in PR**: Include specific questions in PR description
-
----
-
-## Summary Checklist
-
-When implementing an issue:
-
-- [ ] Read `/backlog/ISSUE-#.md` thoroughly
-- [ ] Reference relevant docs in `/docs/`
-- [ ] Follow conventional commits
-- [ ] Add tests for new functionality
-- [ ] Update documentation if needed
-- [ ] Include testing checklist in PR
-- [ ] Note any files that couldn't be created (workflows)
-- [ ] Ensure error messages are user-friendly
-- [ ] Add docstrings to exported functions
-- [ ] Follow Go best practices
+If blocked:
+1. Check if issue's reference files clarify
+2. Review related spec section in `LEGER-CLI-SPEC-FINAL.md`
+3. Look at similar patterns in reference implementations
+4. Ask in PR comments with specific question + context
 
 ---
 
-**Good luck! You're building something great. 🚀**
+## Summary Checklist for Each Issue
+
+- [ ] Read `/backlog/ISSUE-XX.md` completely
+- [ ] Study ONLY listed reference files (don't over-read)
+- [ ] Review spec sections mentioned
+- [ ] Implement following patterns
+- [ ] Write/update tests
+- [ ] Update docs if needed
+- [ ] Verify error messages are helpful
+- [ ] Use conventional commit format
+- [ ] Complete testing checklist
+- [ ] Note any blockers or concerns

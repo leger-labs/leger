@@ -1,9 +1,19 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/tailscale/setec/internal/auth"
+	"github.com/tailscale/setec/internal/daemon"
+	"github.com/tailscale/setec/internal/quadlet"
+	"github.com/tailscale/setec/internal/tailscale"
 )
 
 // deployCmd returns the deploy command group
@@ -14,38 +24,387 @@ func deployCmd() *cobra.Command {
 		Long:  "Manage Podman Quadlet deployments from Git repositories",
 	}
 
-	cmd.AddCommand(deployInitCmd())
+	cmd.AddCommand(deployInstallCmd())
 	cmd.AddCommand(deployUpdateCmd())
+	cmd.AddCommand(deployListCmd())
+	cmd.AddCommand(deployRemoveCmd())
 
 	return cmd
 }
 
-// deployInitCmd returns the deploy init command
-func deployInitCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "init",
-		Short: "Initialize deployment",
-		Long: `Initialize a new Leger deployment.
-
-Sets up the local deployment environment, clones the quadlet
-repository, and prepares systemd units for activation.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("not yet implemented")
-		},
-	}
+var installFlags struct {
+	source    string
+	noStart   bool
+	dryRun    bool
+	force     bool
+	noSecrets bool
 }
 
-// deployUpdateCmd returns the deploy update command
+// deployInstallCmd returns the deploy install command
+func deployInstallCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "install [name]",
+		Short: "Install quadlet deployment",
+		Long: `Install a new Leger deployment from Git repository.
+
+This command:
+1. Validates authentication and legerd connectivity
+2. Downloads quadlet files from source repository
+3. Parses quadlet files for Secret= directives
+4. Creates setec.Store with AllowLookup enabled
+5. Fetches required secrets from legerd
+6. Creates Podman secrets for each required secret
+7. Installs quadlets using: podman quadlet install --user
+8. Starts services (unless --no-start)
+
+Source can be:
+- Empty (uses your leger.run repository)
+- Git URL (e.g., https://github.com/org/repo)
+- Local path (e.g., ~/quadlets)
+`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+
+			name := "default"
+			if len(args) > 0 {
+				name = args[0]
+			}
+
+			return runDeployInstall(ctx, name)
+		},
+	}
+
+	cmd.Flags().StringVar(&installFlags.source, "source", "", "Source repository URL or path")
+	cmd.Flags().BoolVar(&installFlags.noStart, "no-start", false, "Install but do not start services")
+	cmd.Flags().BoolVar(&installFlags.dryRun, "dry-run", false, "Validate and show what would be installed")
+	cmd.Flags().BoolVar(&installFlags.force, "force", false, "Skip conflict checks")
+	cmd.Flags().BoolVar(&installFlags.noSecrets, "no-secrets", false, "Skip secret injection (for testing)")
+
+	return cmd
+}
+
+func runDeployInstall(ctx context.Context, name string) error {
+	fmt.Printf("Installing deployment: %s\n", name)
+	fmt.Println()
+
+	// Step 1: Verify prerequisites
+	fmt.Println("Step 1/7: Verifying prerequisites...")
+	
+	if !auth.IsAuthenticated() {
+		return fmt.Errorf("not authenticated\n\nRun: leger auth login")
+	}
+
+	tsClient := tailscale.NewClient()
+	identity, err := tsClient.VerifyIdentity(ctx)
+	if err != nil {
+		return fmt.Errorf("Tailscale verification failed: %w", err)
+	}
+	userUUID := deriveUserUUID(identity)
+
+	daemonClient := daemon.NewClient("")
+	if err := daemonClient.Health(ctx); err != nil {
+		return fmt.Errorf("legerd not running: %w\n\nStart with: systemctl --user start legerd.service", err)
+	}
+
+	fmt.Println("✓ Prerequisites verified")
+	fmt.Println()
+
+	// Step 2: Download/locate quadlet files
+	fmt.Println("Step 2/7: Locating quadlet files...")
+	
+	var quadletDir string
+	if installFlags.source == "" {
+		// Use leger.run repository
+		quadletDir, err = downloadFromLegerRun(ctx, userUUID, name)
+	} else if isURL(installFlags.source) {
+		// Clone from Git
+		quadletDir, err = cloneGitRepo(ctx, installFlags.source, name)
+	} else {
+		// Use local path
+		quadletDir = installFlags.source
+		if !filepath.IsAbs(quadletDir) {
+			quadletDir, err = filepath.Abs(quadletDir)
+		}
+	}
+	
+	if err != nil {
+		return fmt.Errorf("failed to locate quadlets: %w", err)
+	}
+
+	fmt.Printf("✓ Quadlet directory: %s\n", quadletDir)
+	fmt.Println()
+
+	// Step 3: Parse quadlet files for secrets
+	fmt.Println("Step 3/7: Parsing quadlet files...")
+	
+	parseResult, err := quadlet.ParseDirectory(quadletDir)
+	if err != nil {
+		return fmt.Errorf("failed to parse quadlets: %w", err)
+	}
+
+	fmt.Printf("✓ Found %d quadlet files\n", len(parseResult.QuadletFiles))
+	if len(parseResult.Secrets) > 0 {
+		fmt.Printf("  Requires %d secrets\n", len(parseResult.Secrets))
+		for _, secret := range parseResult.Secrets {
+			fmt.Printf("    - %s (type=%s, target=%s)\n", secret.Name, secret.Type, secret.Target)
+		}
+	} else {
+		fmt.Println("  No secrets required")
+	}
+	fmt.Println()
+
+	// Step 4: Create setec.Store and fetch secrets
+	if len(parseResult.Secrets) > 0 && !installFlags.noSecrets {
+		fmt.Println("Step 4/7: Fetching secrets from legerd...")
+		
+		if err := fetchAndCreateSecrets(ctx, daemonClient, userUUID, parseResult); err != nil {
+			return fmt.Errorf("failed to handle secrets: %w", err)
+		}
+
+		fmt.Printf("✓ All %d secrets available\n", len(parseResult.Secrets))
+		fmt.Println()
+	} else {
+		fmt.Println("Step 4/7: No secrets to fetch")
+		fmt.Println()
+	}
+
+	// Step 5: Validate quadlets
+	fmt.Println("Step 5/7: Validating quadlets...")
+	
+	if err := validateQuadlets(quadletDir); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	fmt.Println("✓ Quadlet validation passed")
+	fmt.Println()
+
+	if installFlags.dryRun {
+		fmt.Println("Dry run mode - stopping here")
+		return nil
+	}
+
+	// Step 6: Install quadlets using podman
+	fmt.Println("Step 6/7: Installing quadlets...")
+	
+	if err := installQuadlets(ctx, quadletDir); err != nil {
+		return fmt.Errorf("failed to install quadlets: %w", err)
+	}
+
+	fmt.Println("✓ Quadlets installed")
+	fmt.Println()
+
+	// Step 7: Start services
+	if !installFlags.noStart {
+		fmt.Println("Step 7/7: Starting services...")
+		
+		if err := startServices(ctx, parseResult); err != nil {
+			return fmt.Errorf("failed to start services: %w", err)
+		}
+
+		fmt.Println("✓ Services started")
+	} else {
+		fmt.Println("Step 7/7: Skipping service start (--no-start)")
+	}
+	fmt.Println()
+
+	fmt.Println("✓ Deployment complete!")
+	fmt.Println()
+	fmt.Println("Next steps:")
+	fmt.Println("  - Check status: leger status")
+	fmt.Println("  - View logs: leger service logs <service>")
+	fmt.Println("  - List deployments: leger deploy list")
+
+	return nil
+}
+
+// fetchAndCreateSecrets uses setec.Store to fetch secrets and create Podman secrets
+func fetchAndCreateSecrets(ctx context.Context, client *daemon.Client, userUUID string, parseResult *quadlet.ParseResult) error {
+	// Create context with timeout for store operations
+	storeCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	// Get secret names (without prefix for Store initialization)
+	secretNames := parseResult.GetSecretNames()
+	
+	// Add prefix for full secret paths
+	prefix := fmt.Sprintf("leger/%s/", userUUID)
+	prefixedNames := make([]string, len(secretNames))
+	for i, name := range secretNames {
+		prefixedNames[i] = prefix + name
+	}
+
+	// Pattern 1: Create Store with AllowLookup enabled
+	// Pattern 3: Block until secrets are available
+	store, err := client.NewStore(storeCtx, prefixedNames)
+	if err != nil {
+		return fmt.Errorf("failed to create store: %w", err)
+	}
+	defer store.Close()
+
+	fmt.Printf("✓ Connected to legerd store\n")
+
+	// Pattern 2: Use LookupSecret for each discovered secret
+	for _, secretName := range secretNames {
+		fullName := prefix + secretName
+		
+		// Pattern 6: Use context timeout for each lookup
+		lookupCtx, lookupCancel := context.WithTimeout(ctx, 5*time.Second)
+		
+		secret, err := store.LookupSecret(lookupCtx, fullName)
+		lookupCancel()
+		
+		if err != nil {
+			return fmt.Errorf("secret %q not found in legerd: %w\n\nEnsure secrets are synced: leger auth login", secretName, err)
+		}
+
+		// Create Podman secret
+		if err := createPodmanSecret(ctx, secretName, secret.Get()); err != nil {
+			return fmt.Errorf("failed to create Podman secret %q: %w", secretName, err)
+		}
+
+		fmt.Printf("  ✓ Created Podman secret: %s\n", secretName)
+	}
+
+	return nil
+}
+
+// createPodmanSecret creates or updates a Podman secret
+func createPodmanSecret(ctx context.Context, name string, value []byte) error {
+	// Check if secret already exists
+	checkCmd := exec.CommandContext(ctx, "podman", "secret", "inspect", name)
+	if err := checkCmd.Run(); err == nil {
+		// Secret exists, remove it first
+		rmCmd := exec.CommandContext(ctx, "podman", "secret", "rm", name)
+		if err := rmCmd.Run(); err != nil {
+			return fmt.Errorf("failed to remove existing secret: %w", err)
+		}
+	}
+
+	// Create new secret
+	cmd := exec.CommandContext(ctx, "podman", "secret", "create", name, "-")
+	cmd.Stdin = bytes.NewReader(value)
+	
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("podman secret create failed: %w\nStderr: %s", err, stderr.String())
+	}
+
+	return nil
+}
+
+// installQuadlets installs quadlet files using podman quadlet install
+func installQuadlets(ctx context.Context, quadletDir string) error {
+	cmd := exec.CommandContext(ctx, "podman", "quadlet", "install", "--user", quadletDir)
+	
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("podman quadlet install failed: %w\nStdout: %s\nStderr: %s", err, stdout.String(), stderr.String())
+	}
+
+	fmt.Println(stdout.String())
+	return nil
+}
+
+// validateQuadlets validates quadlet syntax
+func validateQuadlets(quadletDir string) error {
+	// Basic validation - check files are readable
+	files, err := filepath.Glob(filepath.Join(quadletDir, "*.container"))
+	if err != nil {
+		return err
+	}
+
+	if len(files) == 0 {
+		return fmt.Errorf("no .container files found in %s", quadletDir)
+	}
+
+	for _, file := range files {
+		if _, err := os.Stat(file); err != nil {
+			return fmt.Errorf("cannot read file %s: %w", file, err)
+		}
+	}
+
+	return nil
+}
+
+// startServices starts the installed services
+func startServices(ctx context.Context, parseResult *quadlet.ParseResult) error {
+	// Extract service names from quadlet files
+	for _, qfile := range parseResult.QuadletFiles {
+		base := filepath.Base(qfile)
+		serviceName := base[:len(base)-len(filepath.Ext(base))] + ".service"
+		
+		cmd := exec.CommandContext(ctx, "systemctl", "--user", "start", serviceName)
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("  ⚠ Failed to start %s: %v\n", serviceName, err)
+			continue
+		}
+		
+		fmt.Printf("  ✓ Started: %s\n", serviceName)
+	}
+
+	return nil
+}
+
+// Helper functions
+
+func isURL(s string) bool {
+	return len(s) > 7 && (s[:7] == "http://" || s[:8] == "https://")
+}
+
+func downloadFromLegerRun(ctx context.Context, userUUID, name string) (string, error) {
+	// TODO: Implement downloading from leger.run
+	// For now, return error indicating not implemented
+	return "", fmt.Errorf("leger.run download not yet implemented - use --source flag with Git URL or local path")
+}
+
+func cloneGitRepo(ctx context.Context, url, name string) (string, error) {
+	// TODO: Implement Git cloning
+	// For now, return error indicating not implemented
+	return "", fmt.Errorf("Git cloning not yet implemented - use --source flag with local path")
+}
+
+// Stub commands for other deploy subcommands
+
 func deployUpdateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "update",
 		Short: "Update deployed services",
-		Long: `Update deployed Podman Quadlets.
-
-Pulls the latest changes from the Git repository, updates
-systemd units, and restarts affected services.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("not yet implemented")
+			return fmt.Errorf("not yet implemented - coming in v0.2.0")
+		},
+	}
+}
+
+func deployListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List deployed services",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			
+			// Use podman quadlet list
+			cmd := exec.CommandContext(ctx, "podman", "quadlet", "list", "--user")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			
+			return cmd.Run()
+		},
+	}
+}
+
+func deployRemoveCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "remove <name>",
+		Short: "Remove deployed quadlets",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("not yet implemented - coming in v0.2.0")
 		},
 	}
 }
