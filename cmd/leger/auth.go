@@ -1,15 +1,15 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/tailscale/setec/internal/auth"
-	"github.com/tailscale/setec/internal/daemon"
 	"github.com/tailscale/setec/internal/legerrun"
 	"github.com/tailscale/setec/internal/tailscale"
+	"github.com/tailscale/setec/internal/ui"
+	"github.com/tailscale/setec/internal/version"
 )
 
 // authCmd returns the auth command group
@@ -17,7 +17,7 @@ func authCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth",
 		Short: "Authentication commands",
-		Long:  "Manage Leger authentication and Tailscale identity verification",
+		Long:  "Manage authentication with leger.run backend using Tailscale identity",
 	}
 
 	cmd.AddCommand(authLoginCmd())
@@ -31,142 +31,101 @@ func authCmd() *cobra.Command {
 func authLoginCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "login",
-		Short: "Authenticate with Leger Labs",
-		Long: `Verify Tailscale identity and authenticate with Leger.
+		Short: "Authenticate with leger.run",
+		Long: `Authenticate CLI with leger.run backend using Tailscale identity.
 
-This command:
-1. Verifies your Tailscale authentication
-2. Derives your user UUID from Tailscale identity
-3. Fetches all secrets from leger.run (Cloudflare KV)
-4. Populates legerd daemon with your secrets
-5. Stores authentication state locally
+Workflow:
+  1. Reads your Tailscale identity locally
+  2. Sends to leger.run for verification
+  3. Receives and stores authentication token
 
-Requirements:
-- Tailscale must be installed and running
-- Device must be authenticated to a Tailnet
-- legerd daemon must be running
-
-Your Tailscale identity will be stored locally in:
-  ~/.config/leger/auth.json
-`,
+Requires:
+  - Active Tailscale connection
+  - Account linked at app.leger.run (v0.2.0)`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
-			fmt.Println("Authenticating with Leger...")
+			fmt.Println("Authenticating with leger.run...")
 			fmt.Println()
 
-			// Check if already authenticated
-			if auth.IsAuthenticated() {
-				currentAuth, _ := auth.Load()
-				fmt.Println("✓ Already authenticated")
-				fmt.Printf("  User:      %s\n", currentAuth.TailscaleUser)
-				fmt.Printf("  Tailnet:   %s\n", currentAuth.Tailnet)
-				fmt.Printf("  Device:    %s\n", currentAuth.DeviceName)
-				fmt.Println()
-				fmt.Println("Run 'leger auth logout' to clear authentication")
-				return nil
-			}
-
-			// Step 1: Verify Tailscale identity
-			fmt.Println("Step 1/4: Verifying Tailscale identity...")
+			// Step 1: Check Tailscale is running
+			fmt.Println("Step 1/3: Verifying Tailscale identity...")
 			tsClient := tailscale.NewClient()
 			identity, err := tsClient.VerifyIdentity(ctx)
 			if err != nil {
-				return fmt.Errorf("Tailscale verification failed: %w\n\nPlease ensure:\n  - Tailscale is installed\n  - Tailscale daemon is running (sudo tailscale up)\n  - Device is authenticated to your tailnet", err)
+				return fmt.Errorf(`Tailscale not running: %w
+
+Start Tailscale:
+  sudo tailscale up
+
+Verify status:
+  tailscale status`, err)
 			}
 
-			fmt.Println("✓ Tailscale identity verified")
+			fmt.Println(ui.Success("✓") + " Tailscale identity verified")
 			fmt.Printf("  User:      %s\n", identity.LoginName)
 			fmt.Printf("  Tailnet:   %s\n", identity.Tailnet)
 			fmt.Printf("  Device:    %s\n", identity.DeviceName)
 			fmt.Printf("  IP:        %s\n", identity.DeviceIP)
 			fmt.Println()
 
-			// Derive user UUID from Tailscale identity
-			userUUID := deriveUserUUID(identity)
-			fmt.Printf("  User UUID: %s\n", userUUID)
-			fmt.Println()
+			// Step 2: Call leger.run backend
+			fmt.Println("Step 2/3: Authenticating with leger.run backend...")
+			client := legerrun.NewClient()
 
-			// Step 2: Check legerd health
-			fmt.Println("Step 2/4: Checking legerd daemon...")
-			daemonClient := daemon.NewClient("")
-			if err := daemonClient.Health(ctx); err != nil {
-				return fmt.Errorf("legerd not running: %w\n\nStart legerd with:\n  systemctl --user start legerd.service\n\nOr check logs:\n  journalctl --user -u legerd.service -f", err)
+			// Convert tailscale.Identity to legerrun.TailscaleIdentity
+			tsIdentity := legerrun.TailscaleIdentity{
+				UserID:    fmt.Sprintf("%d", identity.UserID),
+				LoginName: identity.LoginName,
+				DeviceID:  identity.DeviceIP, // Use IP as device identifier
+				Hostname:  identity.DeviceName,
+				Tailnet:   identity.Tailnet,
 			}
-			fmt.Println("✓ legerd is running")
-			fmt.Println()
 
-			// Step 3: Fetch secrets from leger.run
-			fmt.Println("Step 3/4: Fetching secrets from leger.run...")
-			lrClient := legerrun.NewClient()
-
-			// Add timeout for leger.run fetch
-			fetchCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-			defer cancel()
-
-			secrets, err := lrClient.FetchSecrets(fetchCtx, userUUID)
+			authResp, err := client.AuthenticateCLI(ctx, tsIdentity, version.String())
 			if err != nil {
-				return fmt.Errorf("failed to fetch secrets from leger.run: %w\n\nPlease ensure:\n  - You are connected to your Tailscale network\n  - You have configured secrets in the leger.run web interface\n  - The leger.run API is accessible", err)
-			}
+				// Check for specific error codes
+				if err == legerrun.ErrAccountNotLinked {
+					return fmt.Errorf(`Tailscale account not linked to leger.run
 
-			fmt.Printf("✓ Fetched %d secrets from leger.run\n", len(secrets))
-			fmt.Println()
+Visit https://app.leger.run to link your account
+(Web UI will be available in v0.2.0 with device code authentication)
 
-			// Step 4: Populate legerd with secrets using setec.Client.Put()
-			fmt.Println("Step 4/4: Populating legerd with secrets...")
-			
-			// Use leger/{user-uuid}/ prefix for secret names
-			prefix := fmt.Sprintf("leger/%s/", userUUID)
-			
-			successCount := 0
-			failCount := 0
-			for name, value := range secrets {
-				// Construct full secret name with prefix
-				fullName := prefix + name
-				
-				// Use setec.Client.Put() to store in legerd
-				version, err := daemonClient.PutSecret(ctx, fullName, value)
-				if err != nil {
-					fmt.Printf("  ✗ Failed to store secret %q: %v\n", name, err)
-					failCount++
-					continue
+For now, leger.run backend will accept any authenticated Tailscale user.`)
 				}
-				
-				fmt.Printf("  ✓ Stored secret %q (version %d)\n", name, version)
-				successCount++
+				return fmt.Errorf("authentication failed: %w", err)
 			}
 
+			// Convert to StoredAuth
+			expiresAt := time.Now().Add(time.Duration(authResp.Data.ExpiresIn) * time.Second)
+			storedAuth := &auth.StoredAuth{
+				Token:     authResp.Data.Token,
+				TokenType: authResp.Data.TokenType,
+				ExpiresAt: expiresAt,
+				UserUUID:  authResp.Data.UserUUID,
+				UserEmail: authResp.Data.User.TailscaleEmail,
+			}
+
+			fmt.Println(ui.Success("✓") + " Authentication successful")
 			fmt.Println()
-			fmt.Printf("✓ Stored %d/%d secrets in legerd\n", successCount, len(secrets))
-			
-			if failCount > 0 {
-				fmt.Printf("  ⚠ %d secrets failed to store\n", failCount)
+
+			// Step 3: Store token
+			fmt.Println("Step 3/3: Saving authentication...")
+			tokenStore := auth.NewTokenStore()
+			if err := tokenStore.Save(storedAuth); err != nil {
+				return fmt.Errorf("failed to save token: %w", err)
 			}
+
+			fmt.Println(ui.Success("✓") + " Authentication saved")
 			fmt.Println()
-
-			// Step 5: Save authentication state
-			authState := &auth.Auth{
-				TailscaleUser:   identity.LoginName,
-				Tailnet:         identity.Tailnet,
-				DeviceName:      identity.DeviceName,
-				DeviceIP:        identity.DeviceIP,
-				AuthenticatedAt: time.Now(),
-			}
-
-			if err := authState.Save(); err != nil {
-				return fmt.Errorf("failed to save authentication: %w", err)
-			}
-
-			authFile, _ := auth.AuthFile()
-			fmt.Println("✓ Authentication saved")
-			fmt.Printf("  Location:  %s\n", authFile)
-			fmt.Println()
-			fmt.Println("You're now authenticated with Leger!")
+			fmt.Println("Authenticated as", ui.Success(storedAuth.UserEmail))
+			fmt.Printf("  User UUID:     %s\n", storedAuth.UserUUID)
+			fmt.Printf("  Token expires: %s\n", storedAuth.ExpiresAt.Format(time.RFC3339))
 			fmt.Println()
 			fmt.Println("Next steps:")
-			fmt.Println("  - Deploy quadlets: leger deploy install <source>")
-			fmt.Println("  - List secrets: leger secrets list")
-			fmt.Println("  - Check status: leger status")
+			fmt.Println("  - Manage secrets: leger secrets set <name> <value>")
+			fmt.Println("  - List secrets:   leger secrets list")
+			fmt.Println("  - Check status:   leger auth status")
 
 			return nil
 		},
@@ -177,96 +136,40 @@ Your Tailscale identity will be stored locally in:
 func authStatusCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "status",
-		Short: "Check authentication status",
+		Short: "Show authentication status",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-
-			// Check Tailscale status
-			client := tailscale.NewClient()
-
-			fmt.Println("=== Tailscale Status ===")
-			fmt.Println()
-
-			if !client.IsInstalled() {
-				fmt.Println("Status: NOT INSTALLED")
-				fmt.Println()
-				fmt.Println("Install Tailscale from: https://tailscale.com/download")
-				return fmt.Errorf("Tailscale not installed")
-			}
-
-			if !client.IsRunning(ctx) {
-				fmt.Println("Status: NOT RUNNING")
-				fmt.Println()
-				fmt.Println("Start Tailscale: sudo tailscale up")
-				return fmt.Errorf("Tailscale daemon not running")
-			}
-
-			identity, err := client.GetIdentity(ctx)
+			tokenStore := auth.NewTokenStore()
+			storedAuth, err := tokenStore.Load()
 			if err != nil {
-				fmt.Println("Status: ERROR")
-				return err
-			}
-
-			fmt.Println("Status: AUTHENTICATED")
-			fmt.Printf("  User:      %s\n", identity.LoginName)
-			fmt.Printf("  Tailnet:   %s\n", identity.Tailnet)
-			fmt.Printf("  Device:    %s\n", identity.DeviceName)
-			fmt.Printf("  IP:        %s\n", identity.DeviceIP)
-			userUUID := deriveUserUUID(identity)
-			fmt.Printf("  UUID:      %s\n", userUUID)
-			fmt.Println()
-
-			// Check legerd daemon
-			fmt.Println("=== legerd Daemon ===")
-			fmt.Println()
-
-			daemonClient := daemon.NewClient("")
-			if err := daemonClient.Health(ctx); err != nil {
-				fmt.Println("Status: NOT RUNNING")
-				fmt.Printf("  Error: %v\n", err)
+				fmt.Println("Status:", ui.Warning("NOT AUTHENTICATED"))
 				fmt.Println()
-				fmt.Println("Start legerd:")
-				fmt.Println("  systemctl --user start legerd.service")
-			} else {
-				fmt.Println("Status: RUNNING")
-				fmt.Println("  URL: http://localhost:8080")
-				
-				// Get secret count
-				secrets, err := daemonClient.ListSecrets(ctx)
-				if err == nil {
-					fmt.Printf("  Secrets: %d stored\n", len(secrets))
-				}
-			}
-			fmt.Println()
-
-			// Check Leger authentication
-			fmt.Println("=== Leger Authentication ===")
-			fmt.Println()
-
-			authState, err := auth.Load()
-			if err != nil {
-				fmt.Println("Status: ERROR")
-				return fmt.Errorf("failed to load auth: %w", err)
-			}
-
-			if authState == nil {
-				fmt.Println("Status: NOT AUTHENTICATED")
-				fmt.Println()
-				fmt.Println("Run: leger auth login")
+				fmt.Println("Authenticate with: leger auth login")
 				return nil
 			}
 
-			fmt.Println("Status: AUTHENTICATED")
-			fmt.Printf("  User:      %s\n", authState.TailscaleUser)
-			fmt.Printf("  Tailnet:   %s\n", authState.Tailnet)
-			fmt.Printf("  Device:    %s\n", authState.DeviceName)
-			fmt.Printf("  Authenticated: %s\n", authState.AuthenticatedAt.Format("2006-01-02 15:04:05"))
+			if !storedAuth.IsValid() {
+				fmt.Println("Status:", ui.Warning("TOKEN EXPIRED"))
+				fmt.Println()
+				fmt.Println("Re-authenticate with: leger auth login")
+				return nil
+			}
+
+			fmt.Println("Status:", ui.Success("AUTHENTICATED"))
+			fmt.Printf("  User:    %s\n", storedAuth.UserEmail)
+			fmt.Printf("  UUID:    %s\n", storedAuth.UserUUID)
+			fmt.Printf("  Expires: %s\n", storedAuth.ExpiresAt.Format(time.RFC3339))
 			fmt.Println()
 
-			// Verify identity matches
-			if authState.TailscaleUser != identity.LoginName {
-				fmt.Println("⚠ Warning: Tailscale identity has changed")
-				fmt.Println("  Run 'leger auth login' to re-authenticate")
+			// Show time remaining
+			remaining := time.Until(storedAuth.ExpiresAt)
+			if remaining > 0 {
+				days := int(remaining.Hours() / 24)
+				if days > 0 {
+					fmt.Printf("  Token valid for %d more days\n", days)
+				} else {
+					hours := int(remaining.Hours())
+					fmt.Printf("  Token valid for %d more hours\n", hours)
+				}
 			}
 
 			return nil
@@ -278,37 +181,24 @@ func authStatusCmd() *cobra.Command {
 func authLogoutCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "logout",
-		Short: "Log out of Leger",
-		Long:  "Clear local authentication state. Tailscale authentication is not affected.",
+		Short: "Clear authentication credentials",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !auth.IsAuthenticated() {
-				fmt.Println("Not authenticated")
-				return nil
-			}
-
-			currentAuth, _ := auth.Load()
-
-			if err := auth.Clear(); err != nil {
+			tokenStore := auth.NewTokenStore()
+			if err := tokenStore.Clear(); err != nil {
 				return fmt.Errorf("failed to clear authentication: %w", err)
 			}
-
-			fmt.Println("✓ Logged out successfully")
-			fmt.Printf("  User:      %s\n", currentAuth.TailscaleUser)
+			fmt.Println(ui.Success("✓") + " Logged out")
 			fmt.Println()
-			fmt.Println("Note: Secrets remain in legerd daemon.")
-			fmt.Println("Tailscale authentication is still active.")
-			fmt.Println("Run 'leger auth login' to authenticate again.")
-
+			fmt.Println("Run 'leger auth login' to authenticate again")
 			return nil
 		},
 	}
 }
 
-// deriveUserUUID derives a user UUID from Tailscale identity
-// In production, this would be a proper mapping from the leger.run API
-// For now, we use a simplified version based on the UserID
+// deriveUserUUID is a helper function for backward compatibility with deploy.go
+// It derives a user UUID from Tailscale identity
+// TODO: In production, this should fetch the proper UUID mapping from leger.run API
 func deriveUserUUID(identity *tailscale.Identity) string {
-	// TODO: In production, fetch the proper UUID mapping from leger.run API
 	// For now, use a deterministic UUID based on Tailscale UserID
 	return fmt.Sprintf("%d", identity.UserID)
 }
