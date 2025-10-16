@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -13,6 +15,7 @@ import (
 	"github.com/tailscale/setec/internal/auth"
 	"github.com/tailscale/setec/internal/daemon"
 	"github.com/tailscale/setec/internal/git"
+	"github.com/tailscale/setec/internal/legerrun"
 	"github.com/tailscale/setec/internal/podman"
 	"github.com/tailscale/setec/internal/quadlet"
 	"github.com/tailscale/setec/internal/tailscale"
@@ -362,9 +365,72 @@ func isURL(s string) bool {
 }
 
 func downloadFromLegerRun(ctx context.Context, userUUID, name string) (string, error) {
-	// TODO: Implement downloading from leger.run
-	// For now, return error indicating not implemented
-	return "", fmt.Errorf("leger.run download not yet implemented - use --source flag with Git URL or local path")
+	// Create leger.run client
+	client := legerrun.NewClient()
+
+	// Determine version (default to "latest")
+	version := "latest"
+	if name != "default" {
+		version = name
+	}
+
+	// Fetch manifest
+	manifestData, err := client.FetchManifest(ctx, userUUID, version)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch manifest from leger.run: %w", err)
+	}
+
+	// Parse manifest
+	manifest, err := legerrun.ParseManifest(manifestData)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse manifest: %w", err)
+	}
+
+	// Create temporary directory for quadlet files
+	tmpDir, err := os.MkdirTemp("", "leger-"+name+"-*")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp directory: %w", err)
+	}
+
+	// Save manifest to temp directory
+	manifestPath := filepath.Join(tmpDir, "manifest.json")
+	if err := os.WriteFile(manifestPath, manifestData, 0644); err != nil {
+		return "", fmt.Errorf("failed to save manifest: %w", err)
+	}
+
+	// Download each quadlet file from leger.run
+	baseURL := fmt.Sprintf("https://static.leger.run/%s/%s/", userUUID, version)
+
+	for _, service := range manifest.Services {
+		for _, file := range service.Files {
+			fileURL := baseURL + file
+
+			// Fetch file content using HTTP client
+			resp, err := client.DownloadFile(ctx, fileURL)
+			if err != nil {
+				return "", fmt.Errorf("failed to download %s: %w", file, err)
+			}
+			defer resp.Body.Close()
+
+			// Read file content
+			content, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return "", fmt.Errorf("failed to read %s: %w", file, err)
+			}
+
+			// Save file to temp directory
+			filePath := filepath.Join(tmpDir, file)
+			if err := os.WriteFile(filePath, content, 0644); err != nil {
+				return "", fmt.Errorf("failed to save %s: %w", file, err)
+			}
+
+			fmt.Printf("  ✓ Downloaded: %s\n", file)
+		}
+	}
+
+	fmt.Printf("✓ Downloaded %d quadlet files from leger.run\n", len(manifest.Services))
+
+	return tmpDir, nil
 }
 
 func cloneGitRepo(ctx context.Context, url, name string) (string, error) {
