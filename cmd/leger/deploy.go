@@ -18,6 +18,7 @@ import (
 	"github.com/tailscale/setec/internal/legerrun"
 	"github.com/tailscale/setec/internal/podman"
 	"github.com/tailscale/setec/internal/quadlet"
+	"github.com/tailscale/setec/internal/staging"
 	"github.com/tailscale/setec/internal/tailscale"
 	"github.com/tailscale/setec/internal/validation"
 )
@@ -452,13 +453,85 @@ func cloneGitRepo(ctx context.Context, url, name string) (string, error) {
 // Stub commands for other deploy subcommands
 
 func deployUpdateCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "update",
-		Short: "Update deployed services",
+	var dryRun bool
+	var noBackup bool
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "update [deployment]",
+		Short: "Update deployed services (uses staging)",
+		Long: `Update deployment to latest version.
+
+Workflow:
+  1. Stages updates (leger stage)
+  2. Shows diff (leger diff)
+  3. Prompts for confirmation
+  4. Applies updates (leger apply)
+
+Flags allow skipping steps for automation.`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("not yet implemented - coming in v0.2.0")
+			ctx := cmd.Context()
+
+			deploymentName := "default"
+			if len(args) > 0 {
+				deploymentName = args[0]
+			}
+
+			m, err := staging.NewManager()
+			if err != nil {
+				return err
+			}
+
+			// 1. Stage updates
+			fmt.Println("Staging updates...")
+			source := installFlags.source // Use source from install flags
+			if err := m.StageUpdate(ctx, source, deploymentName); err != nil {
+				return err
+			}
+
+			// 2. Show diff
+			fmt.Println("\nChanges to be applied:")
+			diff, err := m.GenerateDiff(deploymentName)
+			if err != nil {
+				return err
+			}
+			diff.Display()
+
+			// 3. If --dry-run, stop here
+			if dryRun {
+				fmt.Println("\n--dry-run: Updates staged but not applied")
+				fmt.Println("Run 'leger apply' to install")
+				return nil
+			}
+
+			// 4. Confirm unless --force
+			if !force {
+				fmt.Print("\nApply these updates? [y/N]: ")
+				var response string
+				fmt.Scanln(&response)
+				if response != "y" && response != "Y" && response != "yes" {
+					fmt.Println("Update cancelled")
+					return nil
+				}
+			}
+
+			// 5. Apply updates
+			fmt.Println()
+			if err := m.ApplyStaged(ctx, deploymentName); err != nil {
+				return err
+			}
+
+			fmt.Println("\n✓ Update complete")
+			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without applying")
+	cmd.Flags().BoolVar(&noBackup, "no-backup", false, "Skip automatic backup (not recommended)")
+	cmd.Flags().BoolVar(&force, "force", false, "Skip confirmation prompt")
+
+	return cmd
 }
 
 func deployListCmd() *cobra.Command {
