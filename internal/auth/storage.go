@@ -9,10 +9,11 @@ import (
 )
 
 // StoredAuth represents JWT token-based authentication from leger.run backend
+// v1.0 NOTE: Token expiry is not enforced. Tokens remain valid until logout.
 type StoredAuth struct {
 	Token     string    `json:"token"`
 	TokenType string    `json:"token_type"`
-	ExpiresAt time.Time `json:"expires_at"`
+	ExpiresAt time.Time `json:"expires_at"` // Stored but not validated in v1.0
 	UserUUID  string    `json:"user_uuid"`
 	UserEmail string    `json:"user_email"`
 }
@@ -27,10 +28,10 @@ func NewTokenStore() *TokenStore {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		// Fallback to current directory if home is unavailable
-		return &TokenStore{ConfigDir: ".config/leger"}
+		return &TokenStore{ConfigDir: ".local/share/leger"}
 	}
 	return &TokenStore{
-		ConfigDir: filepath.Join(home, ".config", "leger"),
+		ConfigDir: filepath.Join(home, ".local", "share", "leger"),
 	}
 }
 
@@ -84,15 +85,21 @@ func (ts *TokenStore) Clear() error {
 	return nil
 }
 
-// IsValid checks if the stored auth token is still valid
+// IsValid checks if authentication is present
+// v1.0 NOTE: Does NOT validate token expiry - tokens never expire
+// Expiry validation will be added in v1.1+ with automatic token refresh
 func (sa *StoredAuth) IsValid() bool {
 	if sa == nil {
 		return false
 	}
-	return time.Now().Before(sa.ExpiresAt)
+
+	// v1.0: Token is valid if it exists
+	// TODO(v1.1): Add expiry validation with auto-refresh support
+	return sa.Token != ""
 }
 
 // RequireAuth is a helper function that loads and validates authentication
+// v1.0 NOTE: Does not check expiry - tokens remain valid until manual logout
 func RequireAuth() (*StoredAuth, error) {
 	tokenStore := NewTokenStore()
 	auth, err := tokenStore.Load()
@@ -101,7 +108,7 @@ func RequireAuth() (*StoredAuth, error) {
 	}
 
 	if !auth.IsValid() {
-		return nil, fmt.Errorf("token expired\n\nRe-authenticate with: leger auth login")
+		return nil, fmt.Errorf("invalid authentication\n\nRe-authenticate with: leger auth login")
 	}
 
 	return auth, nil

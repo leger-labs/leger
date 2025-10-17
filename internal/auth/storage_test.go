@@ -87,7 +87,7 @@ func TestTokenStoreClear(t *testing.T) {
 }
 
 func TestStoredAuthIsValid(t *testing.T) {
-	// Valid token (expires in future)
+	// v1.0: Token with valid data (should always be valid regardless of expiry)
 	validAuth := &StoredAuth{
 		Token:     "test-token",
 		TokenType: "Bearer",
@@ -96,25 +96,37 @@ func TestStoredAuthIsValid(t *testing.T) {
 		UserEmail: "alice@example.ts.net",
 	}
 	if !validAuth.IsValid() {
-		t.Error("expected valid token to be valid")
+		t.Error("v1.0: token with valid data should be valid")
 	}
 
-	// Expired token
-	expiredAuth := &StoredAuth{
+	// v1.0: Token with past expiry date (should still be valid)
+	pastExpiryAuth := &StoredAuth{
 		Token:     "test-token",
 		TokenType: "Bearer",
-		ExpiresAt: time.Now().Add(-1 * time.Hour),
+		ExpiresAt: time.Now().Add(-1 * time.Hour), // "Expired" 1 hour ago
 		UserUUID:  "user-123",
 		UserEmail: "alice@example.ts.net",
 	}
-	if expiredAuth.IsValid() {
-		t.Error("expected expired token to be invalid")
+	if !pastExpiryAuth.IsValid() {
+		t.Error("v1.0: token with past ExpiresAt should still be valid (expiry not enforced)")
 	}
 
-	// Nil auth
+	// Empty token (should be INVALID)
+	emptyAuth := &StoredAuth{
+		Token:     "", // Empty token
+		TokenType: "Bearer",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+		UserUUID:  "user-123",
+		UserEmail: "alice@example.ts.net",
+	}
+	if emptyAuth.IsValid() {
+		t.Error("v1.0: empty token should be invalid")
+	}
+
+	// Nil auth (should be INVALID)
 	var nilAuth *StoredAuth
 	if nilAuth.IsValid() {
-		t.Error("expected nil auth to be invalid")
+		t.Error("v1.0: nil auth should be invalid")
 	}
 }
 
