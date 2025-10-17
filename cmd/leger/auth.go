@@ -148,7 +148,7 @@ func authStatusCmd() *cobra.Command {
 			}
 
 			if !storedAuth.IsValid() {
-				fmt.Println("Status:", ui.Warning("TOKEN EXPIRED"))
+				fmt.Println("Status:", ui.Warning("INVALID TOKEN"))
 				fmt.Println()
 				fmt.Println("Re-authenticate with: leger auth login")
 				return nil
@@ -157,20 +157,11 @@ func authStatusCmd() *cobra.Command {
 			fmt.Println("Status:", ui.Success("AUTHENTICATED"))
 			fmt.Printf("  User:    %s\n", storedAuth.UserEmail)
 			fmt.Printf("  UUID:    %s\n", storedAuth.UserUUID)
-			fmt.Printf("  Expires: %s\n", storedAuth.ExpiresAt.Format(time.RFC3339))
 			fmt.Println()
 
-			// Show time remaining
-			remaining := time.Until(storedAuth.ExpiresAt)
-			if remaining > 0 {
-				days := int(remaining.Hours() / 24)
-				if days > 0 {
-					fmt.Printf("  Token valid for %d more days\n", days)
-				} else {
-					hours := int(remaining.Hours())
-					fmt.Printf("  Token valid for %d more hours\n", hours)
-				}
-			}
+			// v1.0: Tokens do not expire
+			fmt.Println("Note: Tokens remain valid until you run 'leger auth logout'")
+			fmt.Println("      (Token expiry will be enforced in v1.1 with auto-refresh)")
 
 			return nil
 		},

@@ -469,7 +469,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body interf
 
 	// Handle error responses
 	if resp.StatusCode >= 400 {
-		return c.handleErrorResponse(resp)
+		return c.handleHTTPError(resp)
 	}
 
 	// Decode response
@@ -480,6 +480,19 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body interf
 	}
 
 	return nil
+}
+
+// handleHTTPError provides specific handling for common HTTP errors
+func (c *Client) handleHTTPError(resp *http.Response) error {
+	// Special handling for 401 Unauthorized
+	// Note: Even though v1.0 doesn't validate expiry client-side,
+	// the server may still reject tokens
+	if resp.StatusCode == http.StatusUnauthorized {
+		return fmt.Errorf("authentication failed: token rejected by server\n\nRe-authenticate with: leger auth login")
+	}
+
+	// For other errors, parse the error response
+	return c.handleErrorResponse(resp)
 }
 
 func (c *Client) handleErrorResponse(resp *http.Response) error {
