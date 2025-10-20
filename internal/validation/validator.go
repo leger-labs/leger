@@ -14,13 +14,13 @@ type Validator struct {
 
 // ValidationResult contains the results of validation
 type ValidationResult struct {
-	Valid                  bool
-	SyntaxErrors           []string
-	PortConflicts          []types.PortConflict
-	VolumeConflicts        []types.VolumeConflict
-	CircularDependencies   []types.CircularDependency
-	MissingDependencies    []types.MissingDependency
-	Dependencies           []Dependency
+	Valid                bool
+	SyntaxErrors         []string
+	PortConflicts        []types.PortConflict
+	VolumeConflicts      []types.VolumeConflict
+	CircularDependencies []types.CircularDependency
+	MissingDependencies  []types.MissingDependency
+	Dependencies         []Dependency
 }
 
 // NewValidator creates a new Validator

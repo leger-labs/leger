@@ -4,16 +4,16 @@ import "time"
 
 // DeploymentState represents the state of a deployment
 type DeploymentState struct {
-	Name        string              `json:"name"`
-	Source      string              `json:"source"`      // Git URL or leger.run URL
-	Version     string              `json:"version"`     // Version or commit hash
-	Scope       string              `json:"scope"`       // "user" or "system"
-	InstalledAt time.Time           `json:"installed_at"`
-	UpdatedAt   time.Time           `json:"updated_at,omitempty"`
-	Services    []DeployedService   `json:"services"`
-	Volumes     []DeployedVolume    `json:"volumes,omitempty"`
-	Secrets     []string            `json:"secrets,omitempty"`
-	Metadata    map[string]string   `json:"metadata,omitempty"`
+	Name        string            `json:"name"`
+	Source      string            `json:"source"`  // Git URL or leger.run URL
+	Version     string            `json:"version"` // Version or commit hash
+	Scope       string            `json:"scope"`   // "user" or "system"
+	InstalledAt time.Time         `json:"installed_at"`
+	UpdatedAt   time.Time         `json:"updated_at,omitempty"`
+	Services    []DeployedService `json:"services"`
+	Volumes     []DeployedVolume  `json:"volumes,omitempty"`
+	Secrets     []string          `json:"secrets,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 // DeployedService represents a deployed service
@@ -39,12 +39,12 @@ type DeployedVolume struct {
 
 // DeploymentHistory represents historical deployment information
 type DeploymentHistory struct {
-	Timestamp   time.Time         `json:"timestamp"`
-	Action      string            `json:"action"` // install, update, remove, rollback
-	Version     string            `json:"version"`
-	Source      string            `json:"source"`
-	Success     bool              `json:"success"`
-	Message     string            `json:"message,omitempty"`
-	Changes     []string          `json:"changes,omitempty"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
+	Timestamp time.Time         `json:"timestamp"`
+	Action    string            `json:"action"` // install, update, remove, rollback
+	Version   string            `json:"version"`
+	Source    string            `json:"source"`
+	Success   bool              `json:"success"`
+	Message   string            `json:"message,omitempty"`
+	Changes   []string          `json:"changes,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
 }

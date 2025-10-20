@@ -30,9 +30,9 @@ type QuadletInfo struct {
 
 // PortInfo represents port mapping information
 type PortInfo struct {
-	Host      string `json:"host"`       // Host port
-	Container string `json:"container"`  // Container port
-	Protocol  string `json:"protocol"`   // tcp, udp, sctp
+	Host      string `json:"host"`      // Host port
+	Container string `json:"container"` // Container port
+	Protocol  string `json:"protocol"`  // tcp, udp, sctp
 }
 
 // QuadletMetadata contains metadata about a quadlet deployment

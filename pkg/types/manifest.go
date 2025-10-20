@@ -13,21 +13,21 @@ import (
 
 // Manifest represents a leger deployment manifest
 type Manifest struct {
-	Version     int                  `json:"version" yaml:"version"`
-	CreatedAt   time.Time            `json:"created_at" yaml:"created_at"`
-	UserUUID    string               `json:"user_uuid,omitempty" yaml:"user_uuid,omitempty"`
-	Name        string               `json:"name" yaml:"name"`
-	Description string               `json:"description,omitempty" yaml:"description,omitempty"`
-	Services    []ServiceDefinition  `json:"services" yaml:"services"`
-	Volumes     []VolumeDefinition   `json:"volumes,omitempty" yaml:"volumes,omitempty"`
-	Networks    []NetworkDefinition  `json:"networks,omitempty" yaml:"networks,omitempty"`
-	Secrets     []SecretDefinition   `json:"secrets,omitempty" yaml:"secrets,omitempty"`
+	Version     int                 `json:"version" yaml:"version"`
+	CreatedAt   time.Time           `json:"created_at" yaml:"created_at"`
+	UserUUID    string              `json:"user_uuid,omitempty" yaml:"user_uuid,omitempty"`
+	Name        string              `json:"name" yaml:"name"`
+	Description string              `json:"description,omitempty" yaml:"description,omitempty"`
+	Services    []ServiceDefinition `json:"services" yaml:"services"`
+	Volumes     []VolumeDefinition  `json:"volumes,omitempty" yaml:"volumes,omitempty"`
+	Networks    []NetworkDefinition `json:"networks,omitempty" yaml:"networks,omitempty"`
+	Secrets     []SecretDefinition  `json:"secrets,omitempty" yaml:"secrets,omitempty"`
 }
 
 // ServiceDefinition defines a service in the manifest
 type ServiceDefinition struct {
 	Name        string            `json:"name"`
-	Type        string            `json:"type"` // container, pod, kube
+	Type        string            `json:"type"`  // container, pod, kube
 	Files       []string          `json:"files"` // Quadlet files associated with this service
 	Description string            `json:"description,omitempty"`
 	DependsOn   []string          `json:"depends_on,omitempty"`
@@ -58,8 +58,8 @@ type NetworkDefinition struct {
 // SecretDefinition defines a secret requirement in the manifest
 type SecretDefinition struct {
 	Name        string `json:"name" yaml:"name"`
-	Type        string `json:"type" yaml:"type"`               // env, mount
-	Target      string `json:"target" yaml:"target"`           // Environment variable name or mount path
+	Type        string `json:"type" yaml:"type"`     // env, mount
+	Target      string `json:"target" yaml:"target"` // Environment variable name or mount path
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	Required    bool   `json:"required" yaml:"required"`
 }

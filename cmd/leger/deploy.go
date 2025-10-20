@@ -97,23 +97,34 @@ func runDeployInstall(ctx context.Context, name string) error {
 	// Step 1: Verify prerequisites
 	fmt.Println(ui.Bold("Step 1/7: Verifying prerequisites..."))
 
-	storedAuth, err := auth.RequireAuth()
-	if err != nil {
-		return err
-	}
-	userUUID := storedAuth.UserUUID
+	var userUUID string
+	var daemonClient *daemon.Client
 
-	daemonClient := daemon.NewClient("")
-	if err := daemonClient.Health(ctx); err != nil {
-		return fmt.Errorf("legerd not running: %w\n\nStart with: systemctl --user start legerd.service", err)
+	// Skip auth check if --no-secrets is used (for testing)
+	if !installFlags.noSecrets {
+		storedAuth, err := auth.RequireAuth()
+		if err != nil {
+			return err
+		}
+		userUUID = storedAuth.UserUUID
+
+		daemonClient = daemon.NewClient("")
+		if err := daemonClient.Health(ctx); err != nil {
+			return fmt.Errorf("legerd not running: %w\n\nStart with: systemctl --user start legerd.service", err)
+		}
+	} else {
+		// In test mode, use a placeholder UUID
+		userUUID = "test-user-uuid"
+		fmt.Println("⚠ Running in test mode (--no-secrets)")
 	}
 
 	ui.SuccessPrintf("✓ Prerequisites verified\n\n")
 
 	// Step 2: Download/locate quadlet files
 	fmt.Println("Step 2/7: Locating quadlet files...")
-	
+
 	var quadletDir string
+	var err error
 	if installFlags.source == "" {
 		// Use leger.run repository
 		quadletDir, err = downloadFromLegerRun(ctx, userUUID, name)
@@ -127,7 +138,7 @@ func runDeployInstall(ctx context.Context, name string) error {
 			quadletDir, err = filepath.Abs(quadletDir)
 		}
 	}
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to locate quadlets: %w", err)
 	}
@@ -137,7 +148,7 @@ func runDeployInstall(ctx context.Context, name string) error {
 
 	// Step 3: Parse quadlet files for secrets
 	fmt.Println("Step 3/7: Parsing quadlet files...")
-	
+
 	parseResult, err := quadlet.ParseDirectory(quadletDir)
 	if err != nil {
 		return fmt.Errorf("failed to parse quadlets: %w", err)
@@ -157,7 +168,7 @@ func runDeployInstall(ctx context.Context, name string) error {
 	// Step 4: Create setec.Store and fetch secrets
 	if len(parseResult.Secrets) > 0 && !installFlags.noSecrets {
 		fmt.Println("Step 4/7: Fetching secrets from legerd...")
-		
+
 		if err := fetchAndCreateSecrets(ctx, daemonClient, userUUID, parseResult); err != nil {
 			return fmt.Errorf("failed to handle secrets: %w", err)
 		}
@@ -171,7 +182,7 @@ func runDeployInstall(ctx context.Context, name string) error {
 
 	// Step 5: Validate quadlets
 	fmt.Println("Step 5/7: Validating quadlets...")
-	
+
 	if err := validateQuadlets(quadletDir); err != nil {
 		return fmt.Errorf("validation failed: %w", err)
 	}
@@ -186,7 +197,7 @@ func runDeployInstall(ctx context.Context, name string) error {
 
 	// Step 6: Install quadlets using podman
 	fmt.Println("Step 6/7: Installing quadlets...")
-	
+
 	if err := installQuadlets(ctx, quadletDir); err != nil {
 		return fmt.Errorf("failed to install quadlets: %w", err)
 	}
@@ -197,7 +208,7 @@ func runDeployInstall(ctx context.Context, name string) error {
 	// Step 7: Start services
 	if !installFlags.noStart {
 		fmt.Println("Step 7/7: Starting services...")
-		
+
 		if err := startServices(ctx, parseResult); err != nil {
 			return fmt.Errorf("failed to start services: %w", err)
 		}
@@ -226,7 +237,7 @@ func fetchAndCreateSecrets(ctx context.Context, client *daemon.Client, userUUID 
 
 	// Get secret names (without prefix for Store initialization)
 	secretNames := parseResult.GetSecretNames()
-	
+
 	// Add prefix for full secret paths
 	prefix := fmt.Sprintf("leger/%s/", userUUID)
 	prefixedNames := make([]string, len(secretNames))
@@ -247,13 +258,13 @@ func fetchAndCreateSecrets(ctx context.Context, client *daemon.Client, userUUID 
 	// Pattern 2: Use LookupSecret for each discovered secret
 	for _, secretName := range secretNames {
 		fullName := prefix + secretName
-		
+
 		// Pattern 6: Use context timeout for each lookup
 		lookupCtx, lookupCancel := context.WithTimeout(ctx, 5*time.Second)
-		
+
 		secret, err := store.LookupSecret(lookupCtx, fullName)
 		lookupCancel()
-		
+
 		if err != nil {
 			return fmt.Errorf("secret %q not found in legerd: %w\n\nEnsure secrets are synced: leger auth login", secretName, err)
 		}
@@ -284,7 +295,7 @@ func createPodmanSecret(ctx context.Context, name string, value []byte) error {
 	// Create new secret
 	cmd := exec.CommandContext(ctx, "podman", "secret", "create", name, "-")
 	cmd.Stdin = bytes.NewReader(value)
-	
+
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
@@ -339,13 +350,13 @@ func startServices(ctx context.Context, parseResult *quadlet.ParseResult) error 
 	for _, qfile := range parseResult.QuadletFiles {
 		base := filepath.Base(qfile)
 		serviceName := base[:len(base)-len(filepath.Ext(base))] + ".service"
-		
+
 		cmd := exec.CommandContext(ctx, "systemctl", "--user", "start", serviceName)
 		if err := cmd.Run(); err != nil {
 			fmt.Printf("  ⚠ Failed to start %s: %v\n", serviceName, err)
 			continue
 		}
-		
+
 		fmt.Printf("  ✓ Started: %s\n", serviceName)
 	}
 

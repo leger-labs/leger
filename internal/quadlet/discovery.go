@@ -8,8 +8,8 @@ import (
 
 // DiscoveredQuadlets represents discovered quadlet files
 type DiscoveredQuadlets struct {
-	Directory string   // Root directory
-	Files     []string // All quadlet files found
+	Directory  string   // Root directory
+	Files      []string // All quadlet files found
 	Containers []string // .container files
 	Volumes    []string // .volume files
 	Networks   []string // .network files
