@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/leger-labs/leger/internal/auth"
 	"github.com/leger-labs/leger/internal/daemon"
 	"github.com/leger-labs/leger/internal/git"
@@ -21,6 +20,7 @@ import (
 	"github.com/leger-labs/leger/internal/staging"
 	"github.com/leger-labs/leger/internal/ui"
 	"github.com/leger-labs/leger/internal/validation"
+	"github.com/spf13/cobra"
 )
 
 // deployCmd returns the deploy command group

@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/leger-labs/leger/internal/daemon"
 	"github.com/leger-labs/leger/internal/staging"
+	"github.com/spf13/cobra"
 )
 
 // statusCmd returns the status command

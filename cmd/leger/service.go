@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/leger-labs/leger/internal/health"
 	"github.com/leger-labs/leger/internal/podman"
 	"github.com/leger-labs/leger/internal/quadlet"
+	"github.com/spf13/cobra"
 )
 
 // serviceCmd returns the service command group

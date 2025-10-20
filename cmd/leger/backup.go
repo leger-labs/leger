@@ -7,8 +7,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/leger-labs/leger/internal/backup"
+	"github.com/spf13/cobra"
 )
 
 // backupCmd returns the backup command group
