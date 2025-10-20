@@ -25,9 +25,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/tailscale/setec/acl"
-	"github.com/tailscale/setec/audit"
-	"github.com/tailscale/setec/server"
+	"github.com/leger-labs/leger/acl"
+	"github.com/leger-labs/leger/audit"
+	"github.com/leger-labs/leger/server"
 	"tailscale.com/client/tailscale/apitype"
 	"tailscale.com/tailcfg"
 )

@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/tailscale/setec/internal/auth"
-	"github.com/tailscale/setec/internal/legerrun"
-	"github.com/tailscale/setec/internal/ui"
+	"github.com/leger-labs/leger/internal/auth"
+	"github.com/leger-labs/leger/internal/legerrun"
+	"github.com/leger-labs/leger/internal/ui"
 )
 
 // secretsCmd returns the secrets command group

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tailscale/setec/pkg/types"
+	"github.com/leger-labs/leger/pkg/types"
 )
 
 // CheckPortConflicts checks for port conflicts in quadlet files

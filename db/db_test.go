@@ -12,10 +12,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/tailscale/setec/audit"
-	"github.com/tailscale/setec/db"
-	"github.com/tailscale/setec/setectest"
-	"github.com/tailscale/setec/types/api"
+	"github.com/leger-labs/leger/audit"
+	"github.com/leger-labs/leger/db"
+	"github.com/leger-labs/leger/setectest"
+	"github.com/leger-labs/leger/types/api"
 )
 
 func TestCreate(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tailscale/setec/pkg/types"
+	"github.com/leger-labs/leger/pkg/types"
 )
 
 // SystemdManager handles systemd service operations

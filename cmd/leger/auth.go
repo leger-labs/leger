@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tailscale/setec/internal/auth"
-	"github.com/tailscale/setec/internal/legerrun"
-	"github.com/tailscale/setec/internal/tailscale"
-	"github.com/tailscale/setec/internal/ui"
-	"github.com/tailscale/setec/internal/version"
+	"github.com/leger-labs/leger/internal/auth"
+	"github.com/leger-labs/leger/internal/legerrun"
+	"github.com/leger-labs/leger/internal/tailscale"
+	"github.com/leger-labs/leger/internal/ui"
+	"github.com/leger-labs/leger/internal/version"
 )
 
 // authCmd returns the auth command group

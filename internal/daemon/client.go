@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tailscale/setec/client/setec"
-	"github.com/tailscale/setec/types/api"
+	"github.com/leger-labs/leger/client/setec"
+	"github.com/leger-labs/leger/types/api"
 )
 
 // Client wraps setec.Client to communicate with legerd daemon

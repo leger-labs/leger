@@ -6,7 +6,7 @@ package acl_test
 import (
 	"testing"
 
-	"github.com/tailscale/setec/acl"
+	"github.com/leger-labs/leger/acl"
 )
 
 func TestACL(t *testing.T) {

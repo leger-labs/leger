@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tailscale/setec/pkg/types"
+	"github.com/leger-labs/leger/pkg/types"
 )
 
 // Dependency represents a service dependency relationship

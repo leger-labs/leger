@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/tailscale/setec/internal/version"
+	"github.com/leger-labs/leger/internal/version"
 )
 
 var rootCmd = &cobra.Command{

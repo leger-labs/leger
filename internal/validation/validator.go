@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tailscale/setec/pkg/types"
+	"github.com/leger-labs/leger/pkg/types"
 )
 
 // Validator validates quadlet deployments

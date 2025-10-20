@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/tailscale/setec/pkg/types"
+	"github.com/leger-labs/leger/pkg/types"
 )
 
 // ParseManifest parses a leger.run manifest from JSON data

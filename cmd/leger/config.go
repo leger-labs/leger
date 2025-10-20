@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/tailscale/setec/internal/auth"
-	"github.com/tailscale/setec/internal/git"
-	"github.com/tailscale/setec/internal/legerrun"
-	"github.com/tailscale/setec/pkg/types"
+	"github.com/leger-labs/leger/internal/auth"
+	"github.com/leger-labs/leger/internal/git"
+	"github.com/leger-labs/leger/internal/legerrun"
+	"github.com/leger-labs/leger/pkg/types"
 )
 
 // configCmd returns the config command group

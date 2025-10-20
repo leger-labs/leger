@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/tailscale/setec/setectest"
+	"github.com/leger-labs/leger/setectest"
 )
 
 func TestClientSetecIntegration(t *testing.T) {

@@ -12,15 +12,15 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tailscale/setec/internal/auth"
-	"github.com/tailscale/setec/internal/daemon"
-	"github.com/tailscale/setec/internal/git"
-	"github.com/tailscale/setec/internal/legerrun"
-	"github.com/tailscale/setec/internal/podman"
-	"github.com/tailscale/setec/internal/quadlet"
-	"github.com/tailscale/setec/internal/staging"
-	"github.com/tailscale/setec/internal/ui"
-	"github.com/tailscale/setec/internal/validation"
+	"github.com/leger-labs/leger/internal/auth"
+	"github.com/leger-labs/leger/internal/daemon"
+	"github.com/leger-labs/leger/internal/git"
+	"github.com/leger-labs/leger/internal/legerrun"
+	"github.com/leger-labs/leger/internal/podman"
+	"github.com/leger-labs/leger/internal/quadlet"
+	"github.com/leger-labs/leger/internal/staging"
+	"github.com/leger-labs/leger/internal/ui"
+	"github.com/leger-labs/leger/internal/validation"
 )
 
 // deployCmd returns the deploy command group

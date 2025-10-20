@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tailscale/setec/internal/tailscale"
+	"github.com/leger-labs/leger/internal/tailscale"
 )
 
 // PrintIdentity displays Tailscale identity in user-friendly format

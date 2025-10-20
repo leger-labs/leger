@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tailscale/setec/internal/backup"
+	"github.com/leger-labs/leger/internal/backup"
 )
 
 // backupCmd returns the backup command group

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tailscale/setec/pkg/types"
+	"github.com/leger-labs/leger/pkg/types"
 )
 
 func TestParseManifest(t *testing.T) {
