@@ -6,9 +6,9 @@ import (
 
 func TestDetectSourceType(t *testing.T) {
 	tests := []struct {
-		name       string
-		urlOrPath  string
-		wantType   SourceType
+		name      string
+		urlOrPath string
+		wantType  SourceType
 	}{
 		{
 			name:      "leger.run URL",
@@ -113,11 +113,11 @@ func TestResolveSource(t *testing.T) {
 	testUUID := "abc12345-1234-1234-1234-123456789abc"
 
 	tests := []struct {
-		name       string
-		urlOrName  string
-		userUUID   string
-		wantType   SourceType
-		wantErr    bool
+		name      string
+		urlOrName string
+		userUUID  string
+		wantType  SourceType
+		wantErr   bool
 	}{
 		{
 			name:      "empty URL with user UUID - defaults to leger.run",

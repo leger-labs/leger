@@ -12,7 +12,7 @@ import (
 type QuadletFile struct {
 	Path     string
 	Name     string
-	Type     string // container, volume, network, pod, kube, image
+	Type     string                         // container, volume, network, pod, kube, image
 	Sections map[string]map[string][]string // section -> key -> []values
 }
 

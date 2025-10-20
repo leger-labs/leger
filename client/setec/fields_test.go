@@ -13,8 +13,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/tailscale/setec/client/setec"
-	"github.com/tailscale/setec/setectest"
+	"github.com/leger-labs/leger/client/setec"
+	"github.com/leger-labs/leger/setectest"
 	"tailscale.com/types/logger"
 )
 

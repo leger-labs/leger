@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/tailscale/setec/audit"
+	"github.com/leger-labs/leger/audit"
 )
 
 func TestWriter(t *testing.T) {

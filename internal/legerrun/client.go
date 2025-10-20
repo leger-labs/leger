@@ -256,11 +256,11 @@ type AuthResponse struct {
 
 // TailscaleIdentity represents the Tailscale identity sent to the backend
 type TailscaleIdentity struct {
-	UserID     string `json:"user_id"`
-	LoginName  string `json:"login_name"`
-	DeviceID   string `json:"device_id"`
-	Hostname   string `json:"device_hostname"`
-	Tailnet    string `json:"tailnet"`
+	UserID    string `json:"user_id"`
+	LoginName string `json:"login_name"`
+	DeviceID  string `json:"device_id"`
+	Hostname  string `json:"device_hostname"`
+	Tailnet   string `json:"tailnet"`
 }
 
 // AuthenticateCLI authenticates the CLI with the leger.run backend using Tailscale identity

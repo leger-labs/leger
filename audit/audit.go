@@ -13,8 +13,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/tailscale/setec/acl"
-	"github.com/tailscale/setec/types/api"
+	"github.com/leger-labs/leger/acl"
+	"github.com/leger-labs/leger/types/api"
 )
 
 // Principal is the identity of a client taking action on the secrets

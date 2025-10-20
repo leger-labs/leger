@@ -1,4 +1,4 @@
-module github.com/tailscale/setec
+module github.com/leger-labs/leger
 
 go 1.24.0
 

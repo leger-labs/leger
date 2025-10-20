@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tailscale/setec/internal/staging"
+	"github.com/leger-labs/leger/internal/staging"
 )
 
 // stagedCmd returns the staged command group

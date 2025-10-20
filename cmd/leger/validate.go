@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/tailscale/setec/internal/validation"
+	"github.com/leger-labs/leger/internal/validation"
 )
 
 // validateCmd returns the validate command

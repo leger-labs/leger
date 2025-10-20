@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tailscale/setec/setectest"
+	"github.com/leger-labs/leger/setectest"
 )
 
 func TestWatcher(t *testing.T) {

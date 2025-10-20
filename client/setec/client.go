@@ -49,8 +49,8 @@
 // the caller is responsible for handling retries in case the secrets service
 // is temporarily unavailable.
 //
-// [Bootstrapping and Availability]: https://github.com/tailscale/setec?tab=readme-ov-file#bootstrapping-and-availability
-// [setec HTTP API]: https://github.com/tailscale/setec/blob/main/docs/api.md
+// [Bootstrapping and Availability]: https://github.com/leger-labs/leger?tab=readme-ov-file#bootstrapping-and-availability
+// [setec HTTP API]: https://github.com/leger-labs/leger/blob/main/docs/api.md
 package setec
 
 import (
@@ -62,7 +62,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tailscale/setec/types/api"
+	"github.com/leger-labs/leger/types/api"
 )
 
 // Client is a raw client to the secret management server.

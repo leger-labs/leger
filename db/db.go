@@ -23,9 +23,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tailscale/setec/acl"
-	"github.com/tailscale/setec/audit"
-	"github.com/tailscale/setec/types/api"
+	"github.com/leger-labs/leger/acl"
+	"github.com/leger-labs/leger/audit"
+	"github.com/leger-labs/leger/types/api"
 	"github.com/tink-crypto/tink-go/v2/tink"
 	"tailscale.com/util/multierr"
 )

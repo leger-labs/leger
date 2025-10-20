@@ -28,7 +28,7 @@ func (m *Manager) StageUpdate(ctx context.Context, source string, deploymentName
 	meta := &StagingMetadata{
 		DeploymentName: deploymentName,
 		SourceURL:      source,
-		StagedVersion:  "latest", // TODO: Extract version from manifest
+		StagedVersion:  "latest",  // TODO: Extract version from manifest
 		CurrentVersion: "unknown", // TODO: Get from active deployment
 		StagedAt:       time.Now(),
 		Checksum:       "", // TODO: Calculate checksum

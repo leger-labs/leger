@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tailscale/setec/client/setec"
-	"github.com/tailscale/setec/types/api"
+	"github.com/leger-labs/leger/client/setec"
+	"github.com/leger-labs/leger/types/api"
 )
 
 const testSecrets = `{

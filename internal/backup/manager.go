@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tailscale/setec/internal/podman"
-	"github.com/tailscale/setec/internal/quadlet"
+	"github.com/leger-labs/leger/internal/podman"
+	"github.com/leger-labs/leger/internal/quadlet"
 )
 
 const (

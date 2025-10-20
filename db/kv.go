@@ -14,7 +14,7 @@ import (
 	"os"
 	"slices"
 
-	"github.com/tailscale/setec/types/api"
+	"github.com/leger-labs/leger/types/api"
 	"github.com/tink-crypto/tink-go/v2/aead"
 	"github.com/tink-crypto/tink-go/v2/keyset"
 	"github.com/tink-crypto/tink-go/v2/tink"

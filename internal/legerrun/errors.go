@@ -7,11 +7,11 @@ import (
 
 // Custom error types for leger.run API responses
 var (
-	ErrAccountNotLinked                = errors.New("account_not_linked")
-	ErrInvalidToken                    = errors.New("invalid_token")
-	ErrTailscaleVerificationFailed     = errors.New("tailscale_verification_failed")
-	ErrSecretNotFound                  = errors.New("secret_not_found")
-	ErrInsufficientPermissions         = errors.New("insufficient_permissions")
+	ErrAccountNotLinked            = errors.New("account_not_linked")
+	ErrInvalidToken                = errors.New("invalid_token")
+	ErrTailscaleVerificationFailed = errors.New("tailscale_verification_failed")
+	ErrSecretNotFound              = errors.New("secret_not_found")
+	ErrInsufficientPermissions     = errors.New("insufficient_permissions")
 )
 
 // ParseErrorCode converts an error code string from the API to a typed error

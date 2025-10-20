@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tailscale/setec/types/api"
+	"github.com/leger-labs/leger/types/api"
 )
 
 // FileClient is an implementation of the StoreClient interface that vends

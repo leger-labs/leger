@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tailscale/setec/internal/version"
 	"github.com/spf13/cobra"
+	"github.com/leger-labs/leger/internal/version"
 )
 
 var rootCmd = &cobra.Command{

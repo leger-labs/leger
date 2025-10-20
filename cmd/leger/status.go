@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/tailscale/setec/internal/daemon"
-	"github.com/tailscale/setec/internal/staging"
 	"github.com/spf13/cobra"
+	"github.com/leger-labs/leger/internal/daemon"
+	"github.com/leger-labs/leger/internal/staging"
 )
 
 // statusCmd returns the status command

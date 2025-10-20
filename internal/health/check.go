@@ -103,9 +103,10 @@ func (h *HealthCheck) Check(ctx context.Context) *Result {
 
 // ParseHealthCheckLabels parses health check configuration from quadlet labels
 // Expected label format:
-//   Label=x-health-url=http://localhost:8080/health
-//   Label=x-health-timeout=5s
-//   Label=x-health-expected=200
+//
+//	Label=x-health-url=http://localhost:8080/health
+//	Label=x-health-timeout=5s
+//	Label=x-health-expected=200
 func ParseHealthCheckLabels(labels map[string]string) *HealthCheck {
 	hc := &HealthCheck{}
 
