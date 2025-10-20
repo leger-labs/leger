@@ -32,13 +32,24 @@ func (qm *QuadletManager) Install(quadletPath string) error {
 		return fmt.Errorf("quadlet path does not exist: %s", quadletPath)
 	}
 
-	args := []string{"quadlet", "install"}
-
+	// Determine destination path based on scope
+	var destPath string
 	if qm.scope == "user" {
-		args = append(args, "--user")
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		destPath = filepath.Join(homeDir, ".config", "containers", "systemd")
+	} else {
+		destPath = "/etc/containers/systemd"
 	}
 
-	args = append(args, quadletPath)
+	// Ensure destination directory exists
+	if err := os.MkdirAll(destPath, 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory %s: %w", destPath, err)
+	}
+
+	args := []string{"quadlet", "install", quadletPath, destPath}
 
 	cmd := exec.Command("podman", args...)
 
@@ -59,7 +70,7 @@ Check quadlet files are valid:
   ls -la %s
 
 Try manual install:
-  podman quadlet install --user %s`, err, stdout.String(), stderr.String(), quadletPath, quadletPath)
+  podman quadlet install %s %s`, err, stdout.String(), stderr.String(), quadletPath, quadletPath, destPath)
 	}
 
 	return nil
@@ -68,10 +79,6 @@ Try manual install:
 // List lists installed quadlets using native podman quadlet list command
 func (qm *QuadletManager) List() ([]types.QuadletInfo, error) {
 	args := []string{"quadlet", "list", "--format", "json"}
-
-	if qm.scope == "user" {
-		args = append(args, "--user")
-	}
 
 	cmd := exec.Command("podman", args...)
 
@@ -88,7 +95,7 @@ Verify Podman is installed:
   podman version
 
 Try manual list:
-  podman quadlet list --user`, err, stderr.String())
+  podman quadlet list`, err, stderr.String())
 	}
 
 	// Parse JSON output
@@ -107,13 +114,7 @@ func (qm *QuadletManager) Remove(name string) error {
 		name += ".container"
 	}
 
-	args := []string{"quadlet", "rm"}
-
-	if qm.scope == "user" {
-		args = append(args, "--user")
-	}
-
-	args = append(args, name)
+	args := []string{"quadlet", "rm", name}
 
 	cmd := exec.Command("podman", args...)
 
@@ -128,10 +129,10 @@ Stdout: %s
 Stderr: %s
 
 Verify quadlet exists:
-  podman quadlet list --user
+  podman quadlet list
 
 Try manual remove:
-  podman quadlet rm --user %s`, err, stdout.String(), stderr.String(), name)
+  podman quadlet rm %s`, err, stdout.String(), stderr.String(), name)
 	}
 
 	return nil
@@ -144,13 +145,7 @@ func (qm *QuadletManager) Print(name string) (string, error) {
 		name += ".container"
 	}
 
-	args := []string{"quadlet", "print"}
-
-	if qm.scope == "user" {
-		args = append(args, "--user")
-	}
-
-	args = append(args, name)
+	args := []string{"quadlet", "print", name}
 
 	cmd := exec.Command("podman", args...)
 

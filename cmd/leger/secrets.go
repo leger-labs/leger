@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/leger-labs/leger/internal/auth"
 	"github.com/leger-labs/leger/internal/legerrun"
 	"github.com/leger-labs/leger/internal/ui"
+	"github.com/spf13/cobra"
 )
 
 // secretsCmd returns the secrets command group

@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/cobra"
 	"github.com/leger-labs/leger/internal/auth"
 	"github.com/leger-labs/leger/internal/git"
 	"github.com/leger-labs/leger/internal/legerrun"
 	"github.com/leger-labs/leger/pkg/types"
+	"github.com/spf13/cobra"
 )
 
 // configCmd returns the config command group

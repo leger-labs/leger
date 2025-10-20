@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/leger-labs/leger/internal/staging"
+	"github.com/spf13/cobra"
 )
 
 // stagedCmd returns the staged command group

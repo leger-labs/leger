@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/leger-labs/leger/internal/auth"
 	"github.com/leger-labs/leger/internal/legerrun"
 	"github.com/leger-labs/leger/internal/tailscale"
 	"github.com/leger-labs/leger/internal/ui"
 	"github.com/leger-labs/leger/internal/version"
+	"github.com/spf13/cobra"
 )
 
 // authCmd returns the auth command group
