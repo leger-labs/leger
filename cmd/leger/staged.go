@@ -175,7 +175,7 @@ Shows:
 			}
 
 			if !hasUpdates {
-				return fmt.Errorf(`No staged updates found
+				return fmt.Errorf(`no staged updates found
 
 Stage updates first:
   leger stage [source]
@@ -231,7 +231,7 @@ Rolls back automatically if errors occur.`,
 			}
 
 			if !hasUpdates {
-				return fmt.Errorf(`No staged updates found
+				return fmt.Errorf(`no staged updates found
 
 Stage updates first:
   leger stage [source]`)

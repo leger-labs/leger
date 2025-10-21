@@ -53,7 +53,7 @@ Requires:
 			tsClient := tailscale.NewClient()
 			identity, err := tsClient.VerifyIdentity(ctx)
 			if err != nil {
-				return fmt.Errorf(`Tailscale not running: %w
+				return fmt.Errorf(`tailscale not running: %w
 
 Start Tailscale:
   sudo tailscale up
@@ -86,12 +86,12 @@ Verify status:
 			if err != nil {
 				// Check for specific error codes
 				if err == legerrun.ErrAccountNotLinked {
-					return fmt.Errorf(`Tailscale account not linked to leger.run
+					return fmt.Errorf(`tailscale account not linked to leger.run
 
 Visit https://app.leger.run to link your account
 (Web UI will be available in v0.2.0 with device code authentication)
 
-For now, leger.run backend will accept any authenticated Tailscale user.`)
+For now, leger.run backend will accept any authenticated Tailscale user`)
 				}
 				return fmt.Errorf("authentication failed: %w", err)
 			}

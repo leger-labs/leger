@@ -56,7 +56,7 @@ Checking for manifest in:
   - .leger.yaml (generic format)
 
 If no manifest exists, one will be auto-generated from quadlet files.
-Ensure the directory contains .container, .volume, or .network files.`, err)
+Ensure the directory contains .container, .volume, or .network files`, err)
 	}
 
 	return manifest, nil

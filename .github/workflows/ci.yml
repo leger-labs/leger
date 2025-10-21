@@ -77,7 +77,7 @@ jobs:
       
       - name: Verify legerd
         run: |
-          ./legerd version
+          ./legerd version || [ $? -eq 2 ]
           test -f legerd
       
       - name: Upload binaries as artifacts

@@ -42,7 +42,7 @@ func (vm *VolumeManager) Remove(volumeName string) error {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf(`Failed to remove volume: %w
+		return fmt.Errorf(`failed to remove volume: %w
 
 Stderr: %s
 

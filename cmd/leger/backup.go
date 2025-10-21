@@ -64,7 +64,7 @@ Examples:
 			// Create backup manager
 			backupMgr, err := backup.NewManager()
 			if err != nil {
-				return fmt.Errorf(`Failed to initialize backup manager: %w
+				return fmt.Errorf(`failed to initialize backup manager: %w
 
 Check directory permissions:
   ls -la ~/.local/share/bluebuild-quadlets/`, err)

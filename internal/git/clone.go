@@ -62,7 +62,7 @@ Repository: %s
 Branch: %s
 Subpath: %s
 
-Verify the path exists in the repository.`, repo.SubPath, cloneURL, repo.Branch, repo.SubPath)
+Verify the path exists in the repository`, repo.SubPath, cloneURL, repo.Branch, repo.SubPath)
 		}
 
 		return subDir, nil
