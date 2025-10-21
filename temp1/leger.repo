@@ -1,0 +1,8 @@
+[leger]
+name=leger - Podman Quadlet Manager
+baseurl=https://pkgs.leger.run/fedora/$releasever/$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://pkgs.leger.run/RPM-GPG-KEY-leger
+metadata_expire=1h

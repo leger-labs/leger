@@ -1,0 +1,23 @@
+# RPM Packaging
+*.rpm
+*.deb
+*.tar.gz
+*.tar.xz
+nfpm-build.yaml
+dist/
+
+# GPG keys - NEVER COMMIT PRIVATE KEYS!
+*.private.asc
+leger-rpm-signing.private.asc
+*-private.pem
+
+# Build artifacts
+leger
+legerd
+leger-*
+legerd-*
+!leger-*.rpm
+
+# Temporary files
+.rpmmacros
+*.log
