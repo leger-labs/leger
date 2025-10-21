@@ -1,11 +1,8 @@
 package podman
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -25,10 +22,11 @@ func NewQuadletManager(scope string) *QuadletManager {
 	return &QuadletManager{scope: scope}
 }
 
-// Install installs quadlet files using native podman quadlet install command
+// Install installs quadlet files by copying them to the systemd directory
 func (qm *QuadletManager) Install(quadletPath string) error {
 	// Verify path exists
-	if _, err := os.Stat(quadletPath); err != nil {
+	fileInfo, err := os.Stat(quadletPath)
+	if err != nil {
 		return fmt.Errorf("quadlet path does not exist: %s", quadletPath)
 	}
 
@@ -49,115 +47,209 @@ func (qm *QuadletManager) Install(quadletPath string) error {
 		return fmt.Errorf("failed to create destination directory %s: %w", destPath, err)
 	}
 
-	args := []string{"quadlet", "install", quadletPath, destPath}
+	// Copy quadlet files
+	if fileInfo.IsDir() {
+		// Copy all quadlet files from directory
+		err = filepath.Walk(quadletPath, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
 
-	cmd := exec.Command("podman", args...)
+			// Skip directories
+			if info.IsDir() {
+				return nil
+			}
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+			// Only copy files with quadlet extensions
+			if !hasQuadletExtension(path) {
+				return nil
+			}
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf(`Podman quadlet install failed: %w
+			// Determine destination file path
+			relPath, err := filepath.Rel(quadletPath, path)
+			if err != nil {
+				return fmt.Errorf("failed to determine relative path: %w", err)
+			}
+			destFile := filepath.Join(destPath, relPath)
 
-Stdout: %s
-Stderr: %s
+			// Ensure parent directory exists
+			destDir := filepath.Dir(destFile)
+			if err := os.MkdirAll(destDir, 0755); err != nil {
+				return fmt.Errorf("failed to create directory %s: %w", destDir, err)
+			}
 
-Verify Podman is installed:
-  podman version
+			// Copy file
+			if err := copyFile(path, destFile); err != nil {
+				return fmt.Errorf("failed to copy %s to %s: %w", path, destFile, err)
+			}
 
-Check quadlet files are valid:
-  ls -la %s
+			return nil
+		})
 
-Try manual install:
-  podman quadlet install %s %s`, err, stdout.String(), stderr.String(), quadletPath, quadletPath, destPath)
+		if err != nil {
+			return fmt.Errorf("failed to install quadlet files: %w", err)
+		}
+	} else {
+		// Copy single file
+		destFile := filepath.Join(destPath, filepath.Base(quadletPath))
+		if err := copyFile(quadletPath, destFile); err != nil {
+			return fmt.Errorf("failed to copy %s to %s: %w", quadletPath, destFile, err)
+		}
 	}
 
 	return nil
 }
 
-// List lists installed quadlets using native podman quadlet list command
-func (qm *QuadletManager) List() ([]types.QuadletInfo, error) {
-	args := []string{"quadlet", "list", "--format", "json"}
+// copyFile copies a file from src to dst
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
 
-	cmd := exec.Command("podman", args...)
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf(`Podman quadlet list failed: %w
-
-Stderr: %s
-
-Verify Podman is installed:
-  podman version
-
-Try manual list:
-  podman quadlet list`, err, stderr.String())
+	if _, err := destFile.ReadFrom(sourceFile); err != nil {
+		return err
 	}
 
-	// Parse JSON output
+	// Copy permissions
+	sourceInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(dst, sourceInfo.Mode())
+}
+
+// List lists installed quadlets by reading the systemd directory
+func (qm *QuadletManager) List() ([]types.QuadletInfo, error) {
+	// Determine systemd path based on scope
+	var quadletDir string
+	if qm.scope == "user" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		quadletDir = filepath.Join(homeDir, ".config", "containers", "systemd")
+	} else {
+		quadletDir = "/etc/containers/systemd"
+	}
+
+	// Check if directory exists
+	if _, err := os.Stat(quadletDir); os.IsNotExist(err) {
+		return []types.QuadletInfo{}, nil // Return empty list if directory doesn't exist
+	}
+
 	var quadlets []types.QuadletInfo
-	if err := json.Unmarshal(stdout.Bytes(), &quadlets); err != nil {
-		return nil, fmt.Errorf("failed to parse quadlet list output: %w\nOutput: %s", err, stdout.String())
+
+	// Walk the directory to find quadlet files
+	err := filepath.Walk(quadletDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Only include files with quadlet extensions
+		if !hasQuadletExtension(path) {
+			return nil
+		}
+
+		// Create QuadletInfo
+		relPath, err := filepath.Rel(quadletDir, path)
+		if err != nil {
+			relPath = filepath.Base(path)
+		}
+
+		quadlets = append(quadlets, types.QuadletInfo{
+			Name: relPath,
+			Path: path,
+			Type: GetQuadletType(path),
+		})
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to list quadlets: %w", err)
 	}
 
 	return quadlets, nil
 }
 
-// Remove removes a quadlet using native podman quadlet rm command
+// Remove removes a quadlet by deleting it from the systemd directory
 func (qm *QuadletManager) Remove(name string) error {
 	// Ensure proper extension if not provided
 	if !hasQuadletExtension(name) {
 		name += ".container"
 	}
 
-	args := []string{"quadlet", "rm", name}
+	// Determine systemd path based on scope
+	var quadletDir string
+	if qm.scope == "user" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		quadletDir = filepath.Join(homeDir, ".config", "containers", "systemd")
+	} else {
+		quadletDir = "/etc/containers/systemd"
+	}
 
-	cmd := exec.Command("podman", args...)
+	// Construct full path
+	quadletPath := filepath.Join(quadletDir, name)
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	// Check if file exists
+	if _, err := os.Stat(quadletPath); os.IsNotExist(err) {
+		return fmt.Errorf("quadlet %s does not exist", name)
+	}
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf(`Podman quadlet remove failed: %w
-
-Stdout: %s
-Stderr: %s
-
-Verify quadlet exists:
-  podman quadlet list
-
-Try manual remove:
-  podman quadlet rm %s`, err, stdout.String(), stderr.String(), name)
+	// Remove the file
+	if err := os.Remove(quadletPath); err != nil {
+		return fmt.Errorf("failed to remove quadlet %s: %w", name, err)
 	}
 
 	return nil
 }
 
-// Print prints a quadlet definition using podman quadlet print
+// Print prints a quadlet definition by reading the file
 func (qm *QuadletManager) Print(name string) (string, error) {
 	// Ensure proper extension if not provided
 	if !hasQuadletExtension(name) {
 		name += ".container"
 	}
 
-	args := []string{"quadlet", "print", name}
-
-	cmd := exec.Command("podman", args...)
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("podman quadlet print failed: %w\nStderr: %s", err, stderr.String())
+	// Determine systemd path based on scope
+	var quadletDir string
+	if qm.scope == "user" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		quadletDir = filepath.Join(homeDir, ".config", "containers", "systemd")
+	} else {
+		quadletDir = "/etc/containers/systemd"
 	}
 
-	return stdout.String(), nil
+	// Construct full path
+	quadletPath := filepath.Join(quadletDir, name)
+
+	// Read file contents
+	content, err := os.ReadFile(quadletPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read quadlet %s: %w", name, err)
+	}
+
+	return string(content), nil
 }
 
 // DiscoverQuadletFiles discovers all quadlet files in a directory
