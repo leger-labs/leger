@@ -195,8 +195,18 @@ func runDeployInstall(ctx context.Context, name string) error {
 		return nil
 	}
 
-	// Step 6: Install quadlets using podman
-	fmt.Println("Step 6/7: Installing quadlets...")
+	// Step 6: Save deployment to active directory (for tracking and backups)
+	fmt.Println("Step 6/8: Saving deployment...")
+
+	if err := saveDeployment(name, quadletDir); err != nil {
+		return fmt.Errorf("failed to save deployment: %w", err)
+	}
+
+	fmt.Println("✓ Deployment saved")
+	fmt.Println()
+
+	// Step 7: Install quadlets using podman
+	fmt.Println("Step 7/8: Installing quadlets...")
 
 	if err := installQuadlets(ctx, quadletDir); err != nil {
 		return fmt.Errorf("failed to install quadlets: %w", err)
@@ -205,9 +215,9 @@ func runDeployInstall(ctx context.Context, name string) error {
 	fmt.Println("✓ Quadlets installed")
 	fmt.Println()
 
-	// Step 7: Start services
+	// Step 8: Start services
 	if !installFlags.noStart {
-		fmt.Println("Step 7/7: Starting services...")
+		fmt.Println("Step 8/8: Starting services...")
 
 		if err := startServices(ctx, parseResult); err != nil {
 			return fmt.Errorf("failed to start services: %w", err)
@@ -215,7 +225,7 @@ func runDeployInstall(ctx context.Context, name string) error {
 
 		fmt.Println("✓ Services started")
 	} else {
-		fmt.Println("Step 7/7: Skipping service start (--no-start)")
+		fmt.Println("Step 8/8: Skipping service start (--no-start)")
 	}
 	fmt.Println()
 
@@ -306,12 +316,75 @@ func createPodmanSecret(ctx context.Context, name string, value []byte) error {
 	return nil
 }
 
+// saveDeployment saves a copy of the quadlet files to the active directory for tracking
+func saveDeployment(name, quadletDir string) error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to get home directory: %w", err)
+	}
+
+	// Create active deployment directory
+	activeDir := filepath.Join(homeDir, ".local", "share", "bluebuild-quadlets", "active", name)
+	if err := os.MkdirAll(activeDir, 0755); err != nil {
+		return fmt.Errorf("failed to create active directory: %w", err)
+	}
+
+	// Copy all files from quadletDir to activeDir
+	err = filepath.Walk(quadletDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Get relative path
+		relPath, err := filepath.Rel(quadletDir, path)
+		if err != nil {
+			return err
+		}
+
+		// Skip the root directory itself
+		if relPath == "." {
+			return nil
+		}
+
+		destPath := filepath.Join(activeDir, relPath)
+
+		if info.IsDir() {
+			// Create directory
+			return os.MkdirAll(destPath, info.Mode())
+		}
+
+		// Copy file
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", path, err)
+		}
+
+		if err := os.WriteFile(destPath, data, info.Mode()); err != nil {
+			return fmt.Errorf("failed to write %s: %w", destPath, err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to copy quadlet files: %w", err)
+	}
+
+	return nil
+}
+
 // installQuadlets installs quadlet files using podman quadlet install
 func installQuadlets(ctx context.Context, quadletDir string) error {
 	qm := podman.NewQuadletManager("user")
 
 	if err := qm.Install(quadletDir); err != nil {
 		return err
+	}
+
+	// Reload systemd to pick up new quadlet files
+	cmd := exec.CommandContext(ctx, "systemctl", "--user", "daemon-reload")
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("⚠ Warning: failed to reload systemd: %v\n", err)
 	}
 
 	fmt.Println("✓ Quadlets installed successfully")
@@ -635,10 +708,19 @@ func deployRemoveCmd() *cobra.Command {
 				fmt.Println("⚠ Backup volumes not yet implemented (coming in Issue #17)")
 			}
 
-			// Remove quadlet
+			// Remove quadlet from systemd
 			fmt.Printf("Removing quadlet %s...\n", quadletName)
 			if err := qm.Remove(quadletName); err != nil {
 				return err
+			}
+
+			// Remove from active directory
+			homeDir, err := os.UserHomeDir()
+			if err == nil {
+				activeDir := filepath.Join(homeDir, ".local", "share", "bluebuild-quadlets", "active", quadletName)
+				if err := os.RemoveAll(activeDir); err != nil {
+					fmt.Printf("⚠ Warning: failed to remove active directory: %v\n", err)
+				}
 			}
 
 			fmt.Printf("✓ Successfully removed %s\n", quadletName)

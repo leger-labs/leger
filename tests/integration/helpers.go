@@ -104,9 +104,22 @@ func (h *TestHelper) WaitForService(serviceName, state string, timeout time.Dura
 
 // CleanupQuadlet removes a deployed quadlet
 func (h *TestHelper) CleanupQuadlet(name string) {
-	// Stop and remove service (errors ignored in cleanup)
+	// Stop service (errors ignored in cleanup)
 	_ = exec.Command("systemctl", "--user", "stop", name+".service").Run()
-	_ = exec.Command("podman", "quadlet", "rm", name).Run()
+
+	// Remove quadlet files from systemd directory
+	homeDir, err := os.UserHomeDir()
+	if err == nil {
+		quadletPath := filepath.Join(homeDir, ".config", "containers", "systemd", name+".container")
+		_ = os.Remove(quadletPath)
+
+		// Remove from active directory
+		activeDir := filepath.Join(homeDir, ".local", "share", "bluebuild-quadlets", "active", name)
+		_ = os.RemoveAll(activeDir)
+	}
+
+	// Reload systemd
+	_ = exec.Command("systemctl", "--user", "daemon-reload").Run()
 }
 
 // SkipIfNoPodman skips the test if Podman is not available
