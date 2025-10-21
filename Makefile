@@ -36,21 +36,36 @@ endif
 RPM_FILE := $(PROJECT)-$(VERSION_SHORT)-1.$(RPM_ARCH).rpm
 
 .PHONY: help
-help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+help: ## Show this help message
+	@echo "leger - Podman Quadlet Manager"
+	@echo ""
+	@echo "Common targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "Build variables:"
+	@echo "  VERSION:     $(VERSION)"
+	@echo "  COMMIT:      $(COMMIT)"
+	@echo "  BUILD_DATE:  $(BUILD_DATE)"
+	@echo "  GOOS:        $(GOOS)"
+	@echo "  GOARCH:      $(GOARCH)"
+	@echo "  RPM_ARCH:    $(RPM_ARCH)"
 
 .PHONY: build
 build: build-leger build-legerd ## Build both binaries
 
 .PHONY: build-leger
 build-leger: ## Build leger CLI
+	@echo "Building leger $(VERSION) for $(GOOS)/$(GOARCH)..."
 	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) \
 		go build $(BUILD_FLAGS) -o leger ./cmd/leger
+	@echo "Built: ./leger"
 
 .PHONY: build-legerd
 build-legerd: ## Build legerd daemon
+	@echo "Building legerd $(VERSION) for $(GOOS)/$(GOARCH)..."
 	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) \
 		go build $(BUILD_FLAGS) -o legerd ./cmd/legerd
+	@echo "Built: ./legerd"
 
 .PHONY: test
 test: ## Run tests
@@ -126,6 +141,26 @@ verify: ## Verify RPM signatures
 			rpm --checksig $$rpm; \
 		fi; \
 	done
+
+.PHONY: generate-gpg-key
+generate-gpg-key: ## Generate GPG key pair for signing
+	@chmod +x scripts/generate-gpg-key.sh
+	@./scripts/generate-gpg-key.sh
+
+.PHONY: release
+release: ## Create a release tag (Usage: make release VERSION=v1.0.0)
+	@if [ -z "$(NEW_VERSION)" ]; then \
+		echo "ERROR: NEW_VERSION not set. Usage: make release NEW_VERSION=v1.0.0"; \
+		exit 1; \
+	fi
+	@if git rev-parse "$(NEW_VERSION)" >/dev/null 2>&1; then \
+		echo "ERROR: Tag $(NEW_VERSION) already exists"; \
+		exit 1; \
+	fi
+	@echo "Creating release $(NEW_VERSION)..."
+	git tag -a $(NEW_VERSION) -m "Release $(NEW_VERSION)"
+	git push origin $(NEW_VERSION)
+	@echo "Release tag created. GitHub Actions will build and publish."
 
 .PHONY: version
 version: ## Show version information

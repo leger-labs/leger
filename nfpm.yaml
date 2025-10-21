@@ -84,22 +84,29 @@ contents:
       owner: root
       group: root
 
-  # Data directories
-  - dst: "/var/lib/legerd"
+  # Data directories - FIXED: Use /var/lib/leger/ not /var/lib/legerd/
+  - dst: "/var/lib/leger"
     type: dir
     file_info:
       mode: 0755
       owner: root
       group: root
 
-  - dst: "/var/lib/legerd/staged"
+  - dst: "/var/lib/leger/staged"
     type: dir
     file_info:
       mode: 0755
       owner: root
       group: root
 
-  - dst: "/var/lib/legerd/backups"
+  - dst: "/var/lib/leger/backups"
+    type: dir
+    file_info:
+      mode: 0755
+      owner: root
+      group: root
+
+  - dst: "/var/lib/leger/manifests"
     type: dir
     file_info:
       mode: 0755
