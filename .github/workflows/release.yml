@@ -92,6 +92,35 @@ jobs:
         run: |
           nfpm pkg --packager rpm -f nfpm.yaml
 
+      - name: Import GPG key
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          # Trust the imported key
+          KEY_ID=$(gpg --list-keys --with-colons packages@leger.run | awk -F: '/^pub:/ {print $5}')
+          echo "${KEY_ID}:6:" | gpg --import-ownertrust
+
+      - name: Sign RPM
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          # Configure rpm macros for signing
+          cat > ~/.rpmmacros <<EOF
+          %_signature gpg
+          %_gpg_name packages@leger.run
+          EOF
+
+          # Sign all RPMs
+          for rpm in *.rpm; do
+            if [ -f "$rpm" ]; then
+              echo "Signing $rpm..."
+              rpmsign --addsign "$rpm"
+              # Verify signature
+              rpm --checksig "$rpm"
+            fi
+          done
+
       - name: Upload RPM artifact
         uses: actions/upload-artifact@v4
         with:
@@ -163,3 +192,60 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Publish to R2 Repository
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Organize RPMs
+        run: |
+          mkdir -p rpms
+          find artifacts -type f -name "*.rpm" -exec cp {} rpms/ \;
+          ls -lh rpms/
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y createrepo-c awscli
+
+      - name: Export GPG public key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --armor --export packages@leger.run > leger-rpm-signing.public.asc
+
+      - name: Publish to R2
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          PUBLIC_URL: https://pkgs.leger.run
+          RPMS_DIR: ./rpms
+        run: |
+          chmod +x scripts/publish-rpm.sh
+          ./scripts/publish-rpm.sh
+
+      - name: Summary
+        run: |
+          echo "## RPM Repository Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Repository URL: https://pkgs.leger.run/fedora" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Installation instructions:" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "sudo dnf config-manager --add-repo https://pkgs.leger.run/fedora/leger.repo" >> $GITHUB_STEP_SUMMARY
+          echo "sudo dnf install leger" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

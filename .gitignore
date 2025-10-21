@@ -17,6 +17,11 @@ dist/
 *.deb
 *.tar.gz
 
+# GPG keys (never commit private keys!)
+*.private.asc
+*.keyid
+leger-rpm-signing.*
+
 # State directories
 *.state/
 /tmp/
