@@ -48,7 +48,7 @@ func (m *Manager) ApplyStaged(ctx context.Context, deploymentName string) error 
 
 	// Verify staged updates exist
 	if _, err := os.Stat(stagingPath); os.IsNotExist(err) {
-		return fmt.Errorf(`No staged updates found for %q
+		return fmt.Errorf(`no staged updates found for %q
 
 Stage updates first:
   leger stage [source]
@@ -256,7 +256,7 @@ func (m *Manager) rollbackOnError(ctx context.Context, deploymentName string, or
 	fmt.Println("\n⚠️  Apply failed, rolling back...")
 
 	if rollbackErr := m.Rollback(ctx, deploymentName); rollbackErr != nil {
-		return fmt.Errorf(`Apply failed and rollback failed: %w
+		return fmt.Errorf(`apply failed and rollback failed: %w
 
 Original error: %v
 

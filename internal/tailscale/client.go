@@ -66,11 +66,11 @@ func (c *Client) GetIdentity(ctx context.Context) (*Identity, error) {
 // VerifyIdentity ensures Tailscale is installed, running, and authenticated
 func (c *Client) VerifyIdentity(ctx context.Context) (*Identity, error) {
 	if !c.IsInstalled() {
-		return nil, fmt.Errorf("Tailscale not installed. Install from: https://tailscale.com/download")
+		return nil, fmt.Errorf("tailscale not installed (install from: https://tailscale.com/download)")
 	}
 
 	if !c.IsRunning(ctx) {
-		return nil, fmt.Errorf("Tailscale daemon not running. Run: sudo tailscale up")
+		return nil, fmt.Errorf("tailscale daemon not running (run: sudo tailscale up)")
 	}
 
 	return c.GetIdentity(ctx)
