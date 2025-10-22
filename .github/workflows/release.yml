@@ -156,29 +156,32 @@ jobs:
 
       - name: Generate release notes
         run: |
-          cat > release-notes.md <<'NOTES'
+          cat > release-notes.md <<'EOF'
           ## Installation
 
           Download the appropriate RPM:
           - **x86_64**: `leger-*-x86_64.rpm`
           - **aarch64**: `leger-*-aarch64.rpm`
-```bash
+
+          ```bash
           sudo dnf install ./leger-*.rpm
-```
+          ```
 
           ## Configuration
 
           Edit `/etc/leger/config.yaml`, then start:
-```bash
+
+          ```bash
           systemctl --user enable --now legerd.service
-```
+          ```
 
           ## Verification
-```bash
+
+          ```bash
           leger --version
           systemctl --user status legerd.service
-```
-          NOTES
+          ```
+          EOF
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
