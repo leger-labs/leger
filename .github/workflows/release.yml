@@ -44,14 +44,25 @@ jobs:
       - name: Get version
         id: version
         run: |
+          set -euo pipefail
+          echo "🔍 Determining release version..."
+          
+          # Detect whether manually triggered or tag-based
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
+
           VERSION_SHORT="${VERSION#v}"
+
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "version_short=${VERSION_SHORT}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=false" >> $GITHUB_OUTPUT
+
+          echo "🟢 Publishing RPMs for version: $VERSION"
+          echo "🔹 Short version: $VERSION_SHORT"
+          echo "🔹 Triggered by: ${{ github.event_name }}"
 
       - name: Install dependencies
         run: |
@@ -281,41 +292,42 @@ jobs:
       - name: Get version
         id: version
         run: |
+          set -euo pipefail
+          echo "🔍 Determining release version (publish job)..."
+          
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
+
+          VERSION_SHORT="${VERSION#v}"
+
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          if [[ "$VERSION" == *-* ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
-            echo "Skipping R2 publish for pre-release version: $VERSION"
-            exit 0
-          else
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
-          fi
+          echo "version_short=${VERSION_SHORT}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=false" >> $GITHUB_OUTPUT   # ✅ always publish
+
+          echo "🟢 Publishing to R2 for version: $VERSION"
+          echo "🔹 Short version: $VERSION_SHORT"
+          echo "🔹 Triggered by: ${{ github.event_name }}"
 
       - name: Download all artifacts
-        if: steps.version.outputs.is_prerelease == 'false'
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
       - name: Organize RPMs
-        if: steps.version.outputs.is_prerelease == 'false'
         run: |
           mkdir -p rpms
           find artifacts -type f -name "*.rpm" -exec cp {} rpms/ \;
           ls -lh rpms/
 
       - name: Install dependencies
-        if: steps.version.outputs.is_prerelease == 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y createrepo-c awscli
 
       - name: Export GPG public key
-        if: steps.version.outputs.is_prerelease == 'false'
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
@@ -323,7 +335,6 @@ jobs:
           gpg --armor --export packages@leger.run > leger-rpm-signing.public.asc
 
       - name: Publish to R2
-        if: steps.version.outputs.is_prerelease == 'false'
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -332,11 +343,21 @@ jobs:
           PUBLIC_URL: https://pkgs.leger.run
           RPMS_DIR: ./rpms
         run: |
+          echo "===== DEBUG: environment ====="
+          echo "RPMS_DIR=$RPMS_DIR"
+          echo "R2_BUCKET_NAME=$R2_BUCKET_NAME"
+          echo "R2_ENDPOINT=$R2_ENDPOINT"
+          echo "PUBLIC_URL=$PUBLIC_URL"
+          echo "Listing rpms dir before publish:"
+          ls -l "$RPMS_DIR" || true
+          echo "================================"
+
+          set -x
           chmod +x scripts/publish-rpm.sh
           ./scripts/publish-rpm.sh
+          set +x
 
       - name: Summary
-        if: steps.version.outputs.is_prerelease == 'false'
         run: |
           echo "## RPM Repository Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
