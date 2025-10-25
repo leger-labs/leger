@@ -5,6 +5,14 @@ All notable changes to Leger will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1](https://github.com/leger-labs/leger/compare/v0.2.0...v0.2.1) (2025-10-25)
+
+
+### Bug Fixes
+
+* **ci:** resolve nfpm environment variable substitution in release workflow ([#53](https://github.com/leger-labs/leger/issues/53)) ([8d69ba3](https://github.com/leger-labs/leger/commit/8d69ba39de8fabb699199df9437c92d7925d0d32))
+* **ci:** resolve YAML syntax error in release workflow ([#50](https://github.com/leger-labs/leger/issues/50)) ([0ab8f89](https://github.com/leger-labs/leger/commit/0ab8f89db0fb34cea0f75a249b035f82d4026d22))
+
 ## [0.2.0](https://github.com/leger-labs/leger/compare/v0.1.0...v0.2.0) (2025-10-22)
 
 
