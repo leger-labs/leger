@@ -68,7 +68,8 @@ jobs:
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
           sudo apt-get update
-          sudo apt-get install -y gettext-base
+          sudo apt-get install -y gettext-base createrepo-c python3-pip
+          pip install --upgrade awscli
 
       - name: Build binaries
         env:
