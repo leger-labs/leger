@@ -56,6 +56,9 @@ jobs:
       - name: Install dependencies
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+          # envsubst is part of gettext-base package
+          sudo apt-get update
+          sudo apt-get install -y gettext-base
 
       - name: Build binaries
         env:
@@ -90,7 +93,24 @@ jobs:
           CLI_BINARY: leger-${{ matrix.arch }}
           DAEMON_BINARY: legerd-${{ matrix.arch }}
         run: |
-          nfpm pkg --packager rpm -f nfpm.yaml
+          # Verify the binary files exist before proceeding
+          echo "Verifying binaries..."
+          ls -lh ${CLI_BINARY} ${DAEMON_BINARY}
+
+          # Use envsubst to substitute environment variables in nfpm.yaml
+          echo "Substituting variables in nfpm.yaml..."
+          envsubst < nfpm.yaml > nfpm-build.yaml
+
+          # Show what was substituted (for debugging)
+          echo "Generated nfpm-build.yaml:"
+          grep -A2 "src:" nfpm-build.yaml | head -6
+
+          # Build RPM with substituted config
+          nfpm pkg --packager rpm -f nfpm-build.yaml
+
+          # Show what was created
+          echo "Created RPMs:"
+          ls -lh *.rpm
 
       - name: Import GPG key
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
