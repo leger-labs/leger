@@ -198,18 +198,31 @@ jobs:
               
               echo ""
               echo "rpmsign completed with exit code 0"
-              
-              # Verify signature
-              echo ""
-              echo "Verifying signature..."
-              rpm -Kv "$rpm"
-              
-              echo "✅ Successfully signed: $rpm"
-              echo ""
             fi
           done
           
           echo "✅ All RPMs signed successfully"
+
+      # 🔐 Added: Import public key and verify RPM signature
+      - name: Import public GPG key for verification
+        run: |
+          if [ -f leger-rpm-signing.public.asc ]; then
+            echo "Importing public key..."
+            gpg --import leger-rpm-signing.public.asc
+            rpm --import leger-rpm-signing.public.asc
+          else
+            echo "⚠️ Public key not found; skipping import"
+          fi
+
+      - name: Verify RPM signature
+        run: |
+          echo "Verifying RPM signatures..."
+          for rpm in *.rpm; do
+            echo "------------------------------------------"
+            echo "Checking: $rpm"
+            rpm --checksig "$rpm" || (echo "❌ Verification failed for $rpm" && exit 1)
+          done
+          echo "✅ All signatures verified successfully"
 
       - name: Upload RPM artifact
         uses: actions/upload-artifact@v4
