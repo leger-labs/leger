@@ -113,7 +113,7 @@ jobs:
           ls -lh *.rpm
 
       - name: Import GPG key
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event_name == 'workflow_dispatch'
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
@@ -123,7 +123,7 @@ jobs:
           echo "${KEY_ID}:6:" | gpg --import-ownertrust
 
       - name: Sign RPM
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event_name == 'workflow_dispatch'
         run: |
           # Configure rpm macros for signing
           cat > ~/.rpmmacros <<EOF
@@ -152,7 +152,7 @@ jobs:
     name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout
@@ -220,29 +220,51 @@ jobs:
     name: Publish to R2 Repository
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-')
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          # Check if this is a pre-release (contains hyphen)
+          if [[ "$VERSION" == *-* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "Skipping R2 publish for pre-release version: $VERSION"
+            exit 0
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Download all artifacts
+        if: steps.version.outputs.is_prerelease == 'false'
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
       - name: Organize RPMs
+        if: steps.version.outputs.is_prerelease == 'false'
         run: |
           mkdir -p rpms
           find artifacts -type f -name "*.rpm" -exec cp {} rpms/ \;
           ls -lh rpms/
 
       - name: Install dependencies
+        if: steps.version.outputs.is_prerelease == 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y createrepo-c awscli
 
       - name: Export GPG public key
+        if: steps.version.outputs.is_prerelease == 'false'
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
@@ -250,6 +272,7 @@ jobs:
           gpg --armor --export packages@leger.run > leger-rpm-signing.public.asc
 
       - name: Publish to R2
+        if: steps.version.outputs.is_prerelease == 'false'
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -262,6 +285,7 @@ jobs:
           ./scripts/publish-rpm.sh
 
       - name: Summary
+        if: steps.version.outputs.is_prerelease == 'false'
         run: |
           echo "## RPM Repository Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
