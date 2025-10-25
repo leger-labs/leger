@@ -56,7 +56,6 @@ jobs:
       - name: Install dependencies
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
-          # envsubst is part of gettext-base package
           sudo apt-get update
           sudo apt-get install -y gettext-base
 
@@ -93,22 +92,13 @@ jobs:
           CLI_BINARY: leger-${{ matrix.arch }}
           DAEMON_BINARY: legerd-${{ matrix.arch }}
         run: |
-          # Verify the binary files exist before proceeding
           echo "Verifying binaries..."
           ls -lh ${CLI_BINARY} ${DAEMON_BINARY}
-
-          # Use envsubst to substitute environment variables in nfpm.yaml
           echo "Substituting variables in nfpm.yaml..."
           envsubst < nfpm.yaml > nfpm-build.yaml
-
-          # Show what was substituted (for debugging)
           echo "Generated nfpm-build.yaml:"
           grep -A2 "src:" nfpm-build.yaml | head -6
-
-          # Build RPM with substituted config
           nfpm pkg --packager rpm -f nfpm-build.yaml
-
-          # Show what was created
           echo "Created RPMs:"
           ls -lh *.rpm
 
@@ -118,92 +108,60 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-
-          # FIXED: Get the full 40-character fingerprint, not just the key ID
           FINGERPRINT=$(gpg --list-keys --with-colons packages@leger.run | awk -F: '/^fpr:/ {print $10; exit}')
-
           if [ -z "$FINGERPRINT" ]; then
             echo "ERROR: Could not extract fingerprint from imported key"
             gpg --list-keys packages@leger.run
             exit 1
           fi
-
           echo "Key fingerprint: $FINGERPRINT"
-
-          # Trust the imported key using full fingerprint
           echo "${FINGERPRINT}:6:" | gpg --import-ownertrust
 
       - name: Sign RPM
         if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event_name == 'workflow_dispatch'
         run: |
-          # Configure GPG for non-interactive signing
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
-          
-          # Configure GPG agent
           cat > ~/.gnupg/gpg-agent.conf <<EOF
           default-cache-ttl 7200
           max-cache-ttl 7200
           allow-loopback-pinentry
           EOF
-          
-          # Configure GPG itself
           cat > ~/.gnupg/gpg.conf <<EOF
           use-agent
           pinentry-mode loopback
           batch
           no-tty
           EOF
-          
-          # Restart GPG agent
           gpgconf --kill gpg-agent 2>/dev/null || true
           gpg-connect-agent /bye 2>/dev/null || true
-          
-          # Get the key ID
           KEY_ID=$(gpg --list-keys --with-colons packages@leger.run | awk -F: '/^pub:/ {print $5; exit}')
           echo "Using key ID: $KEY_ID"
-          
-          # Configure rpm macros - SIMPLIFIED
           cat > ~/.rpmmacros <<EOF
           %_signature gpg
           %_gpg_name packages@leger.run
           %__gpg /usr/bin/gpg
           %__gpg_sign_cmd %{__gpg} --batch --no-tty --no-verbose --no-armor --no-secmem-warning -u "%{_gpg_name}" --sign --detach-sign --output %{__signature_filename} %{__plaintext_filename}
           EOF
-          
-          # Sign all RPMs - SIMPLIFIED error handling
           for rpm in *.rpm; do
             if [ -f "$rpm" ]; then
               echo "=========================================="
               echo "Signing $rpm..."
               echo "=========================================="
-              
-              # Run rpmsign and capture ALL output
-              set +e  # Don't exit on error yet
+              set +e
               OUTPUT=$(rpmsign --addsign "$rpm" 2>&1)
               EXIT_CODE=$?
               set -e
-              
-              # Display the output
               echo "$OUTPUT"
-              
-              # Check if it succeeded
               if [ $EXIT_CODE -ne 0 ]; then
-                echo ""
-                echo "❌ ERROR: rpmsign failed with exit code $EXIT_CODE"
-                echo "Output was:"
-                echo "$OUTPUT"
+                echo "❌ ERROR: rpmsign failed ($EXIT_CODE)"
                 exit 1
               fi
-              
-              echo ""
               echo "rpmsign completed with exit code 0"
             fi
           done
-          
           echo "✅ All RPMs signed successfully"
 
-      # 🔐 Added: Import public key and verify RPM signature
       - name: Import public GPG key for verification
         run: |
           if [ -f leger-rpm-signing.public.asc ]; then
@@ -241,11 +199,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 🩹 Safe tag handling
       - name: Get version
         id: version
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            echo "⚠️ Not running on a tag — skipping release creation."
+            echo "skip_release=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "skip_release=false" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -287,6 +255,7 @@ jobs:
           EOF
 
       - name: Create Release
+        if: steps.version.outputs.skip_release != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
@@ -318,7 +287,6 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          # Check if this is a pre-release (contains hyphen)
           if [[ "$VERSION" == *-* ]]; then
             echo "is_prerelease=true" >> $GITHUB_OUTPUT
             echo "Skipping R2 publish for pre-release version: $VERSION"
