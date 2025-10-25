@@ -136,10 +136,34 @@ jobs:
       - name: Sign RPM
         if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event_name == 'workflow_dispatch'
         run: |
-          # Configure rpm macros for signing
+          # Configure GPG for non-interactive signing
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+
+          # Configure GPG agent for CI environment
+          cat > ~/.gnupg/gpg-agent.conf <<EOF
+          default-cache-ttl 7200
+          max-cache-ttl 7200
+          allow-loopback-pinentry
+          EOF
+
+          # Configure GPG to use loopback pinentry (no prompts)
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+
+          # Restart GPG agent to pick up new config
+          gpg-connect-agent reloadagent /bye || true
+
+          # Get the key ID for signing
+          KEY_ID=$(gpg --list-keys --with-colons packages@leger.run | awk -F: '/^pub:/ {print $5; exit}')
+          echo "Using key ID: $KEY_ID"
+
+          # Configure rpm macros with full GPG command
           cat > ~/.rpmmacros <<EOF
           %_signature gpg
           %_gpg_name packages@leger.run
+          %__gpg /usr/bin/gpg
+          %__gpg_sign_cmd %{__gpg} gpg --batch --no-verbose --no-armor --pinentry-mode loopback --passphrase '' --no-secmem-warning -u "%{_gpg_name}" --sign --detach-sign --output %{__signature_filename} %{__plaintext_filename}
           EOF
 
           # Sign all RPMs
@@ -147,10 +171,26 @@ jobs:
             if [ -f "$rpm" ]; then
               echo "Signing $rpm..."
               rpmsign --addsign "$rpm"
-              # Verify signature
+
+              # Verify signature was added
+              echo "Verifying signature on $rpm..."
               rpm --checksig "$rpm"
+
+              # Check if signature is valid
+              if rpm --checksig "$rpm" | grep -q "pgp.*OK"; then
+                echo "✅ Successfully signed: $rpm"
+              elif rpm --checksig "$rpm" | grep -q "digests signatures OK"; then
+                echo "✅ Successfully signed: $rpm"
+              else
+                echo "❌ Signature verification failed for: $rpm"
+                rpm --checksig "$rpm"
+                exit 1
+              fi
             fi
           done
+
+          echo ""
+          echo "✅ All RPMs signed successfully"
 
       - name: Upload RPM artifact
         uses: actions/upload-artifact@v4
