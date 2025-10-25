@@ -326,7 +326,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y createrepo-c awscli
+          sudo apt-get install -y gettext-base createrepo-c python3-pip
+          pip install --upgrade awscli
 
       - name: Export GPG public key
         env:
