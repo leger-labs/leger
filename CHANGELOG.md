@@ -5,6 +5,16 @@ All notable changes to Leger will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1](https://github.com/leger-labs/leger/compare/v0.2.0...v0.2.1) (2025-10-25)
+
+
+### Bug Fixes
+
+* **ci:** enable GPG signing and publishing for workflow_dispatch releases ([#54](https://github.com/leger-labs/leger/issues/54)) ([fd6d398](https://github.com/leger-labs/leger/commit/fd6d398b5c27218b74cacd0024c21725ed2e54d4))
+* **ci:** resolve nfpm environment variable substitution in release workflow ([#53](https://github.com/leger-labs/leger/issues/53)) ([8d69ba3](https://github.com/leger-labs/leger/commit/8d69ba39de8fabb699199df9437c92d7925d0d32))
+* **ci:** resolve YAML syntax error in release workflow ([#50](https://github.com/leger-labs/leger/issues/50)) ([0ab8f89](https://github.com/leger-labs/leger/commit/0ab8f89db0fb34cea0f75a249b035f82d4026d22))
+* **ci:** use full GPG fingerprint for ownertrust import ([#56](https://github.com/leger-labs/leger/issues/56)) ([825b1f3](https://github.com/leger-labs/leger/commit/825b1f3728e2304a8dee95b8635933d63fa98454))
+
 ## [0.2.0](https://github.com/leger-labs/leger/compare/v0.1.0...v0.2.0) (2025-10-22)
 
 
