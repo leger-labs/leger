@@ -1,196 +1,179 @@
 #!/bin/bash
-# Publish RPM packages to Cloudflare R2 and generate repository metadata
-# This script handles the complete publishing pipeline:
-# 1. Upload RPM files to R2
-# 2. Generate/update RPM repository metadata (repodata)
-# 3. Upload public GPG key
-# 4. Upload repository configuration file
+# Publish RPMs to Cloudflare R2 with proper DNF repository structure
+# This script is called by .github/workflows/release.yml
 
 set -euo pipefail
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Configuration
-BUCKET_NAME="${R2_BUCKET_NAME:-leger-packages}"
-BUCKET_ENDPOINT="${R2_ENDPOINT:-https://your-account-id.r2.cloudflarestorage.com}"
+# ============================================================================
+# Configuration from GitHub Actions environment
+# ============================================================================
+R2_ENDPOINT="${R2_ENDPOINT}"
+R2_BUCKET_NAME="${R2_BUCKET_NAME}"
+R2_ACCESS_KEY_ID="${R2_ACCESS_KEY_ID}"
+R2_SECRET_ACCESS_KEY="${R2_SECRET_ACCESS_KEY}"
 PUBLIC_URL="${PUBLIC_URL:-https://pkgs.leger.run}"
-ARCH="${ARCH:-x86_64}"  # Can be x86_64 or aarch64
-
-# Directories
 RPMS_DIR="${RPMS_DIR:-./rpms}"
+
+# ============================================================================
+# AWS CLI configuration for R2
+# ============================================================================
+export AWS_ACCESS_KEY_ID="${R2_ACCESS_KEY_ID}"
+export AWS_SECRET_ACCESS_KEY="${R2_SECRET_ACCESS_KEY}"
+export AWS_DEFAULT_REGION="auto"
+AWS_ENDPOINT_URL="${R2_ENDPOINT}"
+
+# ============================================================================
+# Setup
+# ============================================================================
+REPO_ROOT="fedora"
 TEMP_DIR=$(mktemp -d)
+trap "rm -rf ${TEMP_DIR}" EXIT
 
-# Cleanup on exit
-trap 'rm -rf "$TEMP_DIR"' EXIT
+echo "=================================================="
+echo "Publishing RPMs to R2 Repository"
+echo "=================================================="
+echo "Bucket: ${R2_BUCKET_NAME}"
+echo "Endpoint: ${R2_ENDPOINT}"
+echo "Public URL: ${PUBLIC_URL}/${REPO_ROOT}"
+echo "Source: ${RPMS_DIR}"
+echo ""
 
-# Check required environment variables
-check_requirements() {
-    local missing=0
+# ============================================================================
+# Create architecture-specific directory structure
+# ============================================================================
+echo "Creating directory structure..."
+mkdir -p "${TEMP_DIR}/${REPO_ROOT}/x86_64"
+mkdir -p "${TEMP_DIR}/${REPO_ROOT}/aarch64"
+echo "  ✅ Created x86_64/ and aarch64/ directories"
+echo ""
 
-    if [ -z "${R2_ACCESS_KEY_ID:-}" ]; then
-        echo -e "${RED}Error: R2_ACCESS_KEY_ID not set${NC}"
-        missing=1
+# ============================================================================
+# Organize RPMs by architecture
+# ============================================================================
+echo "Organizing RPMs by architecture..."
+rpm_count=0
+
+if [ ! -d "${RPMS_DIR}" ]; then
+    echo "❌ ERROR: RPMS_DIR does not exist: ${RPMS_DIR}"
+    exit 1
+fi
+
+for rpm in "${RPMS_DIR}"/*.rpm; do
+    if [ -f "$rpm" ]; then
+        filename=$(basename "$rpm")
+        echo "  Processing: $filename"
+
+        # Determine architecture from filename
+        if [[ "$filename" == *"x86_64.rpm" ]]; then
+            cp "$rpm" "${TEMP_DIR}/${REPO_ROOT}/x86_64/"
+            echo "    → Copied to x86_64/"
+            ((rpm_count++))
+        elif [[ "$filename" == *"aarch64.rpm" ]]; then
+            cp "$rpm" "${TEMP_DIR}/${REPO_ROOT}/aarch64/"
+            echo "    → Copied to aarch64/"
+            ((rpm_count++))
+        elif [[ "$filename" == *"noarch.rpm" ]]; then
+            # Copy noarch packages to both architectures
+            cp "$rpm" "${TEMP_DIR}/${REPO_ROOT}/x86_64/"
+            cp "$rpm" "${TEMP_DIR}/${REPO_ROOT}/aarch64/"
+            echo "    → Copied to both architectures (noarch)"
+            ((rpm_count+=2))
+        else
+            echo "    ⚠️  Unknown architecture, skipping"
+        fi
     fi
+done
 
-    if [ -z "${R2_SECRET_ACCESS_KEY:-}" ]; then
-        echo -e "${RED}Error: R2_SECRET_ACCESS_KEY not set${NC}"
-        missing=1
-    fi
+if [ $rpm_count -eq 0 ]; then
+    echo "❌ ERROR: No RPMs found in ${RPMS_DIR}"
+    exit 1
+fi
 
-    if ! command -v aws &> /dev/null; then
-        echo -e "${RED}Error: AWS CLI not installed${NC}"
-        echo "Install it with: pip install awscli"
-        missing=1
-    fi
+echo "  ✅ Organized $rpm_count RPM file(s)"
+echo ""
 
-    if ! command -v createrepo_c &> /dev/null; then
-        echo -e "${RED}Error: createrepo_c not installed${NC}"
-        echo "Install it with: sudo dnf install createrepo_c"
-        missing=1
-    fi
+# ============================================================================
+# Create repository metadata for each architecture
+# ============================================================================
+echo "Creating repository metadata..."
+for arch in x86_64 aarch64; do
+    arch_dir="${TEMP_DIR}/${REPO_ROOT}/${arch}"
 
-    if [ $missing -eq 1 ]; then
-        exit 1
-    fi
-}
-
-# Configure AWS CLI for R2
-configure_s3() {
-    export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
-    export AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
-    export AWS_DEFAULT_REGION="auto"
-}
-
-# Upload file to R2
-s3_upload() {
-    local src="$1"
-    local dst="$2"
-
-    echo -e "${BLUE}Uploading $src -> $dst${NC}"
-    aws s3 cp "$src" "s3://${BUCKET_NAME}/${dst}" \
-        --endpoint-url "$BUCKET_ENDPOINT" \
-        --no-progress
-}
-
-# Download directory from R2
-s3_download_dir() {
-    local remote="$1"
-    local local="$2"
-
-    echo -e "${BLUE}Downloading $remote -> $local${NC}"
-    aws s3 sync "s3://${BUCKET_NAME}/${remote}" "$local" \
-        --endpoint-url "$BUCKET_ENDPOINT" \
-        --no-progress 2>/dev/null || true
-}
-
-# Upload directory to R2
-s3_upload_dir() {
-    local local="$1"
-    local remote="$2"
-
-    echo -e "${BLUE}Uploading $local -> $remote${NC}"
-    aws s3 sync "$local" "s3://${BUCKET_NAME}/${remote}" \
-        --endpoint-url "$BUCKET_ENDPOINT" \
-        --no-progress
-}
-
-# Main publishing flow
-main() {
-    echo -e "${GREEN}=== Publishing RPMs to R2 ===${NC}"
-    echo ""
-
-    # Check requirements
-    check_requirements
-    configure_s3
-
-    # Create working directory
-    local REPO_DIR="$TEMP_DIR/fedora"
-    mkdir -p "$REPO_DIR"
-
-    # Download existing repository metadata (if any)
-    echo -e "${YELLOW}Downloading existing repository metadata...${NC}"
-    s3_download_dir "fedora" "$REPO_DIR"
-
-    # Copy new RPMs to repository
-    echo -e "${YELLOW}Adding new RPMs...${NC}"
-    if [ -d "$RPMS_DIR" ]; then
-        for rpm in "$RPMS_DIR"/*.rpm; do
-            if [ -f "$rpm" ]; then
-                cp -v "$rpm" "$REPO_DIR/"
-            fi
-        done
+    if [ -d "$arch_dir" ] && compgen -G "$arch_dir/*.rpm" > /dev/null; then
+        echo "  Creating metadata for ${arch}..."
+        createrepo_c --update "$arch_dir" 2>&1 | grep -v "^Spawning worker"
+        echo "    ✅ Metadata created for ${arch}"
     else
-        echo -e "${RED}Error: RPMs directory not found: $RPMS_DIR${NC}"
-        exit 1
+        echo "  ⚠️  No RPMs found for ${arch}, skipping metadata"
     fi
+done
+echo ""
 
-    # Generate repository metadata
-    echo -e "${YELLOW}Generating repository metadata...${NC}"
-    if [ -f "$REPO_DIR/repodata/repomd.xml" ]; then
-        # Update existing repo
-        createrepo_c --update "$REPO_DIR"
-    else
-        # Create new repo
-        createrepo_c "$REPO_DIR"
-    fi
+# ============================================================================
+# Create repository configuration file
+# ============================================================================
+echo "Creating leger.repo file..."
+cat > "${TEMP_DIR}/${REPO_ROOT}/leger.repo" <<EOF
+[leger]
+name=Leger Packages
+baseurl=${PUBLIC_URL}/${REPO_ROOT}/\$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=${PUBLIC_URL}/${REPO_ROOT}/repo.gpg
+metadata_expire=1h
+EOF
+echo "  ✅ leger.repo created with \$basearch in baseurl"
+echo ""
 
-    # Upload public GPG key if it exists
-    if [ -f "leger-rpm-signing.public.asc" ]; then
-        echo -e "${YELLOW}Uploading GPG public key...${NC}"
-        s3_upload "leger-rpm-signing.public.asc" "fedora/repo.gpg"
-    fi
+# ============================================================================
+# Copy GPG public key
+# ============================================================================
+echo "Adding GPG public key..."
+if [ -f "leger-rpm-signing.public.asc" ]; then
+    cp "leger-rpm-signing.public.asc" "${TEMP_DIR}/${REPO_ROOT}/repo.gpg"
+    echo "  ✅ GPG key copied as repo.gpg"
+else
+    echo "  ⚠️  WARNING: leger-rpm-signing.public.asc not found"
+    echo "     Repository will not be verifiable without GPG key"
+fi
+echo ""
 
-    # Upload repository configuration file if it exists
-    if [ -f "packaging/leger.repo" ]; then
-        echo -e "${YELLOW}Uploading repository configuration...${NC}"
-        s3_upload "packaging/leger.repo" "fedora/leger.repo"
-    fi
+# ============================================================================
+# Show final structure
+# ============================================================================
+echo "Final repository structure:"
+find "${TEMP_DIR}/${REPO_ROOT}" -type f -o -type d | sed "s|${TEMP_DIR}/||" | sort
+echo ""
 
-    # Upload everything to R2
-    echo -e "${YELLOW}Uploading repository to R2...${NC}"
-    s3_upload_dir "$REPO_DIR" "fedora"
+# ============================================================================
+# Upload to R2
+# ============================================================================
+echo "Uploading to R2 bucket..."
+echo "  Syncing ${TEMP_DIR}/${REPO_ROOT}/ → s3://${R2_BUCKET_NAME}/${REPO_ROOT}/"
+echo ""
 
-    echo ""
-    echo -e "${GREEN}=== Publishing complete! ===${NC}"
-    echo ""
-    echo "Repository URL: $PUBLIC_URL/fedora"
-    echo ""
-    echo "Users can install with:"
-    echo -e "${BLUE}sudo dnf config-manager --add-repo $PUBLIC_URL/fedora/leger.repo${NC}"
-    echo -e "${BLUE}sudo dnf install leger${NC}"
-    echo ""
-}
+aws s3 sync "${TEMP_DIR}/${REPO_ROOT}/" \
+    "s3://${R2_BUCKET_NAME}/${REPO_ROOT}/" \
+    --endpoint-url="${AWS_ENDPOINT_URL}" \
+    --delete \
+    --acl public-read \
+    --no-progress
 
-# Parse arguments
-case "${1:-}" in
-    --help|-h)
-        echo "Usage: $0 [OPTIONS]"
-        echo ""
-        echo "Publish RPM packages to Cloudflare R2 bucket"
-        echo ""
-        echo "Required environment variables:"
-        echo "  R2_ACCESS_KEY_ID      - R2 access key"
-        echo "  R2_SECRET_ACCESS_KEY  - R2 secret key"
-        echo ""
-        echo "Optional environment variables:"
-        echo "  R2_BUCKET_NAME        - Bucket name (default: leger-packages)"
-        echo "  R2_ENDPOINT           - R2 endpoint URL"
-        echo "  PUBLIC_URL            - Public URL for repository (default: https://pkgs.leger.run)"
-        echo "  RPMS_DIR              - Directory containing RPMs (default: ./rpms)"
-        echo ""
-        echo "Example:"
-        echo "  export R2_ACCESS_KEY_ID=xxx"
-        echo "  export R2_SECRET_ACCESS_KEY=yyy"
-        echo "  export R2_ENDPOINT=https://account-id.r2.cloudflarestorage.com"
-        echo "  $0"
-        exit 0
-        ;;
-    *)
-        main "$@"
-        ;;
-esac
+echo ""
+echo "=================================================="
+echo "✅ Repository Published Successfully"
+echo "=================================================="
+echo ""
+echo "Repository URL: ${PUBLIC_URL}/${REPO_ROOT}"
+echo ""
+echo "Installation instructions:"
+echo "  sudo dnf config-manager --add-repo ${PUBLIC_URL}/${REPO_ROOT}/leger.repo"
+echo "  sudo dnf install leger"
+echo ""
+echo "Repository structure:"
+echo "  ${PUBLIC_URL}/${REPO_ROOT}/x86_64/    - x86_64 RPMs"
+echo "  ${PUBLIC_URL}/${REPO_ROOT}/aarch64/   - aarch64 RPMs"
+echo "  ${PUBLIC_URL}/${REPO_ROOT}/repo.gpg   - GPG public key"
+echo "  ${PUBLIC_URL}/${REPO_ROOT}/leger.repo - Repository config"
+echo ""
