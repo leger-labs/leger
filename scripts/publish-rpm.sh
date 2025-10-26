@@ -67,17 +67,17 @@ for rpm in "${RPMS_DIR}"/*.rpm; do
         if [[ "$filename" == *"x86_64.rpm" ]]; then
             cp "$rpm" "${TEMP_DIR}/${REPO_ROOT}/x86_64/"
             echo "    → Copied to x86_64/"
-            ((rpm_count++))
+            rpm_count=$((rpm_count + 1))
         elif [[ "$filename" == *"aarch64.rpm" ]]; then
             cp "$rpm" "${TEMP_DIR}/${REPO_ROOT}/aarch64/"
             echo "    → Copied to aarch64/"
-            ((rpm_count++))
+            rpm_count=$((rpm_count + 1))
         elif [[ "$filename" == *"noarch.rpm" ]]; then
             # Copy noarch packages to both architectures
             cp "$rpm" "${TEMP_DIR}/${REPO_ROOT}/x86_64/"
             cp "$rpm" "${TEMP_DIR}/${REPO_ROOT}/aarch64/"
             echo "    → Copied to both architectures (noarch)"
-            ((rpm_count+=2))
+            rpm_count=$((rpm_count + 2))
         else
             echo "    ⚠️  Unknown architecture, skipping"
         fi
