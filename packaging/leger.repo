@@ -1,8 +1,8 @@
-[leger-stable]
-name=Leger Stable Repository
+[leger]
+name=Leger Packages
 baseurl=https://pkgs.leger.run/fedora/$basearch
 enabled=1
 gpgcheck=1
+repo_gpgcheck=0
 gpgkey=https://pkgs.leger.run/fedora/repo.gpg
-repo_gpgcheck=1
 metadata_expire=1h
