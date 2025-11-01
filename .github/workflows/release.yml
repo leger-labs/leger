@@ -71,6 +71,9 @@ jobs:
           sudo apt-get install -y gettext-base createrepo-c python3-pip
           pip install --upgrade awscli
 
+      - name: Generate documentation and completions
+        run: make docs
+
       - name: Build binaries
         env:
           GOOS: linux

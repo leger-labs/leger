@@ -13,6 +13,7 @@ coverage.txt
 
 # Build artifacts
 dist/
+build/
 *.rpm
 *.deb
 *.tar.gz

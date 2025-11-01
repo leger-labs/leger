@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -95,7 +95,7 @@ and updates the local configuration file.`,
 		},
 	}
 
-	cmd.Flags().StringVarP(&version, "version", "v", "latest", "Configuration version to fetch")
+	cmd.Flags().StringVar(&version, "version", "latest", "Configuration version to fetch")
 
 	return cmd
 }

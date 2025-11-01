@@ -50,6 +50,38 @@ contents:
       owner: root
       group: root
 
+  # Man page
+  - src: "./build/man/leger.1"
+    dst: "/usr/share/man/man1/leger.1"
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+
+  # Bash completion
+  - src: "./build/completions/bash/leger"
+    dst: "/usr/share/bash-completion/completions/leger"
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+
+  # Fish completion
+  - src: "./build/completions/fish/leger.fish"
+    dst: "/usr/share/fish/vendor_completions.d/leger.fish"
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+
+  # Zsh completion
+  - src: "./build/completions/zsh/_leger"
+    dst: "/usr/share/zsh/site-functions/_leger"
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+
   # Systemd units - user scope
   - src: "./systemd/legerd.service"
     dst: "/usr/lib/systemd/user/legerd.service"
