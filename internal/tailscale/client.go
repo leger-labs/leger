@@ -52,6 +52,10 @@ func (c *Client) GetIdentity(ctx context.Context) (*Identity, error) {
 		return nil, fmt.Errorf("not authenticated to Tailscale")
 	}
 
+	if len(status.Self.TailscaleIPs) == 0 {
+		return nil, fmt.Errorf("tailscale connected but no IP assigned (try: sudo tailscale up)")
+	}
+
 	user := status.User[status.Self.UserID]
 
 	return &Identity{
