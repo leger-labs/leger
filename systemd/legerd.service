@@ -1,8 +1,9 @@
 [Unit]
 Description=Leger Secrets Daemon (User)
 Documentation=https://docs.leger.run
-After=network-online.target
+After=network-online.target tailscaled.service
 Wants=network-online.target
+Requires=tailscaled.service
 
 [Service]
 Type=notify
