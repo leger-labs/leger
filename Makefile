@@ -50,8 +50,14 @@ help: ## Show this help message
 	@echo "  GOARCH:      $(GOARCH)"
 	@echo "  RPM_ARCH:    $(RPM_ARCH)"
 
+.PHONY: docs
+docs: ## Generate documentation and shell completions
+	@echo "Generating documentation..."
+	@go run ./cmd/gendocs
+	@echo "Documentation generation complete"
+
 .PHONY: build
-build: build-leger build-legerd ## Build both binaries
+build: docs build-leger build-legerd ## Build both binaries with documentation
 
 .PHONY: build-leger
 build-leger: ## Build leger CLI
@@ -80,6 +86,7 @@ clean: ## Clean build artifacts
 	rm -f leger legerd leger-* legerd-*
 	rm -f *.rpm *.deb
 	rm -rf dist/
+	rm -rf build/
 	rm -f nfpm-build.yaml
 
 .PHONY: rpm

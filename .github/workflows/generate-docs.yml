@@ -1,0 +1,82 @@
+name: Generate CLI Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cmd/**'
+      - 'client/**'
+      - 'internal/**'
+      - 'cmd/gendocs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Generate documentation
+        run: make docs
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet docs/cli/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No documentation changes detected"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Documentation changes detected"
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/cli/
+          git commit -m "docs: auto-update CLI documentation [skip ci]"
+          git push
+
+      - name: Trigger docs repository webhook
+        if: steps.check_changes.outputs.changed == 'true' && vars.DOCS_REPO != ''
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_REPO_WEBHOOK_TOKEN || secrets.GITHUB_TOKEN }}
+          DOCS_REPO: ${{ vars.DOCS_REPO || 'leger-labs/docs' }}
+        run: |
+          echo "Triggering docs repository update..."
+
+          # Send repository_dispatch event to docs repo
+          # This requires the DOCS_REPO_WEBHOOK_TOKEN secret with repo scope
+          # or configure DOCS_REPO variable with the docs repository name
+
+          if command -v gh &> /dev/null; then
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/${DOCS_REPO}/dispatches \
+              -f event_type='cli_docs_updated' \
+              -f client_payload[repository]='leger-labs/leger' \
+              -f client_payload[ref]='${{ github.ref }}' \
+              -f client_payload[sha]='${{ github.sha }}' || {
+                echo "⚠️ Failed to trigger docs repo webhook. This is optional."
+                echo "To enable: set DOCS_REPO variable and DOCS_REPO_WEBHOOK_TOKEN secret"
+              }
+          else
+            echo "⚠️ gh CLI not available, skipping webhook trigger"
+            echo "Docs repo can watch for commits to docs/cli/ directory instead"
+          fi
