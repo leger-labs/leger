@@ -2,11 +2,13 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/leger-labs/leger/internal/auth"
+	"github.com/leger-labs/leger/internal/daemon"
 	"github.com/leger-labs/leger/internal/legerrun"
 	"github.com/leger-labs/leger/internal/ui"
 	"github.com/spf13/cobra"
@@ -28,6 +30,7 @@ local deployments via legerd.`,
 		secretsListCmd(),
 		secretsGetCmd(),
 		secretsDeleteCmd(),
+		secretsSyncCmd(),
 	)
 
 	return cmd
@@ -267,4 +270,185 @@ List available secrets:
 	cmd.Flags().BoolVar(&force, "force", false, "Skip confirmation prompt")
 
 	return cmd
+}
+
+// secretsSyncCmd returns the secrets sync command
+func secretsSyncCmd() *cobra.Command {
+	var force bool
+	var dryRun bool
+
+	cmd := &cobra.Command{
+		Use:   "sync [service]",
+		Short: "Sync secrets from leger.run to legerd",
+		Long: `Synchronize secrets from leger.run backend to local legerd daemon.
+
+This command:
+1. Fetches all secrets from leger.run (Cloudflare KV)
+2. Connects to legerd daemon
+3. Pushes each secret to legerd's local store
+4. Verifies all secrets are available
+
+The synced secrets are then available for deployment via 'leger deploy install'.
+
+Examples:
+  # Sync all secrets
+  leger secrets sync
+
+  # Sync secrets for a specific service (future)
+  leger secrets sync openwebui
+
+  # Dry run - show what would be synced
+  leger secrets sync --dry-run
+
+  # Force re-sync even if unchanged
+  leger secrets sync --force`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+
+			serviceName := ""
+			if len(args) > 0 {
+				serviceName = args[0]
+			}
+
+			return runSecretsSync(ctx, serviceName, force, dryRun)
+		},
+	}
+
+	cmd.Flags().BoolVar(&force, "force", false, "Re-sync even if secrets haven't changed")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be synced without syncing")
+
+	return cmd
+}
+
+// runSecretsSync implements the secrets sync logic
+func runSecretsSync(ctx context.Context, serviceName string, force, dryRun bool) error {
+	// Step 1: Verify authentication
+	fmt.Println(ui.Bold("Step 1/4: Authenticating..."))
+
+	storedAuth, err := auth.RequireAuth()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("✓ Authenticated as: %s\n", storedAuth.UserEmail)
+	fmt.Println()
+
+	// Step 2: Check legerd is running
+	fmt.Println(ui.Bold("Step 2/4: Connecting to legerd daemon..."))
+
+	daemonClient := daemon.NewClient("")
+	if err := daemonClient.Health(ctx); err != nil {
+		return fmt.Errorf(`legerd not running: %w
+
+Start daemon with:
+  systemctl --user start legerd.service
+
+Check status with:
+  systemctl --user status legerd.service`, err)
+	}
+
+	fmt.Println("✓ Connected to legerd")
+	fmt.Println()
+
+	// Step 3: Fetch secrets from leger.run backend
+	fmt.Println(ui.Bold("Step 3/4: Fetching secrets from leger.run..."))
+
+	apiClient := legerrun.NewClient().WithToken(storedAuth.Token)
+	secrets, err := apiClient.ListSecrets(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch secrets from leger.run: %w", err)
+	}
+
+	if len(secrets) == 0 {
+		fmt.Println("No secrets configured in leger.run")
+		fmt.Println()
+		fmt.Println("Add secrets with: leger secrets set <name> <value>")
+		return nil
+	}
+
+	fmt.Printf("✓ Found %d secrets in leger.run\n", len(secrets))
+
+	// List secrets that will be synced
+	for _, s := range secrets {
+		fmt.Printf("  - %s (version %d)\n", s.Name, s.Version)
+	}
+	fmt.Println()
+
+	if dryRun {
+		fmt.Println(ui.Info("Dry run mode - no secrets synced"))
+		return nil
+	}
+
+	// Step 4: Sync each secret to legerd
+	fmt.Println(ui.Bold("Step 4/4: Syncing secrets to legerd..."))
+
+	syncCount := 0
+	skipCount := 0
+	errorCount := 0
+
+	for _, secretMeta := range secrets {
+		// Fetch full secret value from leger.run
+		secretValue, err := apiClient.GetSecret(ctx, secretMeta.Name)
+		if err != nil {
+			fmt.Printf("  ✗ Failed to fetch %s: %v\n", secretMeta.Name, err)
+			errorCount++
+			continue
+		}
+
+		// Build full secret name with user UUID prefix for legerd
+		fullSecretName := fmt.Sprintf("leger/%s/%s", storedAuth.UserUUID, secretMeta.Name)
+
+		// Check if secret already exists in legerd (unless --force)
+		if !force {
+			existingInfo, err := daemonClient.InfoSecret(ctx, fullSecretName)
+			if err == nil && existingInfo != nil {
+				// Secret exists - skip unless version changed
+				if int(existingInfo.ActiveVersion) == secretValue.Version {
+					fmt.Printf("  ↻ Skipped %s (already at version %d)\n", secretMeta.Name, secretValue.Version)
+					skipCount++
+					continue
+				}
+			}
+		}
+
+		// Push secret to legerd
+		version, err := daemonClient.PutSecret(ctx, fullSecretName, []byte(secretValue.Value))
+		if err != nil {
+			fmt.Printf("  ✗ Failed to sync %s: %v\n", secretMeta.Name, err)
+			errorCount++
+			continue
+		}
+
+		fmt.Printf("  ✓ Synced %s (version %d)\n", secretMeta.Name, version)
+		syncCount++
+	}
+
+	fmt.Println()
+
+	// Summary
+	fmt.Println(ui.Bold("Sync Summary:"))
+	fmt.Printf("  Synced:  %d\n", syncCount)
+	if skipCount > 0 {
+		fmt.Printf("  Skipped: %d (use --force to re-sync)\n", skipCount)
+	}
+	if errorCount > 0 {
+		fmt.Printf("  Errors:  %d\n", errorCount)
+	}
+	fmt.Println()
+
+	if errorCount > 0 {
+		return fmt.Errorf("failed to sync %d secrets", errorCount)
+	}
+
+	if syncCount > 0 {
+		fmt.Println(ui.Success("✓") + " Secrets synced successfully")
+		fmt.Println()
+		fmt.Println("Secrets are now available for deployment:")
+		fmt.Println("  leger deploy install <name>")
+	} else if skipCount > 0 {
+		fmt.Println(ui.Info("All secrets already up to date"))
+	}
+
+	return nil
 }

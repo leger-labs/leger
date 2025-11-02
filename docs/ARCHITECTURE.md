@@ -26,22 +26,35 @@ Both components use Tailscale identity:
 
 ## Secrets Flow
 
+### Stage 1: Secrets Management (leger.run backend)
 ```
-User → Web UI → Cloudflare KV (encrypted)
-                    ↓
-                    ↓ (sync)
-                    ↓
-Device → leger secrets sync → legerd HTTP API
+User → leger secrets set → Cloudflare Workers API
                                     ↓
-                              SQLite (encrypted)
+                           Cloudflare KV (encrypted)
+```
+
+### Stage 2: Sync to Local Daemon
+```
+User → leger secrets sync → Fetch from leger.run API
                                     ↓
-         leger secrets fetch → legerd returns secret
+                           Push to legerd HTTP API
                                     ↓
-                          Written to /run (tmpfs)
+                           SQLite (encrypted at /var/lib/legerd/)
+```
+
+### Stage 3: Deployment (legerd → Podman)
+```
+User → leger deploy install → Parse quadlet Secret= directives
                                     ↓
-                          Podman reads env file
+                           Fetch from legerd (setec.Store)
                                     ↓
-                          Container starts with secret
+                           Create Podman secrets
+                                    ↓
+                           Install quadlets
+                                    ↓
+                           Podman injects secrets as env vars
+                                    ↓
+                           Container starts with secrets
 ```
 
 ## Directory Structure

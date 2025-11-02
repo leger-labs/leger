@@ -440,6 +440,59 @@ leger backup restore myapp 20241016-143500
 
 ## secrets Commands
 
+### leger secrets sync
+
+Synchronize secrets from leger.run backend to local legerd daemon.
+
+```bash
+leger secrets sync [service]
+```
+
+**What it does:**
+1. Fetches all secrets from leger.run (Cloudflare KV)
+2. Connects to legerd daemon
+3. Pushes each secret to legerd's local store
+4. Verifies all secrets are available
+
+**Arguments:**
+- `[service]` (optional): Sync only secrets for specific service (future feature)
+
+**Flags:**
+- `--force`: Re-sync even if secrets haven't changed
+- `--dry-run`: Show what would be synced without syncing
+
+**Example:**
+```bash
+# Sync all secrets
+$ leger secrets sync
+Step 1/4: Authenticating...
+✓ Authenticated as: alice@example.ts.net
+
+Step 2/4: Connecting to legerd daemon...
+✓ Connected to legerd
+
+Step 3/4: Fetching secrets from leger.run...
+✓ Found 3 secrets in leger.run
+  - openai_api_key (version 1)
+  - anthropic_api_key (version 2)
+  - db_password (version 1)
+
+Step 4/4: Syncing secrets to legerd...
+  ✓ Synced openai_api_key (version 1)
+  ✓ Synced anthropic_api_key (version 2)
+  ✓ Synced db_password (version 1)
+
+Sync Summary:
+  Synced:  3
+
+✓ Secrets synced successfully
+
+Secrets are now available for deployment:
+  leger deploy install <name>
+```
+
+**Note:** This is typically done automatically during `leger auth login`, but can be run manually to refresh secrets.
+
 ### leger secrets list
 
 List secrets for a deployment.
