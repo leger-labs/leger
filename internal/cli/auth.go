@@ -2,9 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/leger-labs/leger/internal/auth"
+	"github.com/leger-labs/leger/internal/browser"
 	"github.com/leger-labs/leger/internal/legerrun"
 	"github.com/leger-labs/leger/internal/tailscale"
 	"github.com/leger-labs/leger/internal/ui"
@@ -122,6 +124,23 @@ For now, leger.run backend will accept any authenticated Tailscale user`)
 			fmt.Printf("  User UUID:     %s\n", storedAuth.UserUUID)
 			fmt.Printf("  Token expires: %s\n", storedAuth.ExpiresAt.Format(time.RFC3339))
 			fmt.Println()
+
+			// Open browser with token for web app authentication
+			webAuthURL := fmt.Sprintf("https://app.leger.run/auth?token=%s", url.QueryEscape(storedAuth.Token))
+
+			fmt.Println("Opening web app in browser...")
+			if err := browser.Open(webAuthURL); err != nil {
+				// Browser failed to open, provide manual URL
+				fmt.Println(ui.Warning("! Failed to open browser automatically"))
+				fmt.Println()
+				fmt.Println("To access the web UI, visit this URL:")
+				fmt.Println(ui.Success(webAuthURL))
+				fmt.Println()
+			} else {
+				fmt.Println(ui.Success("✓") + " Web app opened in browser")
+				fmt.Println()
+			}
+
 			fmt.Println("Next steps:")
 			fmt.Println("  - Manage secrets: leger secrets set <name> <value>")
 			fmt.Println("  - List secrets:   leger secrets list")
