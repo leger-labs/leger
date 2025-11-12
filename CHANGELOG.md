@@ -5,6 +5,34 @@ All notable changes to Leger will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/leger-labs/leger/compare/v0.2.0...v0.3.0) (2025-11-12)
+
+
+### Features
+
+* **auth:** auto-open web app in browser after CLI login ([#64](https://github.com/leger-labs/leger/issues/64)) ([3d37acc](https://github.com/leger-labs/leger/commit/3d37accdfae55ce86aad9a86987675e0feb6172f))
+* **docs:** implement automatic documentation generation and shell completions ([#62](https://github.com/leger-labs/leger/issues/62)) ([7ff2d91](https://github.com/leger-labs/leger/commit/7ff2d91d3e369598e9d3aad887b2bc161d7642f0))
+* **secrets:** implement leger secrets sync command ([#63](https://github.com/leger-labs/leger/issues/63)) ([2e75891](https://github.com/leger-labs/leger/commit/2e75891ed0f4f9b26f68f6fd2de260608a19d359))
+
+
+### Bug Fixes
+
+* **ci:** configure GPG for non-interactive RPM signing ([#57](https://github.com/leger-labs/leger/issues/57)) ([51deff3](https://github.com/leger-labs/leger/commit/51deff3baec1ef328c4eed4b8b901563dbc5e650))
+* **ci:** enable GPG signing and publishing for workflow_dispatch releases ([#54](https://github.com/leger-labs/leger/issues/54)) ([fd6d398](https://github.com/leger-labs/leger/commit/fd6d398b5c27218b74cacd0024c21725ed2e54d4))
+* **ci:** resolve nfpm environment variable substitution in release workflow ([#53](https://github.com/leger-labs/leger/issues/53)) ([8d69ba3](https://github.com/leger-labs/leger/commit/8d69ba39de8fabb699199df9437c92d7925d0d32))
+* **ci:** resolve YAML syntax error in release workflow ([#50](https://github.com/leger-labs/leger/issues/50)) ([0ab8f89](https://github.com/leger-labs/leger/commit/0ab8f89db0fb34cea0f75a249b035f82d4026d22))
+* **ci:** use full GPG fingerprint for ownertrust import ([#56](https://github.com/leger-labs/leger/issues/56)) ([825b1f3](https://github.com/leger-labs/leger/commit/825b1f3728e2304a8dee95b8635933d63fa98454))
+* improve legerd dependency on tailscale network ([fe55c92](https://github.com/leger-labs/leger/commit/fe55c92f0cf33dc90672ec6007fee6c7e13048c0))
+* **rpm:** fix arithmetic expansion causing script exit ([#60](https://github.com/leger-labs/leger/issues/60)) ([6d82d40](https://github.com/leger-labs/leger/commit/6d82d403ec788e3ab432a217a79cde991ceb4a24))
+* **rpm:** reorganize repository with architecture-specific directories ([#59](https://github.com/leger-labs/leger/issues/59)) ([0ede903](https://github.com/leger-labs/leger/commit/0ede903d7b518c982801a8ede13e620c2fd8f2b1))
+* **tailscale:** handle empty TailscaleIPs slice to prevent panic ([#61](https://github.com/leger-labs/leger/issues/61)) ([93eb9d8](https://github.com/leger-labs/leger/commit/93eb9d8128b949c96f5945b12013eaf5bd0f25a8))
+
+
+### Documentation
+
+* auto-update CLI documentation [skip ci] ([9bc2f6a](https://github.com/leger-labs/leger/commit/9bc2f6a1d2b05042a326f2242a9d630062caa14b))
+* auto-update CLI documentation [skip ci] ([e7e3719](https://github.com/leger-labs/leger/commit/e7e37198ddd0e43ac145d3369a12a68517925254))
+
 ## [0.2.0](https://github.com/leger-labs/leger/compare/v0.1.0...v0.2.0) (2025-10-22)
 
 
